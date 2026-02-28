@@ -1,5 +1,5 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { logger } from '../../utils/logger';
+import { logger } from '../utils/logger';
 
 /**
  * ErrorBoundary — per error_handling_logging.md §2.1
