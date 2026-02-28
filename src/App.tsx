@@ -7,6 +7,8 @@ import { useUIStore } from './stores/uiStore';
 import HomePage from './pages/HomePage';
 import LabsPage from './pages/LabsPage';
 import ProfilePage from './pages/ProfilePage';
+import LabView from './pages/LabView';
+import TerminalPage from './pages/TerminalPage';
 import { useLabStore } from './stores/labStore';
 import { INITIAL_LABS } from './data/labs/initial';
 import { logger } from './utils/logger';
@@ -42,7 +44,9 @@ function AppContent() {
         <ErrorBoundary section="Main Content">
           <Routes>
             <Route path="/" element={<HomePage />} />
+            <Route path="/terminal" element={<TerminalPage />} />
             <Route path="/labs" element={<LabsPage />} />
+            <Route path="/lab/:labId" element={<LabView />} />
             <Route path="/profile" element={<ProfilePage />} />
           </Routes>
         </ErrorBoundary>

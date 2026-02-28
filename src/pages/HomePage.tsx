@@ -1,86 +1,135 @@
 import React from 'react';
-import { TerminalComponent } from '../components/terminal/Terminal';
+import { useGamificationStore, getLevelTitle, xpForLevel, ACHIEVEMENTS } from '../stores/gamificationStore';
 import { useLabStore } from '../stores/labStore';
-import { useGamificationStore, getLevelTitle } from '../stores/gamificationStore';
-import { ErrorBoundary } from '../components/ErrorBoundary';
-import { GuidedLabInstructions, DIYLabInstructions } from '../components/lab/LabComponents';
+import { useNavigate } from 'react-router-dom';
+import { BookOpen, Trophy, Flame, Zap, ChevronRight, Terminal } from 'lucide-react';
 
 /**
- * HomePage — per frontend_architecture.md §5: the main view
- * Shows terminal + active lab instructions side by side (60/40 split per ui_ux_documentation.md §6)
+ * HomePage — Dashboard: stats overview, recent activity, quick actions.
+ * NO terminal here. Terminal lives at /lab/:id when a lab is active.
  */
 const HomePage: React.FC = () => {
-    const { currentLabId, labs, progress } = useLabStore();
-    const currentLab = currentLabId ? labs[currentLabId] : null;
-    const currentProgress = currentLabId ? progress[currentLabId] : null;
-    const { awardXP, updateStreak, labsCompleted } = useGamificationStore();
+    const navigate = useNavigate();
+    const { level, totalXpEarned, streak, labsCompleted, unlockedAchievements, getXPProgress } = useGamificationStore();
+    const { labs, progress } = useLabStore();
+    const { current, needed, percent } = getXPProgress();
+    const title = getLevelTitle(level);
 
-    const handleDIYComplete = () => {
-        if (currentLab) {
-            useLabStore.getState().completeLab(currentLab.id);
-            awardXP(currentLab.xpReward);
-            updateStreak();
-            useGamificationStore.setState((s) => ({ labsCompleted: s.labsCompleted + 1 }));
-        }
-    };
+    const labList = Object.values(labs);
+    const inProgressLabs = labList.filter(l => progress[l.id]?.status === 'in-progress');
+    const completedLabs = labList.filter(l => progress[l.id]?.status === 'completed');
+    const availableLabs = labList.filter(l => !progress[l.id] || progress[l.id]?.status === 'available');
 
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 h-full">
-            {/* Terminal Area — 60% */}
-            <div className="lg:col-span-3 h-full">
-                <ErrorBoundary section="Terminal">
-                    <TerminalComponent />
-                </ErrorBoundary>
+        <div className="h-full overflow-y-auto p-6">
+            {/* Hero Banner */}
+            <div className="border-3 border-brutal-green bg-brutal-black p-8 mb-6 shadow-brutal relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-48 h-48 bg-brutal-green/5 rotate-45 translate-x-16 -translate-y-16" />
+                <h1 className="font-heading text-4xl uppercase text-brutal-green mb-2">
+                    Command Center
+                </h1>
+                <p className="text-brutal-gray text-sm max-w-lg">
+                    Welcome back, <span className="text-brutal-white font-bold">{title}</span>.
+                    You're on Level {level} with {totalXpEarned} total XP earned.
+                </p>
+                <div className="mt-4 flex gap-3">
+                    <button
+                        onClick={() => navigate('/labs')}
+                        className="border-2 border-brutal-green text-brutal-green px-5 py-2 font-heading uppercase text-sm hover:bg-brutal-green hover:text-brutal-black transition-colors flex items-center gap-2"
+                    >
+                        <BookOpen size={16} /> Start a Lab
+                    </button>
+                </div>
             </div>
 
-            {/* Lab/Info Area — 40% */}
-            <div className="lg:col-span-2 flex flex-col gap-4 overflow-y-auto">
-                {currentLab && currentProgress ? (
-                    <ErrorBoundary section="Lab Instructions">
-                        {currentLab.type === 'guided' ? (
-                            <GuidedLabInstructions
-                                lab={currentLab}
-                                currentStepIndex={currentProgress.currentStepIndex}
-                            />
-                        ) : (
-                            <DIYLabInstructions
-                                lab={currentLab}
-                                vfs={null as any} // Will be passed via context
-                                userId="guest"
-                                onComplete={handleDIYComplete}
-                            />
-                        )}
-                    </ErrorBoundary>
-                ) : (
-                    <div className="bg-brutal-white text-brutal-black p-6 border-3 border-brutal-black shadow-brutal">
-                        <h2 className="font-heading text-xl uppercase mb-3">Welcome, Learner</h2>
-                        <p className="text-sm mb-4">
-                            Ready to master the Linux command line? Head to the <strong>Curriculum</strong> tab to start your first lab.
-                        </p>
-                        <div className="space-y-2 text-xs">
-                            <p>💡 Try typing <code className="bg-brutal-dark text-brutal-green px-1">help</code> to see available commands</p>
-                            <p>💡 Use <code className="bg-brutal-dark text-brutal-green px-1">man ls</code> to read the manual for any command</p>
-                        </div>
-                    </div>
-                )}
+            {/* Stats Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <StatCard icon={<Zap size={20} />} label="Level" value={String(level)} accent="green" />
+                <StatCard icon={<Trophy size={20} />} label="Total XP" value={String(totalXpEarned)} accent="yellow" />
+                <StatCard icon={<Flame size={20} />} label="Day Streak" value={String(streak.current)} accent="red" />
+                <StatCard icon={<BookOpen size={20} />} label="Labs Done" value={`${completedLabs.length}/${labList.length}`} accent="white" />
+            </div>
 
-                {/* Quick Stats */}
-                <div className="bg-brutal-yellow text-brutal-black p-4 border-3 border-brutal-black shadow-brutal">
-                    <h3 className="font-heading uppercase text-sm mb-2">Quick Stats</h3>
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                        <div>
-                            <span className="font-heading uppercase text-[10px] text-black/60">Labs Done</span>
-                            <p className="font-heading text-lg">{labsCompleted}</p>
+            {/* XP Progress */}
+            <div className="border-3 border-brutal-white bg-brutal-black p-4 mb-6 shadow-brutal">
+                <div className="flex justify-between items-center mb-2">
+                    <span className="font-heading uppercase text-xs text-brutal-gray">Progress to Level {level + 1}</span>
+                    <span className="font-heading text-sm text-brutal-green">{current}/{needed} XP</span>
+                </div>
+                <div className="w-full h-3 bg-brutal-dark border border-brutal-white/20">
+                    <div
+                        className="h-full bg-brutal-green transition-all duration-500"
+                        style={{ width: `${percent}%` }}
+                    />
+                </div>
+            </div>
+
+            {/* Two Column: In Progress + Achievements */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Continue Learning */}
+                <div className="border-3 border-brutal-white bg-brutal-black p-5 shadow-brutal">
+                    <h2 className="font-heading uppercase text-sm text-brutal-white mb-4 flex items-center gap-2">
+                        <Terminal size={16} className="text-brutal-green" /> Continue Learning
+                    </h2>
+                    {inProgressLabs.length > 0 ? (
+                        <div className="space-y-3">
+                            {inProgressLabs.slice(0, 3).map(lab => (
+                                <button
+                                    key={lab.id}
+                                    onClick={() => {
+                                        useLabStore.getState().startLab(lab.id);
+                                        navigate(`/lab/${lab.id}`);
+                                    }}
+                                    className="w-full text-left border-2 border-brutal-gray p-3 hover:border-brutal-green transition-colors flex items-center justify-between group"
+                                >
+                                    <div>
+                                        <p className="font-heading uppercase text-xs text-brutal-white">{lab.title}</p>
+                                        <p className="text-[10px] text-brutal-gray mt-1">+{lab.xpReward} XP • {lab.type}</p>
+                                    </div>
+                                    <ChevronRight size={14} className="text-brutal-gray group-hover:text-brutal-green transition-colors" />
+                                </button>
+                            ))}
                         </div>
-                        <div>
-                            <span className="font-heading uppercase text-[10px] text-black/60">Title</span>
-                            <p className="font-heading text-sm">{getLevelTitle(useGamificationStore.getState().level)}</p>
+                    ) : (
+                        <p className="text-brutal-gray text-xs">
+                            No labs in progress. <button onClick={() => navigate('/labs')} className="text-brutal-green underline">Browse curriculum →</button>
+                        </p>
+                    )}
+                </div>
+
+                {/* Recent Achievements */}
+                <div className="border-3 border-brutal-white bg-brutal-black p-5 shadow-brutal">
+                    <h2 className="font-heading uppercase text-sm text-brutal-white mb-4 flex items-center gap-2">
+                        <Trophy size={16} className="text-brutal-yellow" /> Achievements
+                    </h2>
+                    {unlockedAchievements.length > 0 ? (
+                        <div className="flex flex-wrap gap-2">
+                            {unlockedAchievements.slice(0, 6).map(achId => {
+                                const ach = ACHIEVEMENTS.find(a => a.id === achId);
+                                return ach ? (
+                                    <div key={achId} className="border border-brutal-yellow px-3 py-1 text-sm" title={ach.description}>
+                                        {ach.icon} {ach.name}
+                                    </div>
+                                ) : null;
+                            })}
                         </div>
-                    </div>
+                    ) : (
+                        <p className="text-brutal-gray text-xs">
+                            No achievements unlocked yet. Complete labs to earn your first! 🏆
+                        </p>
+                    )}
                 </div>
             </div>
         </div>
     );
 };
+
+const StatCard: React.FC<{ icon: React.ReactNode; label: string; value: string; accent: string }> = ({ icon, label, value, accent }) => (
+    <div className={`border-3 border-brutal-${accent} bg-brutal-black p-4 shadow-brutal`}>
+        <div className={`text-brutal-${accent} mb-2`}>{icon}</div>
+        <p className="font-heading text-2xl text-brutal-white">{value}</p>
+        <p className="font-heading uppercase text-[10px] text-brutal-gray">{label}</p>
+    </div>
+);
 
 export default HomePage;

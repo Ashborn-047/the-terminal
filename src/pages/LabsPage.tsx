@@ -1,18 +1,19 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useLabStore } from '../stores/labStore';
 import { LabCard } from '../components/lab/LabComponents';
 
 /**
- * LabsPage — per frontend_architecture.md §5 routes: /labs
- * Lists all labs grouped by module with their status.
+ * LabsPage — Curriculum listing. Clicking Start navigates to /lab/:labId.
  */
 const LabsPage: React.FC = () => {
+    const navigate = useNavigate();
     const { labs, progress, startLab } = useLabStore();
     const labList = Object.values(labs);
 
     const getLabStatus = (labId: string): 'locked' | 'available' | 'in-progress' | 'completed' => {
         const p = progress[labId];
-        if (!p) return 'available'; // No progress = not started = available
+        if (!p) return 'available';
         if (p.status === 'completed') return 'completed';
         return 'in-progress';
     };
@@ -24,9 +25,15 @@ const LabsPage: React.FC = () => {
         return Math.round((p.currentStepIndex / lab.steps.length) * 100);
     };
 
+    const handleStartLab = (labId: string) => {
+        startLab(labId);
+        navigate(`/lab/${labId}`);
+    };
+
     return (
-        <div className="h-full overflow-y-auto p-4">
-            <h1 className="font-heading text-3xl uppercase mb-6 text-brutal-white">Curriculum</h1>
+        <div className="h-full overflow-y-auto p-6">
+            <h1 className="font-heading text-3xl uppercase mb-2 text-brutal-white">Curriculum</h1>
+            <p className="text-brutal-gray text-sm mb-6">Choose a lab to begin. Each lab teaches Linux commands through hands-on practice.</p>
 
             {labList.length === 0 ? (
                 <div className="bg-brutal-dark border-3 border-brutal-white p-8 text-center">
@@ -40,7 +47,7 @@ const LabsPage: React.FC = () => {
                             lab={lab}
                             status={getLabStatus(lab.id)}
                             progress={getLabProgress(lab.id)}
-                            onStart={startLab}
+                            onStart={handleStartLab}
                         />
                     ))}
                 </div>
