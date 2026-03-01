@@ -1002,8 +1002,8 @@
 - ❌ SpacetimeDB binary update process
 
 ### 9.3 Responsible Disclosure
-- ❌ `SECURITY.md` file in repository
-- ❌ security email / contact info
+- ✅ `SECURITY.md` file in repository — created with vulnerability reporting, architecture overview
+- ✅ security contact info (GitHub issues with security label)
 
 ## §10 — Implementation Checklist
 - ❌ All reducers check authorization — no backend
@@ -1012,8 +1012,8 @@
 - ❌ TLS/WSS in production — no backend
 - ❌ Rate limiting — no backend
 - ❌ Audit logging — no backend
-- ❌ Dependency audits in CI
-- ❌ SECURITY.md file
+    - ❌ Dependency audits in CI
+- ✅ SECURITY.md file — created
 - ❌ Permission boundary tests
 
 ---
@@ -1282,7 +1282,7 @@
 - ❌ `VITE_SPACETIME_HOST` set in production
 - ❌ `VITE_APP_NAME` set
 - ❌ `VITE_SENTRY_DSN` set
-- ❌ `.env.example` file
+- ✅ `.env.example` file — created with all env vars documented
 
 ### 6.2 SpacetimeDB Server
 - ❌ `SPACETIMEDB_BIND_ADDR` configured
