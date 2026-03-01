@@ -235,4 +235,350 @@ export const INITIAL_LABS: Record<string, Lab> = {
         ],
         completionMessage: 'You now understand the Linux permission system!',
     },
+
+    // ─── Module 5: HPC Environment ──────────────────────────────
+    'lab-5-1': {
+        id: 'lab-5-1',
+        module: 5,
+        title: 'Environment Variables',
+        description: 'Explore and set environment variables to configure your shell environment.',
+        type: 'guided',
+        xpReward: 75,
+        prerequisites: ['lab-4-1'],
+        steps: [
+            {
+                id: 'step-1',
+                instruction: 'View all environment variables with `env`',
+                expectedCommand: 'env',
+                hint: 'The `env` command lists all environment variables.',
+            },
+            {
+                id: 'step-2',
+                instruction: 'Check your current user with `whoami`',
+                expectedCommand: 'whoami',
+                hint: 'Type `whoami` to see your username.',
+            },
+            {
+                id: 'step-3',
+                instruction: 'Display system information with `uname -a`',
+                expectedCommand: 'uname -a',
+                hint: 'The `-a` flag shows all system info.',
+            },
+        ],
+        completionMessage: 'You understand how the shell environment works!',
+    },
+
+    // ─── Module 6: Users & Groups ───────────────────────────────
+    'lab-6-1': {
+        id: 'lab-6-1',
+        module: 6,
+        title: 'User & Identity Basics',
+        description: 'Learn about users, groups, and identity in Linux. Every file and process belongs to a user.',
+        type: 'guided',
+        xpReward: 75,
+        prerequisites: ['lab-5-1'],
+        steps: [
+            {
+                id: 'step-1',
+                instruction: 'Check your current user identity with `id`',
+                expectedCommand: 'id',
+                hint: 'The `id` command shows your UID, GID, and groups.',
+            },
+            {
+                id: 'step-2',
+                instruction: 'See which groups you belong to with `groups`',
+                expectedCommand: 'groups',
+                hint: 'Type `groups` to see your group memberships.',
+            },
+            {
+                id: 'step-3',
+                instruction: 'View the system hostname with `hostname`',
+                expectedCommand: 'hostname',
+                hint: 'The `hostname` command shows the system name.',
+            },
+            {
+                id: 'step-4',
+                instruction: 'Look at the passwd file to see all users: `cat /etc/passwd`',
+                expectedCommand: 'cat /etc/passwd',
+                hint: 'The `/etc/passwd` file contains user account information.',
+            },
+        ],
+        completionMessage: 'You understand Linux user and group concepts!',
+    },
+    'lab-6-2': {
+        id: 'lab-6-2',
+        module: 6,
+        title: 'User Management Challenge',
+        description: 'Create a new user account and set up their home directory. You\'ll need sudo for this!',
+        type: 'diy',
+        xpReward: 150,
+        prerequisites: ['lab-6-1'],
+        verification: {
+            conditions: [
+                {
+                    type: 'directory_exists',
+                    path: '/home/devuser',
+                    message: 'Create a user named `devuser` (their home dir should exist at /home/devuser).',
+                },
+                {
+                    type: 'file_exists',
+                    path: '/home/devuser/.bashrc',
+                    message: 'The devuser home directory should contain a `.bashrc` file.',
+                },
+            ]
+        },
+        hints: [
+            'Use `sudo useradd devuser` to create the user.',
+            'The useradd command automatically creates the home directory and .bashrc.',
+        ],
+        completionMessage: 'You\'ve successfully managed user accounts on a Linux system!',
+    },
+
+    // ─── Module 7: Process Management ───────────────────────────
+    'lab-7-1': {
+        id: 'lab-7-1',
+        module: 7,
+        title: 'Monitoring Processes',
+        description: 'Learn to view and understand running processes using `ps`, `top`, and related commands.',
+        type: 'guided',
+        xpReward: 75,
+        prerequisites: ['lab-6-2'],
+        steps: [
+            {
+                id: 'step-1',
+                instruction: 'View running processes with `ps`',
+                expectedCommand: 'ps',
+                hint: 'The `ps` command shows a snapshot of running processes.',
+            },
+            {
+                id: 'step-2',
+                instruction: 'Get a full system view with `top`',
+                expectedCommand: 'top',
+                hint: '`top` shows a real-time view of processes and system resources.',
+            },
+            {
+                id: 'step-3',
+                instruction: 'Check system uptime with `uptime`',
+                expectedCommand: 'uptime',
+                hint: '`uptime` shows how long the system has been running.',
+            },
+            {
+                id: 'step-4',
+                instruction: 'Check memory usage with `free`',
+                expectedCommand: 'free',
+                hint: '`free` shows memory (RAM) and swap usage.',
+            },
+        ],
+        completionMessage: 'You can now monitor system processes like a sysadmin!',
+    },
+    'lab-7-2': {
+        id: 'lab-7-2',
+        module: 7,
+        title: 'Process Control Challenge',
+        description: 'Practice managing processes: find a specific process and terminate it.',
+        type: 'guided',
+        xpReward: 100,
+        prerequisites: ['lab-7-1'],
+        steps: [
+            {
+                id: 'step-1',
+                instruction: 'List all processes to find one to kill: `ps`',
+                expectedCommand: 'ps',
+                hint: 'Look for a process and note its PID.',
+            },
+            {
+                id: 'step-2',
+                instruction: 'Terminate the cron process with `kill 201`',
+                expectedCommand: 'kill 201',
+                hint: 'Use `kill PID` to send a terminate signal to a process.',
+            },
+        ],
+        completionMessage: 'You can now manage processes from the command line!',
+    },
+
+    // ─── Module 8: Storage & Disk ───────────────────────────────
+    'lab-8-1': {
+        id: 'lab-8-1',
+        module: 8,
+        title: 'Disk Usage Analysis',
+        description: 'Learn to check disk space and analyze storage usage with `df` and `du`.',
+        type: 'guided',
+        xpReward: 75,
+        prerequisites: ['lab-7-2'],
+        steps: [
+            {
+                id: 'step-1',
+                instruction: 'Check overall disk usage with `df`',
+                expectedCommand: 'df',
+                hint: '`df` shows disk space usage for mounted filesystems.',
+            },
+            {
+                id: 'step-2',
+                instruction: 'Check directory size with `du /home`',
+                expectedCommand: 'du /home',
+                hint: '`du` shows the disk usage of a directory.',
+            },
+            {
+                id: 'step-3',
+                instruction: 'Get file information with `stat /etc/passwd`',
+                expectedCommand: 'stat /etc/passwd',
+                hint: '`stat` shows detailed information about a file.',
+            },
+        ],
+        completionMessage: 'You now know how to analyze storage usage!',
+    },
+    'lab-8-2': {
+        id: 'lab-8-2',
+        module: 8,
+        title: 'Archive & Compress Challenge',
+        description: 'Practice creating archives and compressing files — essential for backups and file transfers.',
+        type: 'guided',
+        xpReward: 100,
+        prerequisites: ['lab-8-1'],
+        steps: [
+            {
+                id: 'step-1',
+                instruction: 'Create a backup directory: `mkdir /home/guest/backup`',
+                expectedCommand: 'mkdir /home/guest/backup',
+                hint: 'Use `mkdir` to create the backup directory.',
+            },
+            {
+                id: 'step-2',
+                instruction: 'Create a tar archive: `tar -cf backup.tar /home/guest/backup`',
+                expectedCommand: 'tar -cf backup.tar /home/guest/backup',
+                hint: '`tar -cf` creates a new archive file.',
+            },
+            {
+                id: 'step-3',
+                instruction: 'Compress it with gzip: `gzip backup.tar`',
+                expectedCommand: 'gzip backup.tar',
+                hint: '`gzip` compresses a file, adding a .gz extension.',
+            },
+        ],
+        completionMessage: 'You can now create archives and compress files like a pro!',
+    },
+
+    // ─── Module 9: Networking Basics ────────────────────────────
+    'lab-9-1': {
+        id: 'lab-9-1',
+        module: 9,
+        title: 'Network Exploration',
+        description: 'Explore basic networking commands to understand your system\'s network connectivity.',
+        type: 'guided',
+        xpReward: 75,
+        prerequisites: ['lab-8-2'],
+        steps: [
+            {
+                id: 'step-1',
+                instruction: 'Check your hostname with `hostname`',
+                expectedCommand: 'hostname',
+                hint: '`hostname` shows the system name on the network.',
+            },
+            {
+                id: 'step-2',
+                instruction: 'Test connectivity with `ping google.com`',
+                expectedCommand: 'ping google.com',
+                hint: '`ping` sends packets to check if a host is reachable.',
+            },
+            {
+                id: 'step-3',
+                instruction: 'Look up DNS info with `dig google.com`',
+                expectedCommand: 'dig google.com',
+                hint: '`dig` queries DNS servers for domain info.',
+            },
+        ],
+        completionMessage: 'You understand the basics of Linux networking!',
+    },
+    'lab-9-2': {
+        id: 'lab-9-2',
+        module: 9,
+        title: 'Web Requests Challenge',
+        description: 'Practice fetching content from the web using command-line tools.',
+        type: 'guided',
+        xpReward: 100,
+        prerequisites: ['lab-9-1'],
+        steps: [
+            {
+                id: 'step-1',
+                instruction: 'Fetch a webpage with `curl https://example.com`',
+                expectedCommand: 'curl https://example.com',
+                hint: '`curl` fetches content from URLs.',
+            },
+            {
+                id: 'step-2',
+                instruction: 'Download a file with `wget https://example.com/file.txt`',
+                expectedCommand: 'wget https://example.com/file.txt',
+                hint: '`wget` downloads files from the web.',
+            },
+        ],
+        completionMessage: 'You can now interact with the web from the terminal!',
+    },
+
+    // ─── Module 11: Shell Scripting I ───────────────────────────
+    'lab-11-1': {
+        id: 'lab-11-1',
+        module: 11,
+        title: 'Text Processing Pipeline',
+        description: 'Learn to build powerful text processing pipelines using sort, uniq, cut, and other tools.',
+        type: 'guided',
+        xpReward: 100,
+        prerequisites: ['lab-9-2'],
+        steps: [
+            {
+                id: 'step-1',
+                instruction: 'Create a data file: `echo "banana\\napple\\ncherry\\napple\\nbanana\\nbanana" > fruits.txt`',
+                expectedCommand: 'echo "banana\\napple\\ncherry\\napple\\nbanana\\nbanana" > fruits.txt',
+                hint: 'Create a file with some duplicate data to process.',
+            },
+            {
+                id: 'step-2',
+                instruction: 'Sort the file contents: `sort fruits.txt`',
+                expectedCommand: 'sort fruits.txt',
+                hint: '`sort` arranges lines in alphabetical order.',
+            },
+            {
+                id: 'step-3',
+                instruction: 'Sort and remove duplicates: `sort fruits.txt | uniq`',
+                expectedCommand: 'sort fruits.txt | uniq',
+                hint: '`uniq` removes adjacent duplicate lines (sort first!).',
+            },
+            {
+                id: 'step-4',
+                instruction: 'Count occurrences: `sort fruits.txt | uniq -c`',
+                expectedCommand: 'sort fruits.txt | uniq -c',
+                hint: 'The `-c` flag shows how many times each line appears.',
+            },
+        ],
+        completionMessage: 'You\'re building powerful text processing pipelines!',
+    },
+    'lab-11-2': {
+        id: 'lab-11-2',
+        module: 11,
+        title: 'Stream Editing with Sed & Awk',
+        description: 'Master sed and awk — the two most powerful text processing tools in Unix.',
+        type: 'guided',
+        xpReward: 125,
+        prerequisites: ['lab-11-1'],
+        steps: [
+            {
+                id: 'step-1',
+                instruction: 'View the passwd file: `cat /etc/passwd`',
+                expectedCommand: 'cat /etc/passwd',
+                hint: 'View the file we\'ll be processing.',
+            },
+            {
+                id: 'step-2',
+                instruction: 'Extract the first field (usernames) with cut: `cut -d: -f1 /etc/passwd`',
+                expectedCommand: 'cut -d: -f1 /etc/passwd',
+                hint: '`cut -d: -f1` splits by `:` and takes the first field.',
+            },
+            {
+                id: 'step-3',
+                instruction: 'Replace text with sed: `echo "Hello World" | sed s/World/Linux/`',
+                expectedCommand: 'echo "Hello World" | sed s/World/Linux/',
+                hint: '`sed s/old/new/` performs text substitution.',
+            },
+        ],
+        completionMessage: 'You\'re now a text processing guru!',
+    },
 };
