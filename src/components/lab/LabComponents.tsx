@@ -77,7 +77,7 @@ export const LabCard: React.FC<LabCardProps> = ({ lab, status, progress, onStart
 interface GuidedLabProps {
     lab: Lab;
     currentStepIndex: number;
-    onHintUsed?: () => void;
+    onHintUsed?: (stepIndex: number) => void;
 }
 
 export const GuidedLabInstructions: React.FC<GuidedLabProps> = ({ lab, currentStepIndex, onHintUsed }) => {
@@ -114,7 +114,7 @@ export const GuidedLabInstructions: React.FC<GuidedLabProps> = ({ lab, currentSt
                         <button
                             onClick={() => {
                                 setShowHint(true);
-                                onHintUsed?.();
+                                onHintUsed?.(currentStepIndex);
                             }}
                             className="flex items-center gap-1 text-xs text-brutal-yellow hover:underline"
                         >
@@ -150,7 +150,7 @@ interface DIYLabProps {
     vfs: VFS;
     userId: string;
     onComplete: () => void;
-    onHintUsed?: () => void;
+    onHintUsed?: (hintIndex: number) => void;
 }
 
 export const DIYLabInstructions: React.FC<DIYLabProps> = ({ lab, vfs, userId, onComplete, onHintUsed }) => {
@@ -229,7 +229,7 @@ export const DIYLabInstructions: React.FC<DIYLabProps> = ({ lab, vfs, userId, on
                         <button
                             onClick={() => {
                                 setHintIndex(0);
-                                onHintUsed?.();
+                                onHintUsed?.(0);
                             }}
                             className="flex items-center gap-1 text-xs text-brutal-yellow hover:underline"
                         >
@@ -246,7 +246,7 @@ export const DIYLabInstructions: React.FC<DIYLabProps> = ({ lab, vfs, userId, on
                                 <button
                                     onClick={() => {
                                         setHintIndex(hintIndex + 1);
-                                        onHintUsed?.();
+                                        onHintUsed?.(hintIndex + 1);
                                     }}
                                     className="text-xs text-brutal-yellow underline"
                                 >

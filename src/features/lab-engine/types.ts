@@ -16,6 +16,7 @@ export interface LabStep {
     instruction: string;
     expectedCommand?: string;
     hint?: string;
+    regexMatch?: boolean; // If true, expectedCommand is treated as a regex
 }
 
 export interface Lab {
@@ -35,6 +36,8 @@ export interface Lab {
     completionMessage: string;
     parTime?: number; // in seconds
     parXpBonus?: number;
+    tags?: string[];
+    author?: string;
 }
 
 export interface LabProgress {
@@ -43,4 +46,7 @@ export interface LabProgress {
     currentStepIndex: number;
     completedAt?: number;
     verified: boolean;
+    hintsUsed?: number[]; // indices of steps where hints were used
+    startTime?: number;   // UNIX timestamp when lab started/resumed
+    totalTimeSpent?: number; // Cumulative seconds spent
 }

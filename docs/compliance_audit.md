@@ -497,8 +497,8 @@
 - ✅ Lab `objectives` field (array of strings)
 - ✅ Guided labs: `steps` array with instruction, expectedCommand, hint, successMessage
 - ✅ DIY labs: `verification.conditions` array
-- ❌ Lab `tags` field for searchability
-- ❌ Lab `author` field
+- ✅ Lab `tags` field for searchability
+- ✅ Lab `author` field
 
 ## §3 — Guided Lab Steps
 - ✅ Step instruction text
@@ -507,7 +507,7 @@
 - ✅ Step hint text
 - ✅ Step number / progress tracking
 - ✅ Auto-advance on correct command
-- 🟡 Flexible matching — exact match only, no regex or partial match
+- ✅ Flexible matching — `regexMatch` support for commands
 - ❌ Step validation callback (custom logic beyond string match)
 - ❌ Multi-command steps (require sequence of commands)
 
@@ -528,8 +528,8 @@
 - ✅ First hint: general direction
 - ✅ "More help" button for detailed hint
 - ✅ Progressive hint reveal (up to 2 levels)
-- ❌ Hint usage tracking for XP penalty
-- ❌ Hint usage saved per lab in progress
+- ✅ Hint usage tracking for XP penalty
+- ✅ Hint usage saved per lab in progress
 
 ## §6 — Lab Store (Zustand)
 - ✅ `currentLab` — active lab reference

@@ -126,8 +126,9 @@ interface GamificationState {
     labsCompleted: number;
     hintsUsed: number;
 
-    awardXP: (amount: number) => void;
+    awardXP: (amount: number, silent?: boolean) => void;
     hintPenalty: () => void;
+    processLabCompletion: (lab: any, progress: any) => void;
     getStreakMultiplier: () => number;
     updateStreak: () => void;
     incrementCounter: (target: string, amount?: number) => void;
@@ -153,11 +154,14 @@ export const useGamificationStore = create<GamificationState>()(
             labsCompleted: 0,
             hintsUsed: 0,
 
-            awardXP: (amount) => {
+            awardXP: (amount, silent) => {
                 const oldLevel = get().level;
                 // Apply streak multiplier
                 const multiplier = get().getStreakMultiplier();
                 const boostedAmount = Math.round(amount * multiplier);
+
+                if (boostedAmount === 0) return;
+
                 set((state) => {
                     const newTotalXp = state.totalXpEarned + boostedAmount;
                     const newLevel = levelFromXP(newTotalXp);
@@ -167,14 +171,20 @@ export const useGamificationStore = create<GamificationState>()(
                         level: newLevel,
                     };
                 });
+
                 // Fire XP toast (show multiplier if active)
-                const bonusText = multiplier > 1 ? ` (${multiplier}x streak bonus!)` : '';
-                toastEmitter.emit({ type: 'xp', title: `+${boostedAmount} XP${bonusText}`, icon: '⚡' });
+                if (!silent) {
+                    const bonusText = multiplier > 1 ? ` (${multiplier}x streak bonus!)` : '';
+                    toastEmitter.emit({ type: 'xp', title: `${boostedAmount > 0 ? '+' : ''}${boostedAmount} XP${bonusText}`, icon: boostedAmount > 0 ? '⚡' : '💡' });
+                }
+
                 // Fire level-up toast and modal if leveled up
                 const newLevel = get().level;
                 if (newLevel > oldLevel) {
-                    // Show full celebration modal
-                    useUIStore.getState().showLevelUp(newLevel);
+                    // Show full celebration modal if not silent
+                    if (!silent) {
+                        useUIStore.getState().showLevelUp(newLevel);
+                    }
 
                     toastEmitter.emit({
                         type: 'level-up',
@@ -187,12 +197,45 @@ export const useGamificationStore = create<GamificationState>()(
             },
 
             hintPenalty: () => {
-                set((state) => ({
-                    hintsUsed: state.hintsUsed + 1,
-                    xp: Math.max(0, state.xp - 10),
-                    totalXpEarned: Math.max(0, state.totalXpEarned - 10),
-                }));
-                toastEmitter.emit({ type: 'xp', title: '-10 XP (hint used)', icon: '💡' });
+                get().awardXP(-10, false);
+                set((state) => ({ hintsUsed: state.hintsUsed + 1 }));
+            },
+
+            processLabCompletion: (lab, progress) => {
+                if (!lab || !progress) return;
+
+                // 1. Calculate base reward
+                let finalXp = lab.xpReward;
+
+                // 2. Apply Hint Penalties (10 XP per unique hint index used)
+                const hintsCount = progress.hintsUsed?.length || 0;
+                const hintPenalty = hintsCount * 10;
+
+                // 3. Apply Speed Bonus
+                let speedBonus = 0;
+                const timeSpent = progress.totalTimeSpent || 0;
+                if (lab.parTime && timeSpent <= lab.parTime) {
+                    speedBonus = lab.parXpBonus || 50;
+                    get().incrementCounter('speed-bonus-count');
+                    toastEmitter.emit({ type: 'xp', title: `+${speedBonus} XP (Speed Bonus!)`, icon: '⚡' });
+                }
+
+                if (hintsCount > 0) {
+                    toastEmitter.emit({ type: 'xp', title: `-${hintPenalty} XP (${hintsCount} hints used)`, icon: '💡' });
+                }
+
+                // Award total XP (Base - Penalty + Bonus)
+                // Note: finalXp can go below base reward but we stay above 0
+                const finalAmount = Math.max(0, finalXp - hintPenalty + speedBonus);
+                get().awardXP(finalAmount);
+
+                if (hintsCount === 0) {
+                    get().incrementCounter('perfect-lab-count');
+                }
+
+                set((state) => ({ labsCompleted: state.labsCompleted + 1 }));
+                get().updateStreak();
+                get().checkAchievements();
             },
 
             getStreakMultiplier: () => {

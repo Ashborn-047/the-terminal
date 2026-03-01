@@ -9,6 +9,18 @@ export class VerificationEngine {
         const normalizedInput = command.trim().replace(/\s+/g, ' ');
         const expected = step.expectedCommand?.trim().replace(/\s+/g, ' ');
 
+        if (!expected) return false;
+
+        if (step.regexMatch) {
+            try {
+                const regex = new RegExp(`^${expected}$`, 'i');
+                return regex.test(normalizedInput);
+            } catch (e) {
+                console.error('Invalid regex in lab step:', e);
+                return normalizedInput === expected;
+            }
+        }
+
         return normalizedInput === expected;
     }
 
