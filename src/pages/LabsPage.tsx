@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLabStore } from '../stores/labStore';
+import { useFeatureAccess } from '../hooks/useFeatureAccess';
 import { LabCard } from '../components/lab/LabComponents';
 
 /**
@@ -9,9 +10,13 @@ import { LabCard } from '../components/lab/LabComponents';
 const LabsPage: React.FC = () => {
     const navigate = useNavigate();
     const { labs, progress, startLab } = useLabStore();
+    const features = useFeatureAccess();
     const labList = Object.values(labs);
 
     const getLabStatus = (labId: string): 'locked' | 'available' | 'in-progress' | 'completed' => {
+        const lab = labs[labId];
+        if (lab?.type === 'diy' && !features.diyLabs) return 'locked';
+
         const p = progress[labId];
         if (!p) return 'available';
         if (p.status === 'completed') return 'completed';

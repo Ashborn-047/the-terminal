@@ -156,9 +156,8 @@ export function useTerminal(initialUserId: string = 'guest') {
 
                     if (isComplete) {
                         completeLabInStore(currentLabId);
-                        awardXP(lab.xpReward);
-                        updateStreak();
-                        useGamificationStore.setState((s) => ({ labsCompleted: s.labsCompleted + 1 }));
+                        // Rewards and streaks are handled by the LabView component 
+                        // when it detects completion status.
                     }
                 }
             }
@@ -186,18 +185,15 @@ export function useTerminal(initialUserId: string = 'guest') {
             incrementCounter('unique-commands');
         }
 
-        // Time-based achievements (Night Owl, Early Bird) — fire on lab completion
         if (currentLabId && labs[currentLabId]) {
-            const lab = labs[currentLabId];
             const labProgress = progress[currentLabId];
             if (labProgress?.status === 'completed') {
                 const hour = new Date().getHours();
                 if (hour >= 0 && hour < 5) incrementCounter('night-owl');
                 if (hour >= 5 && hour < 8) incrementCounter('early-bird');
+                checkAchievements();
             }
         }
-
-        checkAchievements();
 
         // Handle special case: cd updates CWD
         if (firstPipeline && firstPipeline.actions.length === 1 && firstPipeline.actions[0].name === 'cd' && result.exitCode === 0) {

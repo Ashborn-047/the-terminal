@@ -2,6 +2,7 @@ import { VFS } from '../vfs/vfs';
 import { CommandContext, CommandResult, CommandPipeline, CommandAction } from './types';
 import { CommandRegistry } from './registry';
 import { CommandParser } from './parser';
+import { formatError } from '../../utils/error_codes';
 
 export class CommandExecutor {
     private vfs: VFS;
@@ -23,7 +24,7 @@ export class CommandExecutor {
         for (const action of pipeline.actions) {
             const commandFn = CommandRegistry.get(action.name); // Kept CommandRegistry.get as this.registry is not defined
             if (!commandFn) {
-                return { output: '', error: `Command not found: ${action.name}`, exitCode: 127 };
+                return { output: '', error: formatError('COMMAND_NOT_FOUND'), exitCode: 127 };
             }
 
             // Handle substitutions $(command)

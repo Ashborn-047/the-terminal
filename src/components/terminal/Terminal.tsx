@@ -34,6 +34,7 @@ export const TerminalComponent: React.FC = () => {
     const [input, setInput] = useState('');
     const [historyIndex, setHistoryIndex] = useState(-1);
     const [flashClass, setFlashClass] = useState('');
+    const [isExecuting, setIsExecuting] = useState(false);
     const bottomRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -62,7 +63,9 @@ export const TerminalComponent: React.FC = () => {
             const command = input;
             setInput('');
             setHistoryIndex(-1);
+            setIsExecuting(true);
             const result = await executeCommand(command);
+            setIsExecuting(false);
 
             // Micro-interaction: success flash or error shake
             if (result) {
@@ -131,9 +134,14 @@ export const TerminalComponent: React.FC = () => {
                     autoFocus
                     spellCheck={false}
                     autoComplete="off"
+                    disabled={isExecuting}
                 />
-                {/* Block cursor blink */}
-                <span className="terminal-cursor" />
+                {/* Block cursor blink or loading underscore */}
+                {isExecuting ? (
+                    <span className="loading-underscore" />
+                ) : (
+                    <span className="terminal-cursor" />
+                )}
             </div>
 
             <div ref={bottomRef} className="h-4" />

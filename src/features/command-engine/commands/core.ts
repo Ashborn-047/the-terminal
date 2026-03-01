@@ -2,6 +2,7 @@ import { CommandRegistry } from '../registry';
 import { CommandContext, CommandResult } from '../types';
 import { Inode } from '../../vfs/types';
 import { permissionsToOctal } from '../../vfs/vfs';
+import { logger } from '../../../utils/logger';
 
 // ======================================================================
 //  pwd
@@ -522,17 +523,20 @@ CommandRegistry.register('chmod', async (args, context) => {
 
     const applyMode = (path: string, inode: Inode) => {
         if (inode.ownerId !== context.userId && context.userId !== 'root') {
+            logger.security('CHMOD_UNAUTHORIZED', { path, userId: context.userId });
             return `chmod: changing permissions of '${path}': Operation not permitted`;
         }
 
         if (/^[0-7]{3,4}$/.test(mode)) {
             const result = context.vfs.chmod(path, mode.slice(-3), context.userId);
             if (typeof result === 'string') return `chmod: ${result}`;
+            logger.security('CHMOD_OCTAL', { path, mode, userId: context.userId });
         } else {
             const newPermissions = parseSymbolicMode(mode, inode.permissions);
             if (!newPermissions) return `chmod: invalid mode: '${mode}'`;
             inode.permissions = newPermissions;
             inode.modifiedAt = Date.now();
+            logger.security('CHMOD_SYMBOLIC', { path, mode, userId: context.userId });
         }
         return null;
     };
@@ -735,6 +739,7 @@ CommandRegistry.register('sudo', async (args, context) => {
     }
 
     const rootContext = { ...context, userId: 'root' };
+    logger.security('SUDO_EXEC', { command: commandName, args: commandArgs, userId: context.userId });
     return await commandFn(commandArgs, rootContext);
 });
 

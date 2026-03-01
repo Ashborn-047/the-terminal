@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useUIStore } from '../../stores/uiStore';
+import { trackEvent } from '../../utils/analytics';
 
 /**
  * WelcomeModal — per user_onboarding.md §5.1
@@ -13,6 +14,11 @@ interface WelcomeModalProps {
 export const WelcomeModal: React.FC<WelcomeModalProps> = ({ onComplete }) => {
     const [username, setUsername] = useState('');
     const [error, setError] = useState('');
+    const [isVerifying, setIsVerifying] = useState(false);
+
+    useEffect(() => {
+        trackEvent('onboarding_started');
+    }, []);
 
     const handleSubmit = () => {
         const trimmed = username.trim();
@@ -29,7 +35,14 @@ export const WelcomeModal: React.FC<WelcomeModalProps> = ({ onComplete }) => {
             return;
         }
         setError('');
-        onComplete(trimmed);
+        setIsVerifying(true);
+
+        // Simulate backend verification delay §3.1
+        setTimeout(() => {
+            setIsVerifying(false);
+            trackEvent('onboarding_step_1_complete', { username: trimmed });
+            onComplete(trimmed);
+        }, 1500);
     };
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -71,10 +84,17 @@ export const WelcomeModal: React.FC<WelcomeModalProps> = ({ onComplete }) => {
 
                 <button
                     onClick={handleSubmit}
-                    disabled={!username.trim()}
-                    className="w-full border-3 border-brutal-green text-brutal-green py-3 font-heading uppercase hover:bg-brutal-green hover:text-brutal-black transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                    disabled={!username.trim() || isVerifying}
+                    className="w-full border-3 border-brutal-green text-brutal-green py-3 font-heading uppercase hover:bg-brutal-green hover:text-brutal-black transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                    Initialize Session →
+                    {isVerifying ? (
+                        <>
+                            <span className="animate-spin text-xl">◌</span>
+                            Verifying...
+                        </>
+                    ) : (
+                        'Initialize Session →'
+                    )}
                 </button>
 
                 <p className="mt-4 text-[10px] text-brutal-gray text-center">

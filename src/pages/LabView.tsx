@@ -115,10 +115,10 @@ const LabView: React.FC = () => {
                 <div className="flex items-center gap-3">
                     <button
                         onClick={handleExit}
-                        className="border-2 border-brutal-white text-brutal-white p-1.5 hover:bg-brutal-white hover:text-brutal-black transition-colors"
+                        className="w-10 h-10 flex items-center justify-center border-2 border-brutal-white text-brutal-white hover:bg-brutal-white hover:text-brutal-black transition-colors"
                         title="Exit Lab"
                     >
-                        <ArrowLeft size={16} />
+                        <ArrowLeft size={20} />
                     </button>
                     <div>
                         <h2 className="font-heading uppercase text-sm text-brutal-white">{lab.title}</h2>
@@ -140,7 +140,7 @@ const LabView: React.FC = () => {
                     </span>
                     <button
                         onClick={handleReset}
-                        className="border-2 border-brutal-yellow text-brutal-yellow p-1.5 hover:bg-brutal-yellow hover:text-brutal-black transition-colors"
+                        className="w-8 h-8 flex items-center justify-center border-2 border-brutal-yellow text-brutal-yellow hover:bg-brutal-yellow hover:text-brutal-black transition-colors"
                         title="Reset Lab"
                     >
                         <RotateCcw size={14} />

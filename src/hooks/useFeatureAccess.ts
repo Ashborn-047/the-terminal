@@ -9,11 +9,13 @@ import { useLabStore } from '../stores/labStore';
 export interface FeatureAccess {
     terminal: boolean;      // Always available
     curriculum: boolean;    // Available after onboarding
-    achievements: boolean;  // Unlocks after completing 2 labs
-    chat: boolean;          // Unlocks after completing 3 labs (future)
-    settings: boolean;      // Unlocks at level 3
-    labReset: boolean;      // Unlocks after completing 1 lab
-    hints: boolean;         // Always available
+    achievements: boolean;  // 2 labs
+    chat: boolean;          // 3 labs
+    commandReference: boolean; // 5 labs
+    diyLabs: boolean;       // 10 labs
+    settings: boolean;      // Level 3
+    labReset: boolean;      // 1 lab
+    hints: boolean;
 }
 
 export function useFeatureAccess(): FeatureAccess {
@@ -24,6 +26,8 @@ export function useFeatureAccess(): FeatureAccess {
         curriculum: true,
         achievements: labsCompleted >= 2,
         chat: labsCompleted >= 3,
+        commandReference: labsCompleted >= 5,
+        diyLabs: labsCompleted >= 10,
         settings: level >= 3,
         labReset: labsCompleted >= 1,
         hints: true,

@@ -5,6 +5,7 @@ import { useGamificationStore } from '../../stores/gamificationStore';
 import { useUIStore } from '../../stores/uiStore';
 import { useFeatureAccess } from '../../hooks/useFeatureAccess';
 import { ConnectionStatus } from './ConnectionStatus';
+import { DebugOverlay } from '../debug/DebugOverlay';
 
 interface SidebarItemProps {
     icon: React.ReactNode;
@@ -45,17 +46,18 @@ export const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }
         { path: '/', label: 'Dashboard', icon: <Zap size={20} />, locked: false },
         { path: '/terminal', label: 'Terminal', icon: <Terminal size={20} />, locked: false },
         { path: '/labs', label: 'Curriculum', icon: <BookOpen size={20} />, locked: false },
-        { path: '/commands', label: 'Commands', icon: <BookText size={20} />, locked: false },
-        { path: '/chat', label: 'AI Tutor', icon: <MessageSquare size={20} />, locked: false },
+        { path: '/commands', label: 'Commands', icon: <BookText size={20} />, locked: !features.commandReference },
+        { path: '/chat', label: 'AI Tutor', icon: <MessageSquare size={20} />, locked: !features.chat },
         { path: '/profile', label: 'Achievements', icon: <Award size={20} />, locked: !features.achievements },
-        { path: '/settings', label: 'Settings', icon: <Settings size={20} />, locked: false },
+        { path: '/settings', label: 'Settings', icon: <Settings size={20} />, locked: !features.settings },
     ];
 
     return (
         <div className="flex h-screen w-full bg-brutal-dark text-brutal-white overflow-hidden p-4 gap-4">
+            <DebugOverlay />
             {/* Sidebar */}
             <aside className={`${sidebarOpen ? 'w-64' : 'w-0 overflow-hidden'} flex flex-col h-full transition-all`}>
-                <div className="flex items-center gap-3 mb-8 p-2 border-3 border-brutal-white bg-brutal-black shadow-brutal">
+                <div className="flex items-center gap-3 mb-8 p-2 border-3 border-brutal-white bg-brutal-black shadow-brutal -rotate-1 hover:rotate-0 transition-transform cursor-pointer">
                     <div className="bg-brutal-green p-2 border-2 border-brutal-black">
                         <Terminal size={24} className="text-brutal-black" />
                     </div>
@@ -101,15 +103,15 @@ export const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }
                 </div>
                 <header className="flex justify-between items-center mb-4 p-4 bg-brutal-white border-3 border-brutal-black text-brutal-black shadow-brutal">
                     <div className="flex items-center gap-4">
-                        <div className="flex flex-col items-center p-2 border-2 border-brutal-black bg-brutal-yellow font-heading uppercase text-xs min-w-[60px]">
+                        <div className="flex flex-col items-center p-2 border-2 border-brutal-black bg-brutal-yellow font-heading uppercase text-xs min-w-[60px] rotate-2 hover:rotate-0 transition-transform">
                             <span>LVL {level}</span>
                         </div>
                         <div className="flex flex-col gap-1">
                             <span className="font-heading uppercase text-[10px] text-brutal-gray leading-none">{title}</span>
                             <div className="flex items-center gap-2">
-                                <div className="h-5 w-40 border-2 border-brutal-black bg-brutal-black p-[2px]">
+                                <div className="h-5 w-40 border-2 border-brutal-black bg-brutal-black p-0 overflow-hidden">
                                     <div
-                                        className="h-full bg-brutal-green transition-all duration-500"
+                                        className="h-full bg-brutal-green brutal-stripes border-r border-brutal-white transition-all duration-500"
                                         style={{ width: `${percent}%` }}
                                     />
                                 </div>
@@ -125,7 +127,7 @@ export const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }
                     </div>
                 </header>
 
-                <div className="flex-1 overflow-hidden">
+                <div className="flex-1 overflow-hidden grid-background border-3 border-brutal-white shadow-[inset_0_0_100px_rgba(0,0,0,0.4)]">
                     {children}
                 </div>
             </main>

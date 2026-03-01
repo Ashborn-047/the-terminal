@@ -1,34 +1,35 @@
 :root {
   --font-size: 16px;
-  --background: #000000;
-  --foreground: #FFFFFF;
-  --card: #1A1A1A;
-  --card-foreground: #FFFFFF;
-  --popover: #1A1A1A;
-  --popover-foreground: #FFFFFF;
-  --primary: #00FF00;
-  --primary-foreground: #000000;
-  --secondary: #FFFF00;
-  --secondary-foreground: #000000;
+  --background: #0A0A0A;
+  --foreground: #F0F0F0;
+  --card: #1E1E1E;
+  --card-foreground: #F0F0F0;
+  --popover: #1E1E1E;
+  --popover-foreground: #F0F0F0;
+  --primary: #00FF9D;
+  --primary-foreground: #0A0A0A;
+  --secondary: #FFE600;
+  --secondary-foreground: #0A0A0A;
   --muted: #333333;
-  --muted-foreground: #A1A1A1;
-  --accent: #FFFFFF;
-  --accent-foreground: #000000;
-  --destructive: #FF0000;
-  --destructive-foreground: #FFFFFF;
+  --muted-foreground: #A0A0A0;
+  --accent: #00CCFF;
+  --accent-foreground: #0A0A0A;
+  --destructive: #FF4D4D;
+  --destructive-foreground: #F0F0F0;
   --border: #FFFFFF;
-  --input: #000000;
-  --input-background: #1A1A1A;
+  --input: #0A0A0A;
+  --input-background: #1E1E1E;
   --radius: 0px;
 
-  /* Neo-Brutalist specific tokens */
-  --brutal-black: #000000;
+  /* Neo-Brutalist specific tokens per §3 */
+  --brutal-black: #0A0A0A;
   --brutal-white: #FFFFFF;
-  --brutal-green: #00FF00;
-  --brutal-yellow: #FFFF00;
-  --brutal-red: #FF0000;
-  --brutal-dark: #1A1A1A;
-  --brutal-gray: #A1A1A1;
+  --brutal-green: #00FF9D;
+  --brutal-yellow: #FFE600;
+  --brutal-red: #FF4D4D;
+  --brutal-blue: #00CCFF;
+  --brutal-dark: #1E1E1E;
+  --brutal-gray: #A0A0A0;
 
   --shadow-brutal: 4px 4px 0px 0px rgba(0, 0, 0, 1);
   --shadow-brutal-lg: 8px 8px 0px 0px rgba(0, 0, 0, 1);
@@ -66,6 +67,7 @@
   --color-brutal-green: var(--brutal-green);
   --color-brutal-yellow: var(--brutal-yellow);
   --color-brutal-red: var(--brutal-red);
+  --color-brutal-blue: var(--brutal-blue);
   --color-brutal-dark: var(--brutal-dark);
   --color-brutal-gray: var(--brutal-gray);
 
@@ -87,7 +89,13 @@
     background-color: var(--background);
     color: var(--foreground);
     margin: 0;
-    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+    font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  }
+
+  /* §10 Focus Indicators */
+  :focus-visible {
+    outline: 3px solid var(--brutal-white) !important;
+    outline-offset: 2px !important;
   }
 }
 
@@ -240,4 +248,80 @@
 
 .animate-slide-in {
   animation: slide-in 0.3s ease-out forwards;
+}
+
+/* === Neo-Brutalist Patterns & Utilities === */
+
+.brutal-stripes {
+  background-image: repeating-linear-gradient(45deg,
+      transparent,
+      transparent 10px,
+      rgba(255, 255, 255, 0.1) 10px,
+      rgba(255, 255, 255, 0.1) 20px);
+}
+
+.grid-background {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 20px 20px;
+  background-position: center;
+}
+
+/* Rotating underscore loader */
+@keyframes rotate-underscore {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  25% {
+    transform: rotate(90deg);
+  }
+
+  50% {
+    transform: rotate(180deg);
+  }
+
+  75% {
+    transform: rotate(270deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-underscore::after {
+  content: '_';
+  display: inline-block;
+  animation: rotate-underscore 1s linear infinite;
+  margin-left: 0.5rem;
+  color: var(--brutal-green);
+}
+
+/* Typing points animation */
+@keyframes typing-dots {
+
+  0%,
+  100% {
+    opacity: 0.2;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+.typing-dot {
+  animation: typing-dots 1s infinite;
+  display: inline-block;
+  margin: 0 1px;
+}
+
+.typing-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-dot:nth-child(3) {
+  animation-delay: 0.4s;
 }

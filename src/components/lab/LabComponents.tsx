@@ -40,8 +40,11 @@ export const LabCard: React.FC<LabCardProps> = ({ lab, status, progress, onStart
 
                 {status === 'in-progress' && (
                     <div className="flex items-center gap-2">
-                        <div className="w-24 h-3 border-2 border-brutal-black bg-brutal-dark p-[1px]">
-                            <div className="h-full bg-brutal-green" style={{ width: `${progress || 0}%` }} />
+                        <div className="w-24 h-4 border-2 border-brutal-black bg-brutal-dark p-0 overflow-hidden">
+                            <div
+                                className="h-full bg-brutal-green brutal-stripes border-r border-brutal-white transition-all duration-500"
+                                style={{ width: `${progress || 0}%` }}
+                            />
                         </div>
                         <button
                             onClick={() => onStart(lab.id)}
@@ -116,9 +119,9 @@ export const GuidedLabInstructions: React.FC<GuidedLabProps> = ({ lab, currentSt
                                 setShowHint(true);
                                 onHintUsed?.(currentStepIndex);
                             }}
-                            className="flex items-center gap-1 text-xs text-brutal-yellow hover:underline"
+                            className="flex items-center gap-1 text-xs text-brutal-yellow hover:text-brutal-green font-bold uppercase border-b-2 border-brutal-yellow transition-all"
                         >
-                            <HelpCircle size={14} /> Need a hint?
+                            <HelpCircle size={14} /> [GET_HINT]
                         </button>
                     ) : (
                         <div className="bg-brutal-black border-2 border-brutal-yellow p-2 text-xs text-brutal-yellow">

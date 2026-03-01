@@ -11,6 +11,7 @@ import { ToastProvider } from './components/ToastNotification';
 import { OnboardingWalkthrough } from './components/onboarding/OnboardingWalkthrough';
 import { LevelUpModal } from './components/gamification/LevelUpModal';
 import { ProtectedRoute } from './components/layout/ProtectedRoute';
+import { spacetimeClient } from './utils/spacetimeClient';
 
 // Lazy-loaded pages for code splitting
 const HomePage = React.lazy(() => import('./pages/HomePage'));
@@ -35,6 +36,24 @@ const PageLoader = () => (
 function AppContent() {
   const { onboardingComplete, completeOnboarding, setActiveView, onboardingStep, setOnboardingStep, setUsername, username } = useUIStore();
   const { setLabs, labs } = useLabStore();
+
+  // Heartbeat & Registration synchronization §4.4
+  React.useEffect(() => {
+    // If we have a username but no spacetime user, register them
+    if (username && !spacetimeClient.getUser(spacetimeClient.identity)) {
+      spacetimeClient.register_user(username).catch(err =>
+        logger.error('Failed to register user in simulated backend', { err })
+      );
+    }
+
+    const interval = setInterval(() => {
+      spacetimeClient.heartbeat().catch(err =>
+        logger.error('Heartbeat failed', { err })
+      );
+    }, 30000); // 30s heartbeat
+
+    return () => clearInterval(interval);
+  }, [username]);
 
   // Load initial labs if not already loaded
   React.useEffect(() => {

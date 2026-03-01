@@ -7,6 +7,8 @@ import {
     VFSPermissions
 } from './types';
 import { snapshots } from './snapshots';
+import { formatError } from '../../utils/error_codes';
+import { logger } from '../../utils/logger';
 
 export const DEFAULT_DIR_PERMISSIONS: InodePermissions = {
     owner: { read: true, write: true, execute: true },
@@ -199,7 +201,7 @@ export class VFS {
             const part = parts[i];
             const currentInode = this.inodes[currentId];
 
-            if (!currentInode) return 'No such file or directory';
+            if (!currentInode) return formatError('FILE_NOT_FOUND');
 
             if (part === '.') continue;
             if (part === '..') {
@@ -209,15 +211,16 @@ export class VFS {
             }
 
             if (currentInode.type !== 'directory' || !currentInode.children) {
-                return 'Not a directory';
+                return formatError('NOT_A_DIRECTORY');
             }
 
             if (!this.hasPermission(currentInode, userId, 'execute')) {
-                return 'Permission denied';
+                logger.security('PERMISSION_DENIED', { path, part, userId, action: 'execute' });
+                return formatError('PERMISSION_DENIED');
             }
 
             const childId = currentInode.children.find(id => this.inodes[id]?.name === part);
-            if (!childId) return 'No such file or directory';
+            if (!childId) return formatError('FILE_NOT_FOUND');
 
             const childInode = this.inodes[childId];
 
@@ -244,10 +247,11 @@ export class VFS {
         if (typeof result === 'string') return { error: result };
 
         const inode = result as Inode;
-        if (inode.type === 'directory') return { error: 'Is a directory' };
+        if (inode.type === 'directory') return { error: formatError('IS_DIRECTORY') };
 
         if (!this.hasPermission(inode, userId, 'read')) {
-            return { error: 'Permission denied' };
+            logger.security('PERMISSION_DENIED', { path, userId, action: 'read' });
+            return { error: formatError('PERMISSION_DENIED') };
         }
         return inode.content || '';
     }
@@ -256,7 +260,7 @@ export class VFS {
         let result = this.resolve(path, userId);
 
         if (typeof result === 'string') {
-            if (result === 'No such file or directory') {
+            if (result === formatError('FILE_NOT_FOUND')) {
                 // Try to create the file
                 const parts = path.split('/').filter(p => p.length > 0);
                 const name = parts.pop() || '';
@@ -274,7 +278,8 @@ export class VFS {
         if (inode.type !== 'file') return { error: 'Not a file' };
 
         if (!this.hasPermission(inode, userId, 'write')) {
-            return { error: 'Permission denied' };
+            logger.security('PERMISSION_DENIED', { path, userId, action: 'write' });
+            return { error: formatError('PERMISSION_DENIED') };
         }
 
         inode.content = content;
@@ -291,7 +296,7 @@ export class VFS {
         if (parentInode.type !== 'directory') return 'Not a directory';
 
         if (parentInode.children?.some(id => this.inodes[id]?.name === name)) {
-            return 'File exists';
+            return formatError('DIRECTORY_ALREADY_EXISTS');
         }
 
         const newId = uuidv4();
@@ -360,7 +365,7 @@ export class VFS {
         if (parentInode.type !== 'directory') return 'Not a directory';
 
         if (parentInode.children?.some(id => this.inodes[id]?.name === name)) {
-            return 'File exists';
+            return formatError('DIRECTORY_ALREADY_EXISTS');
         }
 
         const targetResult = this.resolve(target, ownerId);

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useUIStore } from '../../stores/uiStore';
 import { useLabStore } from '../../stores/labStore';
+import { trackEvent } from '../../utils/analytics';
 import { useNavigate } from 'react-router-dom';
 
 /**
@@ -56,10 +57,15 @@ export const OnboardingWalkthrough: React.FC = () => {
 
     const handleNext = () => {
         if (currentStep < WALKTHROUGH_STEPS.length - 1) {
-            setCurrentStep(currentStep + 1);
+            const nextStep = currentStep + 1;
+            setCurrentStep(nextStep);
             setInputValue('');
+            // Track intermediate steps §8
+            const stepEvent = `onboarding_step_${nextStep + 1}_complete` as any;
+            trackEvent(stepEvent);
         } else {
             // Walkthrough complete — advance onboarding
+            trackEvent('onboarding_completed');
             setOnboardingStep(3); // Move to "first lab" phase
             navigate('/lab/lab-1-1'); // Auto-redirect to first lab
         }

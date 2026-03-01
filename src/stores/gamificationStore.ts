@@ -1,7 +1,11 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { toastEmitter } from '../components/ToastNotification';
+import { Lab, LabProgress } from '../features/lab-engine/types';
+import { trackEvent } from '../utils/analytics';
 import { useUIStore } from './uiStore';
+import { spacetimeClient } from '../utils/spacetimeClient';
+import { logger } from '../utils/logger';
 
 // ======================================================================
 //  Level Titles — per gamification_framework.md §2.2
@@ -19,6 +23,8 @@ export const LEVEL_TITLES: Record<number, string> = {
     10: 'Storage Handler',
 };
 
+const FIRST_LAB_BONUS = 500;
+
 /** Returns level title; levels 11-20 → RHCSA Candidate, 21-30 → Linux Professional, 31+ → Terminal Master */
 export function getLevelTitle(level: number): string {
     if (LEVEL_TITLES[level]) return LEVEL_TITLES[level];
@@ -35,17 +41,13 @@ export function getLevelTitle(level: number): string {
 export function xpForLevel(level: number): number {
     if (level <= 1) return 0;
     if (level <= 10) {
-        // Cumulative: sum of 100*(1) + 100*(2) + ... + 100*(level-1)
-        // = 100 * sum(1..level-1) = 100 * (level-1)*level/2
         return 100 * ((level - 1) * level) / 2;
     }
-    // Level 11+: base 4500 + 1000 per level above 10
     const base10 = 4500; // cumulative XP at level 10
     return base10 + (level - 10) * 1000;
 }
 
 export function levelFromXP(totalXp: number): number {
-    // Iterate to find the highest level where xpForLevel(level) <= totalXp
     let level = 1;
     while (xpForLevel(level + 1) <= totalXp) level++;
     return level;
@@ -70,7 +72,6 @@ export interface Achievement {
 }
 
 export const ACHIEVEMENTS: Achievement[] = [
-    // Milestone
     { id: 'first-command', name: 'First Command', description: 'Execute your first command', category: 'milestone', icon: '⌨️', hidden: false, xpReward: 10, criteria: { type: 'counter', target: 'commands-executed', threshold: 1 } },
     { id: 'first-lab', name: 'First Steps', description: 'Complete your first lab', category: 'milestone', icon: '🎯', hidden: false, xpReward: 25, criteria: { type: 'counter', target: 'labs-completed', threshold: 1 } },
     { id: 'explorer', name: 'Explorer', description: 'Complete 3 labs', category: 'milestone', icon: '🗺️', hidden: false, xpReward: 50, criteria: { type: 'counter', target: 'labs-completed', threshold: 3 } },
@@ -79,8 +80,6 @@ export const ACHIEVEMENTS: Achievement[] = [
     { id: 'level-5', name: 'Rising Star', description: 'Reach Level 5', category: 'milestone', icon: '⭐', hidden: false, xpReward: 100, criteria: { type: 'counter', target: 'level', threshold: 5 } },
     { id: 'level-10', name: 'Linux Veteran', description: 'Reach Level 10', category: 'milestone', icon: '🏆', hidden: false, xpReward: 250, criteria: { type: 'counter', target: 'level', threshold: 10 } },
     { id: 'root-access', name: 'Root Access', description: 'Reach Level 20', category: 'milestone', icon: '👑', hidden: false, xpReward: 500, criteria: { type: 'counter', target: 'level', threshold: 20 } },
-
-    // Skill Mastery
     { id: 'navigator', name: 'Navigator', description: 'Use cd 10 times', category: 'skill-mastery', icon: '🧭', hidden: false, xpReward: 25, criteria: { type: 'counter', target: 'cd-count', threshold: 10 } },
     { id: 'file-creator', name: 'File Creator', description: 'Create 5 files', category: 'skill-mastery', icon: '📄', hidden: false, xpReward: 25, criteria: { type: 'counter', target: 'files-created', threshold: 5 } },
     { id: 'permission-master', name: 'Permission Master', description: 'Use chmod on 10 different files', category: 'skill-mastery', icon: '🔐', hidden: false, xpReward: 50, criteria: { type: 'counter', target: 'chmod-count', threshold: 10 } },
@@ -88,29 +87,20 @@ export const ACHIEVEMENTS: Achievement[] = [
     { id: 'pipe-wizard', name: 'Pipe Wizard', description: 'Use 5 pipe chains', category: 'skill-mastery', icon: '🔗', hidden: false, xpReward: 50, criteria: { type: 'counter', target: 'pipe-count', threshold: 5 } },
     { id: 'command-master', name: 'Command Master', description: 'Use 25 unique commands', category: 'skill-mastery', icon: '🎓', hidden: false, xpReward: 100, criteria: { type: 'counter', target: 'unique-commands', threshold: 25 } },
     { id: 'process-terminator', name: 'Process Terminator', description: 'Use kill 5 times', category: 'skill-mastery', icon: '💀', hidden: false, xpReward: 25, criteria: { type: 'counter', target: 'kill-count', threshold: 5 } },
-
-    // Exploration
     { id: 'man-reader', name: 'Man Page Reader', description: 'Read 5 different man pages', category: 'exploration', icon: '📖', hidden: false, xpReward: 25, criteria: { type: 'counter', target: 'man-pages-read', threshold: 5 } },
     { id: 'history-buff', name: 'Command Historian', description: 'Execute 100 commands', category: 'exploration', icon: '📜', hidden: false, xpReward: 75, criteria: { type: 'counter', target: 'commands-executed', threshold: 100 } },
     { id: 'night-owl', name: 'Night Owl', description: 'Complete a lab between midnight and 5am', category: 'exploration', icon: '🦉', hidden: false, xpReward: 50, criteria: { type: 'event', target: 'night-owl', threshold: 1 } },
     { id: 'early-bird', name: 'Early Bird', description: 'Complete a lab between 5am and 8am', category: 'exploration', icon: '🐦', hidden: false, xpReward: 50, criteria: { type: 'event', target: 'early-bird', threshold: 1 } },
     { id: 'speed-runner', name: 'Speed Runner', description: 'Complete a lab under par time', category: 'exploration', icon: '⚡', hidden: false, xpReward: 50, criteria: { type: 'counter', target: 'speed-bonus-count', threshold: 1 } },
     { id: 'perfectionist', name: 'Perfectionist', description: 'Complete a lab without using any hints', category: 'exploration', icon: '🎯', hidden: false, xpReward: 50, criteria: { type: 'counter', target: 'perfect-lab-count', threshold: 1 } },
-
-    // Streak
     { id: 'streak-3', name: 'Streak Starter', description: 'Maintain a 3-day streak', category: 'streak', icon: '✨', hidden: false, xpReward: 25, criteria: { type: 'counter', target: 'streak', threshold: 3 } },
     { id: 'streak-7', name: 'Week Warrior', description: 'Maintain a 7-day streak', category: 'streak', icon: '🔥', hidden: false, xpReward: 75, criteria: { type: 'counter', target: 'streak', threshold: 7 } },
     { id: 'streak-30', name: 'Monthly Master', description: 'Maintain a 30-day streak', category: 'streak', icon: '🌟', hidden: false, xpReward: 200, criteria: { type: 'counter', target: 'streak', threshold: 30 } },
     { id: 'streak-90', name: 'Marathon Runner', description: 'Maintain a 90-day streak', category: 'streak', icon: '🏅', hidden: false, xpReward: 500, criteria: { type: 'counter', target: 'streak', threshold: 90 } },
-
-    // Easter Eggs
     { id: 'sandwich', name: 'Sudo Make Me a Sandwich', description: 'Try to make a sandwich', category: 'easter-egg', icon: '🥪', hidden: true, xpReward: 10, criteria: { type: 'event', target: 'sandwich-attempt', threshold: 1 } },
     { id: 'rm-rf-root', name: 'You Monster', description: 'Try to rm -rf /', category: 'easter-egg', icon: '💣', hidden: true, xpReward: 10, criteria: { type: 'event', target: 'rm-rf-root', threshold: 1 } },
 ];
 
-// ======================================================================
-//  Gamification Store — per gamification_framework.md
-// ======================================================================
 interface GamificationState {
     xp: number;
     level: number;
@@ -128,11 +118,11 @@ interface GamificationState {
 
     awardXP: (amount: number, silent?: boolean) => void;
     hintPenalty: () => void;
-    processLabCompletion: (lab: any, progress: any) => void;
+    processLabCompletion: (lab: Lab, progress: LabProgress) => void;
     getStreakMultiplier: () => number;
     updateStreak: () => void;
     incrementCounter: (target: string, amount?: number) => void;
-    checkAchievements: () => string[]; // returns newly unlocked IDs
+    checkAchievements: () => string[];
     getTitle: () => string;
     getXPProgress: () => { current: number; needed: number; percent: number };
 }
@@ -143,49 +133,49 @@ export const useGamificationStore = create<GamificationState>()(
             xp: 0,
             level: 1,
             totalXpEarned: 0,
-            streak: {
-                current: 0,
-                longest: 0,
-                lastActivityDate: null,
-                freezesRemaining: 1,
-            },
+            streak: { current: 0, longest: 0, lastActivityDate: null, freezesRemaining: 1 },
             counters: {},
             unlockedAchievements: [],
             labsCompleted: 0,
             hintsUsed: 0,
 
-            awardXP: (amount, silent) => {
+            awardXP: async (amount, silent) => {
                 const oldLevel = get().level;
-                // Apply streak multiplier
                 const multiplier = get().getStreakMultiplier();
                 const boostedAmount = Math.round(amount * multiplier);
 
                 if (boostedAmount === 0) return;
 
-                set((state) => {
-                    const newTotalXp = state.totalXpEarned + boostedAmount;
-                    const newLevel = levelFromXP(newTotalXp);
-                    return {
-                        xp: state.xp + boostedAmount,
-                        totalXpEarned: newTotalXp,
-                        level: newLevel,
-                    };
-                });
-
-                // Fire XP toast (show multiplier if active)
-                if (!silent) {
-                    const bonusText = multiplier > 1 ? ` (${multiplier}x streak bonus!)` : '';
-                    toastEmitter.emit({ type: 'xp', title: `${boostedAmount > 0 ? '+' : ''}${boostedAmount} XP${bonusText}`, icon: boostedAmount > 0 ? '⚡' : '💡' });
+                // Execute Spacetime Reducer (Mocked)
+                try {
+                    const user = spacetimeClient.getUser(spacetimeClient.identity);
+                    if (user) {
+                        user.xp += boostedAmount;
+                        // Synchronize Zustand
+                        set({
+                            xp: user.xp,
+                            totalXpEarned: user.xp,
+                            level: levelFromXP(user.xp)
+                        });
+                    }
+                } catch (e) {
+                    logger.error('Failed to sync XP with SpacetimeDB', { error: e });
                 }
 
-                // Fire level-up toast and modal if leveled up
+                if (!silent) {
+                    const bonusText = multiplier > 1 ? ` (${multiplier}x streak bonus!)` : '';
+                    toastEmitter.emit({
+                        type: 'xp',
+                        title: `${boostedAmount > 0 ? '+' : ''}${boostedAmount} XP${bonusText}`,
+                        icon: boostedAmount > 0 ? '⚡' : '💡'
+                    });
+                }
+
                 const newLevel = get().level;
                 if (newLevel > oldLevel) {
-                    // Show full celebration modal if not silent
                     if (!silent) {
                         useUIStore.getState().showLevelUp(newLevel);
                     }
-
                     toastEmitter.emit({
                         type: 'level-up',
                         title: `Level ${newLevel}!`,
@@ -201,17 +191,16 @@ export const useGamificationStore = create<GamificationState>()(
                 set((state) => ({ hintsUsed: state.hintsUsed + 1 }));
             },
 
-            processLabCompletion: (lab, progress) => {
+            processLabCompletion: async (lab, progress) => {
                 if (!lab || !progress) return;
 
-                // 1. Calculate base reward
                 let finalXp = lab.xpReward;
-
-                // 2. Apply Hint Penalties (10 XP per unique hint index used)
                 const hintsCount = progress.hintsUsed?.length || 0;
                 const hintPenalty = hintsCount * 10;
+                const isFirstLab = get().labsCompleted === 0;
 
-                // 3. Apply Speed Bonus
+                if (isFirstLab) finalXp += FIRST_LAB_BONUS;
+
                 let speedBonus = 0;
                 const timeSpent = progress.totalTimeSpent || 0;
                 if (lab.parTime && timeSpent <= lab.parTime) {
@@ -224,16 +213,38 @@ export const useGamificationStore = create<GamificationState>()(
                     toastEmitter.emit({ type: 'xp', title: `-${hintPenalty} XP (${hintsCount} hints used)`, icon: '💡' });
                 }
 
-                // Award total XP (Base - Penalty + Bonus)
-                // Note: finalXp can go below base reward but we stay above 0
                 const finalAmount = Math.max(0, finalXp - hintPenalty + speedBonus);
-                get().awardXP(finalAmount);
+
+                // CALL SPACETIME REDUCER
+                try {
+                    await spacetimeClient.complete_lab(lab.id, finalAmount);
+
+                    // Sync Zustand for immediate UI feedback
+                    const user = spacetimeClient.getUser(spacetimeClient.identity);
+                    const pg = spacetimeClient.getProgress(spacetimeClient.identity);
+
+                    if (user && pg) {
+                        set({
+                            xp: user.xp,
+                            totalXpEarned: user.xp,
+                            level: user.level,
+                            labsCompleted: pg.completed_labs.length
+                        });
+                    }
+                } catch (e) {
+                    logger.error('Failed to complete lab in SpacetimeDB', { error: e });
+                }
 
                 if (hintsCount === 0) {
                     get().incrementCounter('perfect-lab-count');
                 }
 
-                set((state) => ({ labsCompleted: state.labsCompleted + 1 }));
+                trackEvent('lab_completed', {
+                    labId: lab.id,
+                    xpAwarded: finalAmount,
+                    isFirstLab
+                });
+
                 get().updateStreak();
                 get().checkAchievements();
             },
@@ -250,7 +261,6 @@ export const useGamificationStore = create<GamificationState>()(
             updateStreak: () => {
                 const today = new Date().toISOString().split('T')[0];
                 const { streak } = get();
-
                 if (streak.lastActivityDate === today) return;
 
                 const yesterday = new Date();
@@ -261,11 +271,9 @@ export const useGamificationStore = create<GamificationState>()(
                 if (streak.lastActivityDate === yesterdayStr) {
                     newCurrent = streak.current + 1;
                 } else if (streak.lastActivityDate && streak.lastActivityDate !== yesterdayStr) {
-                    // Missed more than 1 day — check freeze
                     const lastDate = new Date(streak.lastActivityDate);
                     const dayDiff = Math.floor((Date.now() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
                     if (dayDiff === 2 && streak.freezesRemaining > 0) {
-                        // Use streak freeze
                         newCurrent = streak.current + 1;
                         set((s) => ({
                             streak: { ...s.streak, freezesRemaining: s.streak.freezesRemaining - 1 },
@@ -282,7 +290,6 @@ export const useGamificationStore = create<GamificationState>()(
                     },
                 });
 
-                // Check streak milestones for bonus XP
                 const streakBonuses: Record<number, number> = { 7: 100, 30: 500, 90: 1000 };
                 if (streakBonuses[newCurrent]) {
                     get().awardXP(streakBonuses[newCurrent]);
@@ -304,7 +311,6 @@ export const useGamificationStore = create<GamificationState>()(
 
                 for (const ach of ACHIEVEMENTS) {
                     if (state.unlockedAchievements.includes(ach.id)) continue;
-
                     let value = 0;
                     switch (ach.criteria.target) {
                         case 'labs-completed': value = state.labsCompleted; break;
@@ -315,7 +321,6 @@ export const useGamificationStore = create<GamificationState>()(
 
                     if (value >= ach.criteria.threshold) {
                         newlyUnlocked.push(ach.id);
-                        // Award XP for the achievement
                         get().awardXP(ach.xpReward);
                     }
                 }
@@ -324,10 +329,10 @@ export const useGamificationStore = create<GamificationState>()(
                     set((state) => ({
                         unlockedAchievements: [...state.unlockedAchievements, ...newlyUnlocked],
                     }));
-                    // Fire achievement toasts
                     for (const achId of newlyUnlocked) {
                         const ach = ACHIEVEMENTS.find(a => a.id === achId);
                         if (ach) {
+                            trackEvent('achievement_unlocked', { achievementId: achId });
                             toastEmitter.emit({
                                 type: 'achievement',
                                 title: `${ach.name} Unlocked!`,
@@ -338,7 +343,6 @@ export const useGamificationStore = create<GamificationState>()(
                         }
                     }
                 }
-
                 return newlyUnlocked;
             },
 
@@ -353,8 +357,6 @@ export const useGamificationStore = create<GamificationState>()(
                 return { current, needed, percent: Math.round((current / needed) * 100) };
             },
         }),
-        {
-            name: 'the-terminal-gamification',
-        }
+        { name: 'the-terminal-gamification' }
     )
 );
