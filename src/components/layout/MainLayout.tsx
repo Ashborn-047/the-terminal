@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Terminal, BookOpen, Award, Settings, LogOut, ChevronRight, Zap, Flame } from 'lucide-react';
+import { Terminal, BookOpen, Award, Settings, LogOut, ChevronRight, Zap, Flame, BookText } from 'lucide-react';
 import { useGamificationStore } from '../../stores/gamificationStore';
 import { useUIStore } from '../../stores/uiStore';
 import { useFeatureAccess } from '../../hooks/useFeatureAccess';
@@ -44,6 +44,7 @@ export const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }
         { path: '/', label: 'Dashboard', icon: <Zap size={20} />, locked: false },
         { path: '/terminal', label: 'Terminal', icon: <Terminal size={20} />, locked: false },
         { path: '/labs', label: 'Curriculum', icon: <BookOpen size={20} />, locked: false },
+        { path: '/commands', label: 'Commands', icon: <BookText size={20} />, locked: false },
         { path: '/profile', label: 'Achievements', icon: <Award size={20} />, locked: !features.achievements },
     ];
 

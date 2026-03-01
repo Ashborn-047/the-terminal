@@ -342,10 +342,10 @@
 - ✅ Route: `/lab/:labId` → LabView (Terminal + Instructions)
 - ✅ Route: `/terminal` → TerminalPage (Sandbox)
 - ✅ Route: `/profile` → ProfilePage
-- ❌ Route: `/commands` → CommandReferencePage
+- ✅ Route: `/commands` → CommandReferencePage
 - ❌ Route: `/chat` → ChatPage
 - ❌ Route: `/settings` → SettingsPage
-- ❌ Lazy loading with React.lazy for routes
+- ✅ Lazy loading with React.lazy for all routes (code splitting active)
 - ❌ Route guards (authenticated-only routes)
 
 ## §6 — Component Hierarchy
@@ -644,7 +644,7 @@
 - ✅ No border radius (sharp edges)
 - ✅ Green `$` prompt
 - ✅ Off-white monospaced output
-- 🟡 Block cursor blink — caret exists but no block-cursor CSS animation
+- ✅ Block cursor blink — implemented with CSS animation in Terminal component
 
 ### 5.2 Buttons
 - ✅ Background #1E1E1E

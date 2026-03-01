@@ -1,19 +1,32 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { MainLayout } from './components/layout/MainLayout';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { WelcomeModal } from './components/onboarding/WelcomeModal';
 import { useUIStore } from './stores/uiStore';
-import HomePage from './pages/HomePage';
-import LabsPage from './pages/LabsPage';
-import ProfilePage from './pages/ProfilePage';
-import LabView from './pages/LabView';
-import TerminalPage from './pages/TerminalPage';
 import { useLabStore } from './stores/labStore';
 import { INITIAL_LABS } from './data/labs/initial';
 import { logger } from './utils/logger';
 import { ToastProvider } from './components/ToastNotification';
 import { OnboardingWalkthrough } from './components/onboarding/OnboardingWalkthrough';
+
+// Lazy-loaded pages for code splitting
+const HomePage = React.lazy(() => import('./pages/HomePage'));
+const LabsPage = React.lazy(() => import('./pages/LabsPage'));
+const ProfilePage = React.lazy(() => import('./pages/ProfilePage'));
+const LabView = React.lazy(() => import('./pages/LabView'));
+const TerminalPage = React.lazy(() => import('./pages/TerminalPage'));
+const CommandReferencePage = React.lazy(() => import('./pages/CommandReferencePage'));
+
+const PageLoader = () => (
+  <div style={{
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    height: '60vh', color: '#00FF9D', fontFamily: 'JetBrains Mono, monospace',
+    fontSize: '1rem',
+  }}>
+    Loading...
+  </div>
+);
 
 function AppContent() {
   const { onboardingComplete, completeOnboarding, setActiveView, onboardingStep, setOnboardingStep } = useUIStore();
@@ -42,13 +55,16 @@ function AppContent() {
       )}
       <MainLayout>
         <ErrorBoundary section="Main Content">
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/terminal" element={<TerminalPage />} />
-            <Route path="/labs" element={<LabsPage />} />
-            <Route path="/lab/:labId" element={<LabView />} />
-            <Route path="/profile" element={<ProfilePage />} />
-          </Routes>
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/terminal" element={<TerminalPage />} />
+              <Route path="/labs" element={<LabsPage />} />
+              <Route path="/lab/:labId" element={<LabView />} />
+              <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/commands" element={<CommandReferencePage />} />
+            </Routes>
+          </Suspense>
         </ErrorBoundary>
         <OnboardingWalkthrough />
       </MainLayout>
