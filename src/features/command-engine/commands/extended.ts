@@ -665,3 +665,92 @@ const handlePkgManager = (cmd: string, args: string[], context: any) => {
 
 CommandRegistry.register('yum', async (args, context) => handlePkgManager('yum', args, context));
 CommandRegistry.register('dnf', async (args, context) => handlePkgManager('dnf', args, context));
+
+// ======================================================================
+//  Phase 9 Commands
+// ======================================================================
+
+CommandRegistry.register('hostname', async () => ({ output: 'linux-academy', exitCode: 0 }));
+
+CommandRegistry.register('id', async (args, context) => {
+    const user = args[0] || context.userId;
+    if (user === 'root') {
+        return { output: 'uid=0(root) gid=0(root) groups=0(root)', exitCode: 0 };
+    }
+    return { output: `uid=1000(${user}) gid=1000(${user}) groups=1000(${user}),10(wheel)`, exitCode: 0 };
+});
+
+CommandRegistry.register('groups', async (args, context) => {
+    const user = args[0] || context.userId;
+    if (user === 'root') {
+        return { output: 'root', exitCode: 0 };
+    }
+    return { output: `${user} wheel`, exitCode: 0 };
+});
+
+CommandRegistry.register('which', async (args) => {
+    if (args.length === 0) return { output: '', exitCode: 1 };
+    const cmd = args[0];
+    if (CommandRegistry.get(cmd)) {
+        return { output: `/usr/bin/${cmd}`, exitCode: 0 };
+    }
+    return { output: `which: no ${cmd} in (/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin)`, exitCode: 1 };
+});
+
+CommandRegistry.register('type', async (args) => {
+    if (args.length === 0) return { output: '', exitCode: 1 };
+    const cmd = args[0];
+    if (CommandRegistry.get(cmd)) {
+        return { output: `${cmd} is a shell builtin`, exitCode: 0 };
+    }
+    return { output: `-bash: type: ${cmd}: not found`, exitCode: 1 };
+});
+
+CommandRegistry.register('dirname', async (args) => {
+    if (args.length === 0) return { output: '', error: 'dirname: missing operand', exitCode: 1 };
+    const path = args[0];
+    const parts = path.split('/').filter(Boolean);
+    if (parts.length <= 1) return { output: path.startsWith('/') ? '/' : '.', exitCode: 0 };
+    parts.pop();
+    return { output: (path.startsWith('/') ? '/' : '') + parts.join('/'), exitCode: 0 };
+});
+
+CommandRegistry.register('basename', async (args) => {
+    if (args.length === 0) return { output: '', error: 'basename: missing operand', exitCode: 1 };
+    const path = args[0];
+    const parts = path.split('/').filter(Boolean);
+    if (parts.length === 0) return { output: '/', exitCode: 0 };
+    let base = parts[parts.length - 1];
+    if (args.length > 1 && base.endsWith(args[1])) {
+        base = base.slice(0, -args[1].length);
+    }
+    return { output: base, exitCode: 0 };
+});
+
+CommandRegistry.register('tee', async (args, context, stdin?: string) => {
+    const input = stdin || '';
+    const isAppend = args.includes('-a');
+    const files = args.filter(a => !a.startsWith('-'));
+
+    for (const file of files) {
+        const result = context.vfs.writeFile(file, input, context.userId);
+        if (result !== true) {
+            return { output: input, error: `tee: ${file}: ${result}`, exitCode: 1 };
+        }
+    }
+    return { output: input, exitCode: 0 };
+});
+
+CommandRegistry.register('xargs', async (args, context, stdin?: string) => {
+    // simulated basic xargs behavior
+    const input = stdin || '';
+    const inputArgs = input.split(/\s+/).filter(Boolean);
+    const targetCmd = args.length > 0 ? args[0] : 'echo';
+    const targetArgs = args.slice(1).concat(inputArgs);
+
+    const cmdInfo = CommandRegistry.get(targetCmd);
+    if (!cmdInfo) {
+        return { output: '', error: `xargs: ${targetCmd}: No such file or directory`, exitCode: 127 };
+    }
+    return await cmdInfo(targetArgs, context, undefined);
+});
