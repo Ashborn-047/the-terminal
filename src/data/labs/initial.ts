@@ -581,4 +581,392 @@ export const INITIAL_LABS: Record<string, Lab> = {
         ],
         completionMessage: 'You\'re now a text processing guru!',
     },
+
+    // ─── Module 10: Services & Daemons ──────────────────────────
+    'lab-10-1': {
+        id: 'lab-10-1',
+        module: 10,
+        title: 'Understanding Services',
+        description: 'Learn about system services and daemons — the background processes that keep Linux running.',
+        type: 'guided',
+        xpReward: 75,
+        prerequisites: ['lab-9-2'],
+        steps: [
+            {
+                id: 'step-1',
+                instruction: 'View running processes to find daemons: `ps`',
+                expectedCommand: 'ps',
+                hint: 'Daemons are background processes — look for ones like sshd, crond.',
+            },
+            {
+                id: 'step-2',
+                instruction: 'Check system uptime to see how long services have been running: `uptime`',
+                expectedCommand: 'uptime',
+                hint: '`uptime` tells you how long the system has been running.',
+            },
+            {
+                id: 'step-3',
+                instruction: 'View system info to identify your OS: `uname -a`',
+                expectedCommand: 'uname -a',
+                hint: '`uname -a` shows kernel and OS information.',
+            },
+        ],
+        completionMessage: 'You understand the basics of Linux services and daemons!',
+    },
+    'lab-10-2': {
+        id: 'lab-10-2',
+        module: 10,
+        title: 'Service Investigation Challenge',
+        description: 'Investigate running services and system resource usage.',
+        type: 'diy',
+        xpReward: 125,
+        prerequisites: ['lab-10-1'],
+        verification: {
+            conditions: [
+                {
+                    type: 'file_exists',
+                    path: '/home/guest/services-report.txt',
+                    message: 'Create a `services-report.txt` file with the output of ps redirected into it.',
+                },
+                {
+                    type: 'file_contains',
+                    path: '/home/guest/services-report.txt',
+                    content: 'PID',
+                    message: 'The report should contain process information (PID column header).',
+                },
+            ]
+        },
+        hints: [
+            'Use `ps > services-report.txt` to redirect process list to a file.',
+            'Make sure the file contains the ps output.',
+        ],
+        completionMessage: 'You can now investigate running services!',
+    },
+
+    // ─── Module 12: Shell Scripting II ──────────────────────────
+    'lab-12-1': {
+        id: 'lab-12-1',
+        module: 12,
+        title: 'Advanced Piping & Redirection',
+        description: 'Master advanced piping techniques — combine multiple tools into powerful one-liners.',
+        type: 'guided',
+        xpReward: 125,
+        prerequisites: ['lab-11-2'],
+        steps: [
+            {
+                id: 'step-1',
+                instruction: 'Count unique users in passwd: `cut -d: -f1 /etc/passwd | sort | wc -l`',
+                expectedCommand: 'cut -d: -f1 /etc/passwd | sort | wc -l',
+                hint: 'Chain cut, sort, and wc together with pipes.',
+            },
+            {
+                id: 'step-2',
+                instruction: 'Find and count lines containing "root": `grep root /etc/passwd | wc -l`',
+                expectedCommand: 'grep root /etc/passwd | wc -l',
+                hint: 'Use grep to filter, then wc to count.',
+            },
+            {
+                id: 'step-3',
+                instruction: 'Save sorted output to a file: `sort /etc/passwd > sorted_users.txt`',
+                expectedCommand: 'sort /etc/passwd > sorted_users.txt',
+                hint: 'Use `>` to redirect sorted output to a file.',
+            },
+        ],
+        completionMessage: 'You\'re a shell scripting power user!',
+    },
+    'lab-12-2': {
+        id: 'lab-12-2',
+        module: 12,
+        title: 'Data Processing Challenge',
+        description: 'Build a data processing pipeline from scratch — extract, transform, and load data.',
+        type: 'diy',
+        xpReward: 175,
+        prerequisites: ['lab-12-1'],
+        verification: {
+            conditions: [
+                {
+                    type: 'file_exists',
+                    path: '/home/guest/user-list.txt',
+                    message: 'Create a `user-list.txt` containing sorted unique usernames from /etc/passwd.',
+                },
+            ]
+        },
+        hints: [
+            'Use `cut -d: -f1 /etc/passwd | sort -u > user-list.txt`',
+            'The `-u` flag in sort removes duplicates.',
+        ],
+        completionMessage: 'You\'ve mastered data processing pipelines!',
+    },
+
+    // ─── Module 13: Package Management ──────────────────────────
+    'lab-13-1': {
+        id: 'lab-13-1',
+        module: 13,
+        title: 'Understanding Packages',
+        description: 'Learn about Linux package management — how software is installed, updated, and removed.',
+        type: 'guided',
+        xpReward: 75,
+        prerequisites: ['lab-12-2'],
+        steps: [
+            {
+                id: 'step-1',
+                instruction: 'Check which commands are available using `which ls`',
+                expectedCommand: 'which ls',
+                hint: '`which` shows the full path of a command.',
+            },
+            {
+                id: 'step-2',
+                instruction: 'Check the type of a command: `type echo`',
+                expectedCommand: 'type echo',
+                hint: '`type` shows whether a command is a builtin, alias, or file.',
+            },
+            {
+                id: 'step-3',
+                instruction: 'View the file type of a binary: `file /usr/bin/ls`',
+                expectedCommand: 'file /usr/bin/ls',
+                hint: '`file` identifies the type of a file.',
+            },
+        ],
+        completionMessage: 'You understand how Linux commands and packages work!',
+    },
+
+    // ─── Module 14: Log Management ──────────────────────────────
+    'lab-14-1': {
+        id: 'lab-14-1',
+        module: 14,
+        title: 'Reading System Logs',
+        description: 'Learn to read and analyze system log files — essential for troubleshooting.',
+        type: 'guided',
+        xpReward: 100,
+        prerequisites: ['lab-13-1'],
+        steps: [
+            {
+                id: 'step-1',
+                instruction: 'View the system log: `cat /var/log/syslog`',
+                expectedCommand: 'cat /var/log/syslog',
+                hint: 'System logs are stored in /var/log/.',
+            },
+            {
+                id: 'step-2',
+                instruction: 'Search logs for errors: `grep error /var/log/syslog`',
+                expectedCommand: 'grep error /var/log/syslog',
+                hint: 'Use grep to filter log entries.',
+            },
+            {
+                id: 'step-3',
+                instruction: 'View the last 5 lines of the log: `tail -n 5 /var/log/syslog`',
+                expectedCommand: 'tail -n 5 /var/log/syslog',
+                hint: '`tail -n N` shows the last N lines.',
+            },
+        ],
+        completionMessage: 'You can now read and analyze system logs!',
+    },
+    'lab-14-2': {
+        id: 'lab-14-2',
+        module: 14,
+        title: 'Log Analysis Challenge',
+        description: 'Analyze log files to find and report issues.',
+        type: 'diy',
+        xpReward: 150,
+        prerequisites: ['lab-14-1'],
+        verification: {
+            conditions: [
+                {
+                    type: 'file_exists',
+                    path: '/home/guest/error-report.txt',
+                    message: 'Create an `error-report.txt` containing only the error lines from syslog.',
+                },
+            ]
+        },
+        hints: [
+            'Use `grep error /var/log/syslog > error-report.txt`',
+            'You can also use `grep -i error` for case-insensitive matching.',
+        ],
+        completionMessage: 'You\'re now a log analysis expert!',
+    },
+
+    // ─── Module 15: SELinux Basics ──────────────────────────────
+    'lab-15-1': {
+        id: 'lab-15-1',
+        module: 15,
+        title: 'Security Contexts',
+        description: 'Learn about Security-Enhanced Linux (SELinux) — an advanced security framework.',
+        type: 'guided',
+        xpReward: 100,
+        prerequisites: ['lab-14-2'],
+        steps: [
+            {
+                id: 'step-1',
+                instruction: 'View file permissions with `ls -la /etc`',
+                expectedCommand: 'ls -la /etc',
+                hint: 'SELinux adds security contexts on top of standard permissions.',
+            },
+            {
+                id: 'step-2',
+                instruction: 'Check the current user identity: `id`',
+                expectedCommand: 'id',
+                hint: 'Your UID and GID determine your access level.',
+            },
+            {
+                id: 'step-3',
+                instruction: 'View a permission-restricted file: `chmod 600 /home/guest/.bashrc`',
+                expectedCommand: 'chmod 600 /home/guest/.bashrc',
+                hint: '600 means only the owner can read/write.',
+            },
+        ],
+        completionMessage: 'You understand the basics of Linux security contexts!',
+    },
+
+    // ─── Module 16: Containers Intro ────────────────────────────
+    'lab-16-1': {
+        id: 'lab-16-1',
+        module: 16,
+        title: 'Container Concepts',
+        description: 'Learn the filesystem concepts behind containers — namespaces, isolation, and directory structures.',
+        type: 'guided',
+        xpReward: 100,
+        prerequisites: ['lab-15-1'],
+        steps: [
+            {
+                id: 'step-1',
+                instruction: 'Create an isolated directory structure: `mkdir -p /home/guest/container/rootfs`',
+                expectedCommand: 'mkdir -p /home/guest/container/rootfs',
+                hint: 'Containers use isolated root filesystems.',
+            },
+            {
+                id: 'step-2',
+                instruction: 'Create a basic container structure: `mkdir -p /home/guest/container/rootfs/bin`',
+                expectedCommand: 'mkdir -p /home/guest/container/rootfs/bin',
+                hint: 'Containers need their own /bin directory.',
+            },
+            {
+                id: 'step-3',
+                instruction: 'List the container root: `ls /home/guest/container/rootfs`',
+                expectedCommand: 'ls /home/guest/container/rootfs',
+                hint: 'Verify the structure you created.',
+            },
+        ],
+        completionMessage: 'You understand the filesystem foundations of containers!',
+    },
+
+    // ─── Module 17: Troubleshooting ─────────────────────────────
+    'lab-17-1': {
+        id: 'lab-17-1',
+        module: 17,
+        title: 'System Diagnostics',
+        description: 'Learn systematic troubleshooting — check system health, resources, and connectivity.',
+        type: 'guided',
+        xpReward: 100,
+        prerequisites: ['lab-16-1'],
+        steps: [
+            {
+                id: 'step-1',
+                instruction: 'Check disk space: `df`',
+                expectedCommand: 'df',
+                hint: 'Low disk space is a common cause of issues.',
+            },
+            {
+                id: 'step-2',
+                instruction: 'Check memory: `free`',
+                expectedCommand: 'free',
+                hint: 'Check if the system is running out of RAM.',
+            },
+            {
+                id: 'step-3',
+                instruction: 'Check processes: `top`',
+                expectedCommand: 'top',
+                hint: 'Look for processes consuming too many resources.',
+            },
+            {
+                id: 'step-4',
+                instruction: 'Check network connectivity: `ping google.com`',
+                expectedCommand: 'ping google.com',
+                hint: 'Verify the system can reach external hosts.',
+            },
+        ],
+        completionMessage: 'You can now systematically diagnose Linux issues!',
+    },
+    'lab-17-2': {
+        id: 'lab-17-2',
+        module: 17,
+        title: 'Troubleshooting Challenge',
+        description: 'Put your diagnostic skills to the test — create a system health report.',
+        type: 'diy',
+        xpReward: 175,
+        prerequisites: ['lab-17-1'],
+        verification: {
+            conditions: [
+                {
+                    type: 'file_exists',
+                    path: '/home/guest/health-report.txt',
+                    message: 'Create a `health-report.txt` system health report.',
+                },
+                {
+                    type: 'file_contains',
+                    path: '/home/guest/health-report.txt',
+                    content: 'Filesystem',
+                    message: 'The report should contain disk usage information.',
+                },
+            ]
+        },
+        hints: [
+            'Use `df > health-report.txt` to start the report with disk info.',
+            'You can append more data with `free >> health-report.txt`.',
+        ],
+        completionMessage: 'You\'ve created a professional system health report!',
+    },
+
+    // ─── Module 18: RHCSA Mock Exam ─────────────────────────────
+    'lab-18-1': {
+        id: 'lab-18-1',
+        module: 18,
+        title: 'RHCSA Practice Exam',
+        description: 'Put all your skills to the test! Complete a series of tasks similar to the RHCSA certification exam.',
+        type: 'diy',
+        xpReward: 300,
+        prerequisites: ['lab-17-2'],
+        verification: {
+            conditions: [
+                {
+                    type: 'directory_exists',
+                    path: '/home/guest/exam',
+                    message: 'Create an `exam` directory in your home folder.',
+                },
+                {
+                    type: 'directory_exists',
+                    path: '/home/guest/exam/project',
+                    message: 'Create a `project` subdirectory inside exam.',
+                },
+                {
+                    type: 'file_exists',
+                    path: '/home/guest/exam/project/README.md',
+                    message: 'Create a README.md inside exam/project.',
+                },
+                {
+                    type: 'file_contains',
+                    path: '/home/guest/exam/project/README.md',
+                    content: 'RHCSA',
+                    message: 'The README should contain the word "RHCSA".',
+                },
+                {
+                    type: 'file_exists',
+                    path: '/home/guest/exam/users.txt',
+                    message: 'Create a users.txt file with the sorted list of system users.',
+                },
+                {
+                    type: 'permission_equals',
+                    path: '/home/guest/exam/project/README.md',
+                    mode: '644',
+                    message: 'Set README.md permissions to 644.',
+                },
+            ]
+        },
+        hints: [
+            'Start with `mkdir -p exam/project`',
+            'Use `echo "RHCSA Exam Project" > exam/project/README.md`',
+            'Use `cut -d: -f1 /etc/passwd | sort > exam/users.txt`',
+            'Set permissions with `chmod 644 exam/project/README.md`',
+        ],
+        completionMessage: '🎉 Congratulations! You\'ve completed the RHCSA Mock Exam! You\'re ready for the real thing!',
+    },
 };

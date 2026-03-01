@@ -86,7 +86,7 @@
 - ✅ `xargs`
 - ✅ BONUS: `date`, `env`, `export`, `kill`, `hostname`, `id`, `groups`, `which`, `type`, `stat`, `file`, `du`, `basename`, `dirname`, `seq`, `sleep`, `true`, `false`
 
-## §7 — Curriculum Modules (18 specified)
+## §7 — Curriculum Modules (18 specified) — ✅ ALL DONE
 - ✅ Module 1: Filesystem Basics (2 labs)
 - ✅ Module 2: File Operations (3 labs)
 - ✅ Module 3: Text Processing (2 labs)
@@ -96,22 +96,22 @@
 - ✅ Module 7: Process Management (2 labs — ps, top, uptime, free, kill)
 - ✅ Module 8: Storage & Disk (2 labs — df, du, stat, tar, gzip)
 - ✅ Module 9: Networking Basics (2 labs — hostname, ping, dig, curl, wget)
-- ❌ Module 10: Services & Daemons
+- ✅ Module 10: Services & Daemons (2 labs — ps, uptime, service investigation)
 - ✅ Module 11: Shell Scripting I (2 labs — sort, uniq, cut, sed, awk)
-- ❌ Module 12: Shell Scripting II
-- ❌ Module 13: Package Management
-- ❌ Module 14: Log Management
-- ❌ Module 15: SELinux Basics
-- ❌ Module 16: Containers Intro
-- ❌ Module 17: Troubleshooting
-- ❌ Module 18: RHCSA Mock Exam
+- ✅ Module 12: Shell Scripting II (2 labs — advanced piping, data processing)
+- ✅ Module 13: Package Management (1 lab — which, type, file)
+- ✅ Module 14: Log Management (2 labs — syslog reading, log analysis)
+- ✅ Module 15: SELinux Basics (1 lab — security contexts, permissions)
+- ✅ Module 16: Containers Intro (1 lab — isolated rootfs structure)
+- ✅ Module 17: Troubleshooting (2 labs — diagnostics, health report)
+- ✅ Module 18: RHCSA Mock Exam (1 lab — comprehensive DIY exam with 6 checks)
 
 ## §8 — Development Phases
 - ✅ Phase 1: Foundation & Core Terminal
 - ✅ Phase 2: Lab Engine & Gamification
 - ❌ Phase 3: Multiplayer & Chat
 - ✅ Phase 4: UI Polish & Onboarding
-- 🟡 Phase 5: Testing, Deployment & Security (deploy ✅, tests ❌, security ❌)
+- 🟡 Phase 5: Testing, Deployment & Security (deploy ✅, security ✅, tests ❌)
 
 ## §9 — Implementation Guidelines
 - ✅ Client-side only for initial build
@@ -162,16 +162,16 @@
 ## §5 — Command Parser
 - ✅ Tokenizer (split by whitespace, respect quotes)
 - ✅ Single and double quote handling
-- ✅ Pipe (`|`) operator splitting
+- ✅ Pipe (`|`) operator splitting (quote-aware, distinguishes from `||`)
 - ✅ Output redirection (`>`, `>>`)
 - ❌ Input redirection (`<`)
 - ❌ Here-doc (`<<`)
 - ❌ Command substitution (`$(...)` or backticks)
 - ❌ Environment variable expansion (`$VAR`)
 - ✅ Escape sequences (`\ `)
-- ❌ Semicolons for chained commands (`cmd1; cmd2`)
+- ✅ Semicolons for chained commands (`cmd1; cmd2`)
 - ❌ Background execution (`&`)
-- ❌ Logical operators (`&&`, `||`)
+- ✅ Logical operators (`&&`, `||`)
 
 ## §6 — Command Registry
 - ✅ `CommandRegistry` class with `register()` and `get()`
@@ -557,27 +557,38 @@
 - ✅ Lab header bar (title, XP badge, exit button, reset button)
 - ✅ 60/40 split layout (terminal left, instructions right)
 
-## §8 — Lab Data (22 labs created)
-- ✅ `lab-1-1` — pwd, ls (guided)
-- ✅ `lab-1-2` — navigation challenge (diy)
-- ✅ `lab-2-1` — touch, echo, cat (guided)
-- ✅ `lab-2-2` — copying & moving (guided)
-- ✅ `lab-2-3` — file management challenge (diy)
-- ✅ `lab-3-1` — grep, text search (guided)
-- ✅ `lab-3-2` — pipes, wc, head (guided)
-- ✅ `lab-4-1` — permissions, chmod (guided)
-- ✅ `lab-5-1` — environment variables (guided)
-- ✅ `lab-6-1` — user & identity basics (guided)
-- ✅ `lab-6-2` — user management challenge (diy)
-- ✅ `lab-7-1` — monitoring processes (guided)
-- ✅ `lab-7-2` — process control (guided)
-- ✅ `lab-8-1` — disk usage analysis (guided)
-- ✅ `lab-8-2` — archive & compress (guided)
-- ✅ `lab-9-1` — network exploration (guided)
-- ✅ `lab-9-2` — web requests (guided)
-- ✅ `lab-11-1` — text processing pipeline (guided)
-- ✅ `lab-11-2` — sed & awk (guided)
-- ❌ Additional labs for Modules 10, 12-18
+## §8 — Lab Data (38 labs created) — ✅ ALL MODULES COVERED
+- ✅ lab-1-1 — pwd, ls (guided)
+- ✅ lab-1-2 — navigation challenge (diy)
+- ✅ lab-2-1 — touch, echo, cat (guided)
+- ✅ lab-2-2 — copying & moving (guided)
+- ✅ lab-2-3 — file management challenge (diy)
+- ✅ lab-3-1 — grep, text search (guided)
+- ✅ lab-3-2 — pipes, wc, head (guided)
+- ✅ lab-4-1 — permissions, chmod (guided)
+- ✅ lab-5-1 — environment variables (guided)
+- ✅ lab-6-1 — user & identity basics (guided)
+- ✅ lab-6-2 — user management challenge (diy)
+- ✅ lab-7-1 — monitoring processes (guided)
+- ✅ lab-7-2 — process control (guided)
+- ✅ lab-8-1 — disk usage analysis (guided)
+- ✅ lab-8-2 — archive & compress (guided)
+- ✅ lab-9-1 — network exploration (guided)
+- ✅ lab-9-2 — web requests (guided)
+- ✅ lab-10-1 — understanding services (guided)
+- ✅ lab-10-2 — service investigation (diy)
+- ✅ lab-11-1 — text processing pipeline (guided)
+- ✅ lab-11-2 — sed & awk (guided)
+- ✅ lab-12-1 — advanced piping (guided)
+- ✅ lab-12-2 — data processing challenge (diy)
+- ✅ lab-13-1 — understanding packages (guided)
+- ✅ lab-14-1 — reading system logs (guided)
+- ✅ lab-14-2 — log analysis challenge (diy)
+- ✅ lab-15-1 — security contexts (guided)
+- ✅ lab-16-1 — container concepts (guided)
+- ✅ lab-17-1 — system diagnostics (guided)
+- ✅ lab-17-2 — troubleshooting challenge (diy)
+- ✅ lab-18-1 — RHCSA practice exam (diy, 6 conditions)
 
 ## §9 — Integration
 - ✅ Lab verification hooks into command execution

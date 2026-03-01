@@ -30,7 +30,7 @@ export function useTerminal(initialUserId: string = 'guest') {
         const trimmedInput = input.trim();
         if (!trimmedInput) return;
 
-        const pipeline = CommandParser.parse(trimmedInput);
+        const segments = CommandParser.parseCompound(trimmedInput);
         const context: CommandContext = {
             cwd,
             userId,
@@ -39,7 +39,26 @@ export function useTerminal(initialUserId: string = 'guest') {
             history: history.map(h => h.command),
         };
 
-        const result = await executorRef.current.execute(pipeline, context);
+        // Execute compound commands (;, &&, ||)
+        let result: CommandResult = { output: '', exitCode: 0 };
+        const outputs: string[] = [];
+
+        for (const segment of segments) {
+            const pipeline = segment.pipeline;
+            if (pipeline.actions.length === 0) continue;
+
+            result = await executorRef.current.execute(pipeline, context);
+            if (result.output) outputs.push(result.output);
+            if (result.error) outputs.push(result.error);
+
+            // Handle && (continue only on success) and || (continue only on failure)
+            if (segment.operator === '&&' && result.exitCode !== 0) break;
+            if (segment.operator === '||' && result.exitCode === 0) break;
+            // ; always continues
+        }
+
+        // Merge outputs
+        result = { ...result, output: outputs.join('\n') };
 
         // Lab Verification Logic
         const { currentLabId, labs, progress, updateProgress, completeLab: completeLabInStore } = useLabStore.getState();
@@ -72,7 +91,8 @@ export function useTerminal(initialUserId: string = 'guest') {
 
         // Achievement Counter Tracking — per gamification_framework.md §2.4
         incrementCounter('commands-executed');
-        const cmdName = pipeline.actions[0]?.name;
+        const firstPipeline = segments[0]?.pipeline;
+        const cmdName = firstPipeline?.actions[0]?.name;
         if (cmdName === 'chmod') incrementCounter('chmod-count');
         if (cmdName === 'grep') incrementCounter('grep-count');
         if (cmdName === 'kill') incrementCounter('kill-count');
@@ -81,7 +101,7 @@ export function useTerminal(initialUserId: string = 'guest') {
         if (cmdName === 'touch' || cmdName === 'tee') incrementCounter('files-created');
 
         // Track pipe usage for Pipe Wizard achievement
-        if (pipeline.actions.length > 1) incrementCounter('pipe-count');
+        if (firstPipeline && firstPipeline.actions.length > 1) incrementCounter('pipe-count');
 
         // Track unique commands for Command Master achievement
         const uniqueKey = `__unique_cmd_${cmdName}`;
@@ -105,7 +125,7 @@ export function useTerminal(initialUserId: string = 'guest') {
         checkAchievements();
 
         // Handle special case: cd updates CWD
-        if (pipeline.actions.length === 1 && pipeline.actions[0].name === 'cd' && result.exitCode === 0) {
+        if (firstPipeline && firstPipeline.actions.length === 1 && firstPipeline.actions[0].name === 'cd' && result.exitCode === 0) {
             setCwd(result.output || '/');
         }
 
