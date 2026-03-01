@@ -18,10 +18,14 @@ CommandRegistry.register('ls', async (args, context) => {
     let longFormat = false;
     const paths: string[] = [];
 
+    // ls -h: human-readable sizes
+    let humanReadable = false;
+
     for (const arg of args) {
         if (arg.startsWith('-')) {
             if (arg.includes('a')) showAll = true;
             if (arg.includes('l')) longFormat = true;
+            if (arg.includes('h')) humanReadable = true;
         } else {
             paths.push(arg);
         }
@@ -55,14 +59,14 @@ CommandRegistry.register('ls', async (args, context) => {
         if (longFormat) {
             for (const child of children) {
                 const typeChar = child.type === 'directory' ? 'd' : (child.type === 'symlink' ? 'l' : '-');
-                const octal = permissionsToOctal(child.permissions);
                 const permStr = formatPermissions(child.permissions);
-                const size = child.type === 'file' ? (child.size || 0) : 0;
+                const rawSize = child.type === 'file' ? (child.size || 0) : 0;
+                const sizeStr = humanReadable ? formatHumanSize(rawSize) : String(rawSize).padStart(5);
                 const date = new Date(child.modifiedAt).toLocaleDateString('en-US', {
                     month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
                 });
                 const suffix = child.type === 'symlink' ? ` -> ${child.target || ''}` : '';
-                outputLines.push(`${typeChar}${permStr} 1 ${child.ownerId} ${child.groupId} ${String(size).padStart(5)} ${date} ${child.name}${suffix}`);
+                outputLines.push(`${typeChar}${permStr} 1 ${child.ownerId} ${child.groupId} ${sizeStr} ${date} ${child.name}${suffix}`);
             }
         } else {
             outputLines.push(children.map(n => {
@@ -79,6 +83,13 @@ function formatPermissions(p: { owner: { read: boolean; write: boolean; execute:
     const fmt = (s: { read: boolean; write: boolean; execute: boolean }) =>
         `${s.read ? 'r' : '-'}${s.write ? 'w' : '-'}${s.execute ? 'x' : '-'}`;
     return `${fmt(p.owner)}${fmt(p.group)}${fmt(p.others)}`;
+}
+
+function formatHumanSize(bytes: number): string {
+    if (bytes < 1024) return String(bytes).padStart(5);
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)}K`.padStart(5);
+    if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)}M`.padStart(5);
+    return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)}G`.padStart(5);
 }
 
 // ======================================================================
@@ -171,19 +182,32 @@ CommandRegistry.register('clear', async () => {
 //  cat — per project_documentation.md: file operations
 // ======================================================================
 CommandRegistry.register('cat', async (args, context) => {
-    if (args.length === 0) return { output: '', exitCode: 0 };
+    let lineNumbers = false;
+    const filePaths: string[] = [];
+
+    for (const arg of args) {
+        if (arg === '-n') lineNumbers = true;
+        else if (!arg.startsWith('-')) filePaths.push(arg);
+    }
+
+    if (filePaths.length === 0) return { output: '', exitCode: 0 };
 
     let output = '';
     let error = '';
     let exitCode = 0;
 
-    for (const filePath of args) {
+    for (const filePath of filePaths) {
         const content = context.vfs.readFile(filePath, context.userId);
         if (typeof content === 'object' && 'error' in content) {
             error += `cat: ${filePath}: ${content.error}\n`;
             exitCode = 1;
         } else {
-            output += content + '\n';
+            if (lineNumbers) {
+                const lines = content.split('\n');
+                output += lines.map((line: string, i: number) => `     ${i + 1}\t${line}`).join('\n') + '\n';
+            } else {
+                output += content + '\n';
+            }
         }
     }
 
@@ -251,10 +275,11 @@ CommandRegistry.register('mv', async (args, context) => {
 // ======================================================================
 //  grep — supports -i (case insensitive), -v (invert), -n (line numbers)
 // ======================================================================
-CommandRegistry.register('grep', async (args, context) => {
+CommandRegistry.register('grep', async (args, context, pipedInput) => {
     let caseInsensitive = false;
     let invert = false;
     let lineNumbers = false;
+    let countOnly = false;
     const nonFlags: string[] = [];
 
     for (const arg of args) {
@@ -262,6 +287,7 @@ CommandRegistry.register('grep', async (args, context) => {
             if (arg.includes('i')) caseInsensitive = true;
             if (arg.includes('v')) invert = true;
             if (arg.includes('n')) lineNumbers = true;
+            if (arg.includes('c')) countOnly = true;
         } else {
             nonFlags.push(arg);
         }
@@ -273,16 +299,10 @@ CommandRegistry.register('grep', async (args, context) => {
     const filePaths = nonFlags.slice(1);
     const outputLines: string[] = [];
 
-    // If no file given, use piped input
-    if (filePaths.length === 0) {
-        return { output: '', error: 'grep: No file specified', exitCode: 2 };
-    }
-
-    for (const fp of filePaths) {
-        const content = context.vfs.readFile(fp, context.userId);
-        if (typeof content !== 'string') continue;
-
+    // Helper to search content
+    const searchContent = (content: string, prefix: string) => {
         const lines = content.split('\n');
+        let matchCount = 0;
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i];
             let matches: boolean;
@@ -294,10 +314,31 @@ CommandRegistry.register('grep', async (args, context) => {
             if (invert) matches = !matches;
 
             if (matches) {
-                const prefix = filePaths.length > 1 ? `${fp}:` : '';
-                const lineNum = lineNumbers ? `${i + 1}:` : '';
-                outputLines.push(`${prefix}${lineNum}${line}`);
+                matchCount++;
+                if (!countOnly) {
+                    const lineNum = lineNumbers ? `${i + 1}:` : '';
+                    outputLines.push(`${prefix}${lineNum}${line}`);
+                }
             }
+        }
+        if (countOnly) {
+            outputLines.push(`${prefix}${matchCount}`);
+        }
+    };
+
+    // If no file given, use piped input
+    if (filePaths.length === 0) {
+        if (pipedInput) {
+            searchContent(pipedInput, '');
+        } else {
+            return { output: '', error: 'grep: No file specified', exitCode: 2 };
+        }
+    } else {
+        for (const fp of filePaths) {
+            const content = context.vfs.readFile(fp, context.userId);
+            if (typeof content !== 'string') continue;
+            const prefix = filePaths.length > 1 ? `${fp}:` : '';
+            searchContent(content, prefix);
         }
     }
 
@@ -394,14 +435,33 @@ CommandRegistry.register('date', async () => {
 //  echo — handles $VAR expansion
 // ======================================================================
 CommandRegistry.register('echo', async (args, context) => {
-    const expanded = args.map(a => {
+    let noNewline = false;
+    let interpretEscapes = false;
+    const textArgs: string[] = [];
+
+    for (const arg of args) {
+        if (arg === '-n') { noNewline = true; continue; }
+        if (arg === '-e') { interpretEscapes = true; continue; }
+        textArgs.push(arg);
+    }
+
+    const expanded = textArgs.map(a => {
         if (a.startsWith('$')) {
             const varName = a.slice(1);
             return context.env[varName] || '';
         }
         return a;
     });
-    return { output: expanded.join(' '), exitCode: 0 };
+
+    let result = expanded.join(' ');
+    if (interpretEscapes) {
+        result = result.replace(/\\n/g, '\n').replace(/\\t/g, '\t').replace(/\\\\/g, '\\');
+    }
+    if (noNewline) {
+        // Return without trailing newline (output won't have \n appended)
+        return { output: result, exitCode: 0 };
+    }
+    return { output: result, exitCode: 0 };
 });
 
 // ======================================================================
@@ -479,10 +539,16 @@ CommandRegistry.register('wc', async (args, context) => {
 CommandRegistry.register('find', async (args, context) => {
     const searchPath = args[0] || context.cwd;
     let namePattern = '';
+    let typeFilter = ''; // 'f' for file, 'd' for directory
 
     for (let i = 0; i < args.length; i++) {
         if (args[i] === '-name' && args[i + 1]) {
             namePattern = args[i + 1];
+            i++;
+        }
+        if (args[i] === '-type' && args[i + 1]) {
+            typeFilter = args[i + 1];
+            i++;
         }
     }
 
@@ -493,8 +559,13 @@ CommandRegistry.register('find', async (args, context) => {
         if (typeof resolved === 'string') return;
         const inode = resolved as Inode;
 
+        // Type filter
+        let passesType = true;
+        if (typeFilter === 'f' && inode.type !== 'file') passesType = false;
+        if (typeFilter === 'd' && inode.type !== 'directory') passesType = false;
+
         const fullPath = path;
-        if (!namePattern || matchGlob(inode.name, namePattern)) {
+        if (passesType && (!namePattern || matchGlob(inode.name, namePattern))) {
             results.push(fullPath);
         }
 

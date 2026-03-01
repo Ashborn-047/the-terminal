@@ -202,7 +202,7 @@
 - ✅ `-la` combined
 - ✅ Path argument
 - ❌ `-R` recursive listing
-- ❌ `-h` human-readable sizes
+- ✅ `-h` human-readable sizes
 - ❌ Colorized output (dirs blue, executables green)
 
 ### `cd` command
@@ -216,7 +216,7 @@
 ### `cat` command
 - ✅ `cat file` — display content
 - ✅ `cat file1 file2` — concatenate
-- ❌ `cat -n` — line numbers
+- ✅ `cat -n` — line numbers
 - ❌ `cat > file` (create via redirect — handled by executor redirect, not cat itself)
 
 ### `grep` command
@@ -226,12 +226,13 @@
 - ❌ `-r` recursive
 - ✅ `-n` line numbers
 - ✅ `-v` invert match
-- ❌ `-c` count matches
+- ✅ `-c` count matches
+- ✅ Piped input support (`cmd | grep pattern`)
 - ❌ Regex support (currently literal match only)
 
 ### `find` command
 - ✅ `find path -name pattern`
-- ❌ `-type f` / `-type d` filter
+- ✅ `-type f` / `-type d` filter
 - ❌ `-size` filter
 - ❌ `-perm` filter
 - ❌ `-exec` action
@@ -267,8 +268,8 @@
 - ✅ `echo text`
 - ✅ `echo "quoted text"`
 - ✅ `echo text > file` (via redirect)
-- ❌ `-n` no trailing newline
-- ❌ `-e` interpret escapes
+- ✅ `-n` no trailing newline
+- ✅ `-e` interpret escapes (\n, \t, \\)
 
 ### `ln` command
 - ✅ `ln -s target link` — symlink
