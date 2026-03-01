@@ -1,9 +1,36 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useTerminal } from '@/hooks/useTerminal';
-import { TerminalEntry } from '@/types/terminal';
+import { useTerminal } from '../../hooks/useTerminal';
+import { TerminalEntry } from '../../types/terminal';
+
+const parseAnsi = (text: string) => {
+    // Basic regex for ANSI escape codes like \x1b[1;34m
+    const regex = /\x1b\[([\d;]+)m/g;
+    const parts = text.split(regex);
+    const result: React.ReactNode[] = [];
+
+    let currentClass = '';
+
+    for (let i = 0; i < parts.length; i++) {
+        if (i % 2 === 1) {
+            // These are the codes
+            const codes = parts[i];
+            if (codes === '0') currentClass = '';
+            else if (codes === '1;34') currentClass = 'text-brutal-blue font-bold';
+            else if (codes === '1;36') currentClass = 'text-brutal-cyan font-bold';
+            else if (codes === '1;32') currentClass = 'text-brutal-green font-bold';
+            else if (codes === '1;31') currentClass = 'text-brutal-red font-bold';
+        } else {
+            // This is the text
+            if (parts[i]) {
+                result.push(currentClass ? <span key={i} className={currentClass}>{parts[i]}</span> : parts[i]);
+            }
+        }
+    }
+    return result;
+};
 
 export const TerminalComponent: React.FC = () => {
-    const { history, cwd, userId, executeCommand } = useTerminal();
+    const { history, cwd, userId, executeCommand, pendingPrompt, resolvePrompt, handleTabComplete } = useTerminal();
     const [input, setInput] = useState('');
     const [historyIndex, setHistoryIndex] = useState(-1);
     const [flashClass, setFlashClass] = useState('');
@@ -21,7 +48,17 @@ export const TerminalComponent: React.FC = () => {
     };
 
     const handleKeyDown = async (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter') {
+        if (e.key === 'Tab') {
+            e.preventDefault();
+            const completed = handleTabComplete(input);
+            setInput(completed);
+        } else if (e.key === 'Enter') {
+            if (pendingPrompt) {
+                const answer = input;
+                setInput('');
+                resolvePrompt(answer);
+                return;
+            }
             const command = input;
             setInput('');
             setHistoryIndex(-1);
@@ -63,14 +100,14 @@ export const TerminalComponent: React.FC = () => {
         >
             {/* History */}
             <div className="flex flex-col gap-2">
-                {history.map((entry) => (
+                {history.map((entry: TerminalEntry) => (
                     <div key={entry.id} className="flex flex-col">
                         <div className="flex gap-2">
                             <span className="text-brutal-white">[{userId}@the-terminal {entry.cwd === '/' ? '/' : entry.cwd.split('/').pop()}]$</span>
                             <span className="text-brutal-white">{entry.command}</span>
                         </div>
                         {entry.output && (
-                            <pre className="whitespace-pre-wrap mt-1 opacity-90">{entry.output}</pre>
+                            <pre className="whitespace-pre-wrap mt-1 opacity-90">{parseAnsi(entry.output)}</pre>
                         )}
                         {entry.error && (
                             <div className="text-brutal-red mt-1 font-bold">Error: {entry.error}</div>
@@ -81,7 +118,9 @@ export const TerminalComponent: React.FC = () => {
 
             {/* Current Input */}
             <div className="flex gap-2 mt-2 items-center">
-                <span className="text-brutal-white">[{userId}@the-terminal {cwd === '/' ? '/' : cwd.split('/').pop()}]$</span>
+                <span className="text-brutal-white">
+                    {pendingPrompt ? pendingPrompt.message : `[${userId}@the-terminal ${cwd === '/' ? '/' : cwd.split('/').pop()}]$`}
+                </span>
                 <input
                     ref={inputRef}
                     type="text"

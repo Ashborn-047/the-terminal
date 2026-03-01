@@ -10,6 +10,9 @@ export interface InodePermissions {
     owner: VFSPermissions;
     group: VFSPermissions;
     others: VFSPermissions;
+    sticky?: boolean;
+    setuid?: boolean;
+    setgid?: boolean;
 }
 
 export interface Inode {

@@ -77,9 +77,10 @@ export const LabCard: React.FC<LabCardProps> = ({ lab, status, progress, onStart
 interface GuidedLabProps {
     lab: Lab;
     currentStepIndex: number;
+    onHintUsed?: () => void;
 }
 
-export const GuidedLabInstructions: React.FC<GuidedLabProps> = ({ lab, currentStepIndex }) => {
+export const GuidedLabInstructions: React.FC<GuidedLabProps> = ({ lab, currentStepIndex, onHintUsed }) => {
     const [showHint, setShowHint] = useState(false);
 
     if (!lab.steps || currentStepIndex >= lab.steps.length) {
@@ -111,7 +112,10 @@ export const GuidedLabInstructions: React.FC<GuidedLabProps> = ({ lab, currentSt
                 <div className="mt-3">
                     {!showHint ? (
                         <button
-                            onClick={() => setShowHint(true)}
+                            onClick={() => {
+                                setShowHint(true);
+                                onHintUsed?.();
+                            }}
                             className="flex items-center gap-1 text-xs text-brutal-yellow hover:underline"
                         >
                             <HelpCircle size={14} /> Need a hint?
@@ -146,9 +150,10 @@ interface DIYLabProps {
     vfs: VFS;
     userId: string;
     onComplete: () => void;
+    onHintUsed?: () => void;
 }
 
-export const DIYLabInstructions: React.FC<DIYLabProps> = ({ lab, vfs, userId, onComplete }) => {
+export const DIYLabInstructions: React.FC<DIYLabProps> = ({ lab, vfs, userId, onComplete, onHintUsed }) => {
     const [failedMessages, setFailedMessages] = useState<string[]>([]);
     const [verified, setVerified] = useState(false);
     const [hintIndex, setHintIndex] = useState(-1);
@@ -222,7 +227,10 @@ export const DIYLabInstructions: React.FC<DIYLabProps> = ({ lab, vfs, userId, on
                 <div className="mt-4">
                     {hintIndex < 0 ? (
                         <button
-                            onClick={() => setHintIndex(0)}
+                            onClick={() => {
+                                setHintIndex(0);
+                                onHintUsed?.();
+                            }}
                             className="flex items-center gap-1 text-xs text-brutal-yellow hover:underline"
                         >
                             <HelpCircle size={14} /> Need a hint?
@@ -236,7 +244,10 @@ export const DIYLabInstructions: React.FC<DIYLabProps> = ({ lab, vfs, userId, on
                             ))}
                             {hintIndex < lab.hints.length - 1 && (
                                 <button
-                                    onClick={() => setHintIndex(hintIndex + 1)}
+                                    onClick={() => {
+                                        setHintIndex(hintIndex + 1);
+                                        onHintUsed?.();
+                                    }}
                                     className="text-xs text-brutal-yellow underline"
                                 >
                                     More help

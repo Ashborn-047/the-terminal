@@ -6,6 +6,7 @@ import { useGamificationStore } from '../stores/gamificationStore';
 import { VFS } from '../features/vfs/vfs';
 import { CommandParser } from '../features/command-engine/parser';
 import { CommandExecutor } from '../features/command-engine/executor';
+import { CommandRegistry } from '../features/command-engine/registry';
 import { CommandContext, CommandResult } from '../features/command-engine/types';
 import { VerificationEngine } from '../features/lab-engine/verification';
 import { TerminalEntry } from '../types/terminal';
@@ -16,15 +17,83 @@ export function useTerminal(initialUserId: string = 'guest') {
     const [history, setHistory] = useState<TerminalEntry[]>([]);
     const [cwd, setCwd] = useState<string>('/home/' + initialUserId);
     const [userId, setUserId] = useState<string>(initialUserId);
+    const [env, setEnv] = useState<Record<string, string>>({
+        USER: initialUserId,
+        PWD: '/home/' + initialUserId,
+        HOME: '/home/' + initialUserId,
+        PATH: '/usr/bin:/bin',
+        TERM: 'xterm-256color',
+        SHELL: '/bin/bash',
+    });
+    const [processes, setProcesses] = useState<{ pid: number; name: string; user: string; startTime: number }[]>([]);
+    const [pendingPrompt, setPendingPrompt] = useState<{ message: string; resolve: (val: string) => void } | null>(null);
 
     // Initialize VFS from snapshot or default
     const vfsRef = useRef<VFS>(new VFS(snapshot || undefined));
     const executorRef = useRef<CommandExecutor>(new CommandExecutor(vfsRef.current));
 
+    useEffect(() => {
+        if (processes.length === 0) {
+            setProcesses([
+                { pid: 1, name: 'systemd', user: 'root', startTime: Date.now() - 3600000 },
+                { pid: 142, name: 'sshd', user: 'root', startTime: Date.now() - 3000000 },
+                { pid: 501, name: 'bash', user: userId, startTime: Date.now() - 600000 },
+            ]);
+        }
+    }, [userId]);
+
     // Sync VFS back to store on changes
     const syncVFS = useCallback(() => {
         setSnapshot(vfsRef.current.getSnapshot());
     }, [setSnapshot]);
+
+    const handleTabComplete = useCallback((currentInput: string): string => {
+        const parts = currentInput.split(' ');
+        const lastPart = parts[parts.length - 1];
+        const isFirstWord = parts.length === 1;
+
+        if (isFirstWord) {
+            // Complete command names
+            const cmds = CommandRegistry.list();
+            const matches = cmds.filter((c: string) => c.startsWith(lastPart));
+            if (matches.length === 1) return matches[0] + ' ';
+            return currentInput; // TODO: handle multiple matches (show list?)
+        }
+
+        if (lastPart.startsWith('-')) {
+            // Complete common flags
+            const commonFlags = ['-i', '-f', '-r', '-R', '-p', '-m', '-n', '-v', '-l', '-a'];
+            const matches = commonFlags.filter(f => f.startsWith(lastPart));
+            if (matches.length === 1) {
+                parts[parts.length - 1] = matches[0];
+                return parts.join(' ') + ' ';
+            }
+            return currentInput;
+        }
+
+        // Complete paths
+        const lastSlash = lastPart.lastIndexOf('/');
+        let dirPath = lastSlash === -1 ? '.' : lastPart.substring(0, lastSlash) || '/';
+        let search = lastSlash === -1 ? lastPart : lastPart.substring(lastSlash + 1);
+
+        const absoluteDirPath = dirPath === '.' ? cwd : (dirPath.startsWith('/') ? dirPath : cwd + '/' + dirPath);
+        const children = vfsRef.current.listChildren(absoluteDirPath, userId);
+
+        if (Array.isArray(children)) {
+            const matches = children.filter(c => c.name.startsWith(search));
+            if (matches.length === 1) {
+                const matchName = matches[0].name + (matches[0].type === 'directory' ? '/' : ' ');
+                if (lastSlash === -1) {
+                    parts[parts.length - 1] = matchName;
+                } else {
+                    parts[parts.length - 1] = lastPart.substring(0, lastSlash + 1) + matchName;
+                }
+                return parts.join(' ');
+            }
+        }
+
+        return currentInput;
+    }, [cwd, userId]);
 
     const executeCommand = useCallback(async (input: string) => {
         const trimmedInput = input.trim();
@@ -35,8 +104,14 @@ export function useTerminal(initialUserId: string = 'guest') {
             cwd,
             userId,
             vfs: vfsRef.current,
-            env: { USER: userId, PWD: cwd, HOME: '/home/' + userId },
+            env: { ...env, PWD: cwd, USER: userId },
             history: history.map(h => h.command),
+            processes,
+            updateEnv: (newEnv: Record<string, string>) => setEnv(prev => ({ ...prev, ...newEnv })),
+            updateProcesses: (newProcs: any[]) => setProcesses(newProcs),
+            prompt: (message: string) => new Promise<string>((resolve) => {
+                setPendingPrompt({ message, resolve });
+            }),
         };
 
         // Execute compound commands (;, &&, ||)
@@ -153,8 +228,18 @@ export function useTerminal(initialUserId: string = 'guest') {
         history,
         cwd,
         userId,
+        env,
+        processes,
         vfs: vfsRef.current,
         executeCommand,
+        handleTabComplete,
         setUserId,
+        pendingPrompt,
+        resolvePrompt: (answer: string) => {
+            if (pendingPrompt) {
+                pendingPrompt.resolve(answer);
+                setPendingPrompt(null);
+            }
+        },
     };
 }

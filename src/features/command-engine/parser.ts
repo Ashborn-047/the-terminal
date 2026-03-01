@@ -91,17 +91,36 @@ export class CommandParser {
             redirectionType: 'none',
         };
 
-        // Handle redirections
         let commandPart = stage;
-        if (stage.includes('>>')) {
-            const parts = stage.split('>>');
+
+        // Pattern matching for redirections (order is important: longest first)
+        if (commandPart.includes('&>')) {
+            const parts = commandPart.split('&>');
+            commandPart = parts[0].trim();
+            action.redirectionType = 'both';
+            action.redirectionPath = parts[1].trim();
+        } else if (commandPart.includes('2>')) {
+            const parts = commandPart.split('2>');
+            commandPart = parts[0].trim();
+            action.redirectionType = 'stderr';
+            action.redirectionPath = parts[1].trim();
+        } else if (commandPart.includes('>>')) {
+            const parts = commandPart.split('>>');
             commandPart = parts[0].trim();
             action.redirectionType = 'append';
             action.redirectionPath = parts[1].trim();
-        } else if (stage.includes('>')) {
-            const parts = stage.split('>');
+        } else if (commandPart.includes('>')) {
+            const parts = commandPart.split('>');
             commandPart = parts[0].trim();
             action.redirectionType = 'overwrite';
+            action.redirectionPath = parts[1].trim();
+        }
+
+        // Handle input redirection separately as it can coexist with output
+        if (commandPart.includes('<')) {
+            const parts = commandPart.split('<');
+            commandPart = parts[0].trim();
+            action.redirectionType = 'input';
             action.redirectionPath = parts[1].trim();
         }
 
@@ -115,8 +134,19 @@ export class CommandParser {
         return action;
     }
 
+    /**
+     * Expand environment variables in tokens
+     */
+    public static expand(tokens: string[], env: Record<string, string>): string[] {
+        return tokens.map(token => {
+            // Very basic expansion: replace $VAR or ${VAR}
+            return token.replace(/\$([a-zA-Z_][a-zA-Z0-9_]*)/g, (_, name) => env[name] || '')
+                .replace(/\${([a-zA-Z_][a-zA-Z0-9_]*)}/g, (_, name) => env[name] || '');
+        });
+    }
+
     private static tokenize(input: string): string[] {
-        const regex = /[^\s"']+|"([^"]*)"|'([^']*)'/g;
+        const regex = /\$\((?:[^)(]|\([^)(]*\))*\)|[^\s"']+|"([^"]*)"|'([^']*)'/g;
         const tokens: string[] = [];
         let match;
 

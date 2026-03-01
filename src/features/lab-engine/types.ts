@@ -33,6 +33,8 @@ export interface Lab {
     }; // for diy
     hints?: string[];
     completionMessage: string;
+    parTime?: number; // in seconds
+    parXpBonus?: number;
 }
 
 export interface LabProgress {

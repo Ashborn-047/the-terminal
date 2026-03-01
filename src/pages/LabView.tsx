@@ -5,6 +5,7 @@ import { useLabStore } from '../stores/labStore';
 import { useGamificationStore } from '../stores/gamificationStore';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { GuidedLabInstructions, DIYLabInstructions } from '../components/lab/LabComponents';
+import { CelebrationModal } from '../components/onboarding/CelebrationModal';
 import { ArrowLeft, RotateCcw } from 'lucide-react';
 
 /**
@@ -14,8 +15,14 @@ import { ArrowLeft, RotateCcw } from 'lucide-react';
 const LabView: React.FC = () => {
     const { labId } = useParams<{ labId: string }>();
     const navigate = useNavigate();
-    const { labs, progress, startLab, resetLab, exitLab } = useLabStore();
-    const { awardXP, updateStreak } = useGamificationStore();
+    const { labs, progress, startLab, resetLab, exitLab, completeLab } = useLabStore();
+    const { awardXP, updateStreak, hintPenalty, incrementCounter, checkAchievements } = useGamificationStore();
+
+    const [startTime] = React.useState<number>(Date.now());
+    const [hintsUsedThisSession, setHintsUsedThisSession] = React.useState(0);
+    const [showCelebration, setShowCelebration] = React.useState(false);
+    const [xpAwarded, setXpAwarded] = React.useState(0);
+    const [leveledUp, setLeveledUp] = React.useState<number | undefined>(undefined);
 
     const lab = labId ? labs[labId] : null;
     const labProgress = labId ? progress[labId] : null;
@@ -25,7 +32,14 @@ const LabView: React.FC = () => {
         if (labId && lab && (!labProgress || labProgress.status === 'available')) {
             startLab(labId);
         }
-    }, [labId]);
+    }, [labId, lab, labProgress, startLab]);
+
+    // Check for guided lab completion
+    useEffect(() => {
+        if (lab?.type === 'guided' && labProgress && lab.steps && labProgress.currentStepIndex >= lab.steps.length && labProgress.status !== 'completed') {
+            handleComplete();
+        }
+    }, [labProgress?.currentStepIndex]);
 
     if (!lab) {
         return (
@@ -43,13 +57,55 @@ const LabView: React.FC = () => {
         );
     }
 
-    const handleDIYComplete = () => {
-        useLabStore.getState().completeLab(lab.id);
+    const handleComplete = () => {
+        if (labProgress?.status === 'completed') return;
+
+        const duration = Math.floor((Date.now() - startTime) / 1000);
+        completeLab(lab.id);
+
+        // Base XP
         awardXP(lab.xpReward);
+
+        // Speed Bonus
+        if (lab.parTime && duration <= lab.parTime) {
+            const bonus = lab.parXpBonus || 50;
+            awardXP(bonus);
+            incrementCounter('speed-bonus-count');
+            // Toast is handled by awardXP, but we could add a specific title
+        }
+
+        // Stats & Achievements
         updateStreak();
-        useGamificationStore.setState((s) => ({ labsCompleted: s.labsCompleted + 1 }));
-        useGamificationStore.getState().checkAchievements();
-        navigate('/labs');
+        const prevLabsCompleted = useGamificationStore.getState().labsCompleted;
+        const newLabsCompleted = prevLabsCompleted + 1;
+        const currentLevel = useGamificationStore.getState().level;
+
+        useGamificationStore.setState((s) => ({ labsCompleted: newLabsCompleted }));
+
+        if (hintsUsedThisSession === 0) {
+            incrementCounter('perfect-lab-count');
+        }
+
+        checkAchievements();
+
+        // If first lab, show celebration
+        if (newLabsCompleted === 1) {
+            setXpAwarded(lab.xpReward + (lab.parTime && duration <= lab.parTime ? (lab.parXpBonus || 50) : 0));
+            // Check if they leveled up during this award
+            const finalLevel = useGamificationStore.getState().level;
+            if (finalLevel > currentLevel) {
+                setLeveledUp(finalLevel);
+            }
+            setShowCelebration(true);
+        } else {
+            navigate('/labs');
+        }
+    };
+
+    const handleHintUsed = () => {
+        setHintsUsedThisSession(prev => prev + 1);
+        hintPenalty();
+        incrementCounter('hints-total');
     };
 
     const handleReset = () => {
@@ -80,8 +136,8 @@ const LabView: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-2">
                     <span className={`px-2 py-0.5 border text-[10px] font-heading uppercase ${lab.type === 'guided'
-                            ? 'border-brutal-green text-brutal-green'
-                            : 'border-brutal-yellow text-brutal-yellow'
+                        ? 'border-brutal-green text-brutal-green'
+                        : 'border-brutal-yellow text-brutal-yellow'
                         }`}>
                         {lab.type}
                     </span>
@@ -111,18 +167,31 @@ const LabView: React.FC = () => {
                             <GuidedLabInstructions
                                 lab={lab}
                                 currentStepIndex={labProgress.currentStepIndex}
+                                onHintUsed={handleHintUsed}
                             />
                         ) : (
                             <DIYLabInstructions
                                 lab={lab}
                                 vfs={null as any}
                                 userId="guest"
-                                onComplete={handleDIYComplete}
+                                onComplete={handleComplete}
+                                onHintUsed={handleHintUsed}
                             />
                         )}
                     </ErrorBoundary>
                 </div>
             </div>
+
+            {showCelebration && (
+                <CelebrationModal
+                    title="First Lab Complete!"
+                    message={`You've successfully completed "${lab.title}". This is just the beginning of your Linux journey!`}
+                    xpEarned={xpAwarded}
+                    levelUp={leveledUp}
+                    onContinue={() => navigate('/labs')}
+                    onDashboard={() => navigate('/')}
+                />
+            )}
         </div>
     );
 };

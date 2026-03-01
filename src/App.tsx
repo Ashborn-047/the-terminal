@@ -9,6 +9,8 @@ import { INITIAL_LABS } from './data/labs/initial';
 import { logger } from './utils/logger';
 import { ToastProvider } from './components/ToastNotification';
 import { OnboardingWalkthrough } from './components/onboarding/OnboardingWalkthrough';
+import { LevelUpModal } from './components/gamification/LevelUpModal';
+import { ProtectedRoute } from './components/layout/ProtectedRoute';
 
 // Lazy-loaded pages for code splitting
 const HomePage = React.lazy(() => import('./pages/HomePage'));
@@ -17,6 +19,8 @@ const ProfilePage = React.lazy(() => import('./pages/ProfilePage'));
 const LabView = React.lazy(() => import('./pages/LabView'));
 const TerminalPage = React.lazy(() => import('./pages/TerminalPage'));
 const CommandReferencePage = React.lazy(() => import('./pages/CommandReferencePage'));
+const ChatPage = React.lazy(() => import('./pages/ChatPage.tsx'));
+const SettingsPage = React.lazy(() => import('./pages/SettingsPage.tsx'));
 
 const PageLoader = () => (
   <div style={{
@@ -29,7 +33,7 @@ const PageLoader = () => (
 );
 
 function AppContent() {
-  const { onboardingComplete, completeOnboarding, setActiveView, onboardingStep, setOnboardingStep } = useUIStore();
+  const { onboardingComplete, completeOnboarding, setActiveView, onboardingStep, setOnboardingStep, setUsername, username } = useUIStore();
   const { setLabs, labs } = useLabStore();
 
   // Load initial labs if not already loaded
@@ -40,10 +44,9 @@ function AppContent() {
     }
   }, []);
 
-  const handleOnboardingComplete = (username: string) => {
-    logger.info('Onboarding complete for user:', username);
-    // Save username
-    localStorage.setItem('the-terminal-username', username);
+  const handleOnboardingComplete = (name: string) => {
+    logger.info('Onboarding complete for user:', name);
+    setUsername(name);
     // Advance to walkthrough phase (step 2)
     setOnboardingStep(2);
   };
@@ -58,15 +61,18 @@ function AppContent() {
           <Suspense fallback={<PageLoader />}>
             <Routes>
               <Route path="/" element={<HomePage />} />
-              <Route path="/terminal" element={<TerminalPage />} />
-              <Route path="/labs" element={<LabsPage />} />
-              <Route path="/lab/:labId" element={<LabView />} />
-              <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/terminal" element={<ProtectedRoute><TerminalPage /></ProtectedRoute>} />
+              <Route path="/labs" element={<ProtectedRoute><LabsPage /></ProtectedRoute>} />
+              <Route path="/lab/:labId" element={<ProtectedRoute><LabView /></ProtectedRoute>} />
+              <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
               <Route path="/commands" element={<CommandReferencePage />} />
+              <Route path="/chat" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
+              <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
             </Routes>
           </Suspense>
         </ErrorBoundary>
         <OnboardingWalkthrough />
+        <LevelUpModal />
       </MainLayout>
     </>
   );

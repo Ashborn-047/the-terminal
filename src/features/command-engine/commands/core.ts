@@ -16,15 +16,15 @@ CommandRegistry.register('pwd', async (args, context) => {
 CommandRegistry.register('ls', async (args, context) => {
     let showAll = false;
     let longFormat = false;
-    const paths: string[] = [];
-
-    // ls -h: human-readable sizes
+    let recursive = false;
     let humanReadable = false;
+    const paths: string[] = [];
 
     for (const arg of args) {
         if (arg.startsWith('-')) {
             if (arg.includes('a')) showAll = true;
             if (arg.includes('l')) longFormat = true;
+            if (arg.includes('R')) recursive = true;
             if (arg.includes('h')) humanReadable = true;
         } else {
             paths.push(arg);
@@ -33,24 +33,41 @@ CommandRegistry.register('ls', async (args, context) => {
 
     if (paths.length === 0) paths.push(context.cwd);
 
+    const colorRoot = '\x1b[1;34m'; // Blue for dirs
+    const colorFile = '\x1b[0m';    // Default
+    const colorLink = '\x1b[1;36m'; // Cyan for links
+    const colorReset = '\x1b[0m';
+
     const outputLines: string[] = [];
+    const errors: string[] = [];
     let exitCode = 0;
 
-    for (const path of paths) {
-        const result = context.vfs.resolve(path, context.userId);
+    const listDir = (dirPath: string, isRecursiveCall: boolean = false) => {
+        const result = context.vfs.resolve(dirPath, context.userId);
         if (typeof result === 'string') {
-            return { output: '', error: `ls: cannot access '${path}': ${result}`, exitCode: 2 };
+            errors.push(`ls: cannot access '${dirPath}': ${result}`);
+            exitCode = 1;
+            return;
         }
 
         const inode = result as Inode;
         if (inode.type !== 'directory' || !inode.children) {
             outputLines.push(inode.name);
-            continue;
+            return;
         }
 
-        let children = inode.children
-            .map(id => context.vfs.getInode(id))
-            .filter((n): n is Inode => !!n);
+        if (recursive || paths.length > 1 || isRecursiveCall) {
+            outputLines.push(`${dirPath}:`);
+        }
+
+        const childrenResult = context.vfs.listChildren(dirPath, context.userId);
+        if (typeof childrenResult === 'string') {
+            errors.push(`ls: cannot open directory '${dirPath}': ${childrenResult}`);
+            exitCode = 1;
+            return;
+        }
+
+        let children = childrenResult || [];
 
         if (!showAll) {
             children = children.filter(n => !n.name.startsWith('.'));
@@ -65,18 +82,38 @@ CommandRegistry.register('ls', async (args, context) => {
                 const date = new Date(child.modifiedAt).toLocaleDateString('en-US', {
                     month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
                 });
+                const color = child.type === 'directory' ? colorRoot : (child.type === 'symlink' ? colorLink : colorFile);
                 const suffix = child.type === 'symlink' ? ` -> ${child.target || ''}` : '';
-                outputLines.push(`${typeChar}${permStr} 1 ${child.ownerId} ${child.groupId} ${sizeStr} ${date} ${child.name}${suffix}`);
+                outputLines.push(`${typeChar}${permStr} 1 ${child.ownerId} ${child.groupId} ${sizeStr} ${date} ${color}${child.name}${colorReset}${suffix}`);
             }
         } else {
-            outputLines.push(children.map(n => {
-                if (n.type === 'directory') return n.name + '/';
-                return n.name;
-            }).join('  '));
+            const list = children.map(n => {
+                const color = n.type === 'directory' ? colorRoot : (n.type === 'symlink' ? colorLink : colorFile);
+                return `${color}${n.name}${colorReset}${n.type === 'directory' ? '/' : ''}`;
+            });
+            outputLines.push(list.join('  '));
         }
+
+        if (recursive) {
+            outputLines.push('');
+            for (const child of children) {
+                if (child.type === 'directory' && child.name !== '.' && child.name !== '..') {
+                    const childPath = dirPath === '/' ? `/${child.name}` : `${dirPath}/${child.name}`;
+                    listDir(childPath, true);
+                }
+            }
+        }
+    };
+
+    for (const p of paths) {
+        listDir(p);
     }
 
-    return { output: outputLines.join('\n'), exitCode };
+    return {
+        output: outputLines.join('\n').trim(),
+        error: errors.join('\n').trim(),
+        exitCode
+    };
 });
 
 function formatPermissions(p: { owner: { read: boolean; write: boolean; execute: boolean }; group: { read: boolean; write: boolean; execute: boolean }; others: { read: boolean; write: boolean; execute: boolean } }): string {
@@ -122,31 +159,49 @@ CommandRegistry.register('cd', async (args, context) => {
 //  mkdir — supports -p for recursive creation
 // ======================================================================
 CommandRegistry.register('mkdir', async (args, context) => {
-    const recursive = args.includes('-p');
-    const dirs = args.filter(a => !a.startsWith('-'));
+    let recursive = false;
+    let mode: string | undefined = undefined;
+    const targets: string[] = [];
 
-    if (dirs.length === 0) {
+    for (let i = 0; i < args.length; i++) {
+        const arg = args[i];
+        if (arg === '-p') { recursive = true; continue; }
+        if (arg === '-m' && i + 1 < args.length) {
+            mode = args[++i];
+            continue;
+        }
+        if (arg.startsWith('-')) continue;
+        targets.push(arg);
+    }
+
+    if (targets.length === 0) {
         return { output: '', error: 'mkdir: missing operand', exitCode: 1 };
     }
 
-    for (const dir of dirs) {
+    for (const dir of targets) {
         if (recursive) {
-            // Create path components one by one
             const parts = dir.split('/').filter(p => p.length > 0);
             let currentPath = dir.startsWith('/') ? '' : context.cwd;
-            for (const part of parts) {
-                const checkPath = currentPath === '' ? '/' + part : currentPath + '/' + part;
+            for (let i = 0; i < parts.length; i++) {
+                const part = parts[i];
+                const checkPath = currentPath === '' ? '/' + part : (currentPath === '/' ? '/' + part : currentPath + '/' + part);
                 if (!context.vfs.exists(checkPath, context.userId)) {
                     const parent = currentPath === '' ? '/' : currentPath;
-                    const result = context.vfs.mkdir(parent, part, context.userId);
+                    const applyMode = (i === parts.length - 1) ? mode : undefined;
+                    const result = context.vfs.mkdir(parent, part, context.userId, applyMode);
                     if (typeof result === 'string') {
                         return { output: '', error: `mkdir: ${result}`, exitCode: 1 };
                     }
                 }
-                currentPath = currentPath === '' ? '/' + part : currentPath + '/' + part;
+                currentPath = checkPath;
             }
         } else {
-            const result = context.vfs.mkdir(context.cwd, dir, context.userId);
+            const parts = dir.split('/').filter(p => p.length > 0);
+            const name = parts.pop() || '';
+            const parentRelative = parts.join('/');
+            const parentPath = dir.startsWith('/') ? '/' + parentRelative : (parentRelative ? context.cwd + '/' + parentRelative : context.cwd);
+
+            const result = context.vfs.mkdir(parentPath, name, context.userId, mode);
             if (typeof result === 'string') {
                 return { output: '', error: `mkdir: ${result}`, exitCode: 1 };
             }
@@ -181,7 +236,7 @@ CommandRegistry.register('clear', async () => {
 // ======================================================================
 //  cat — per project_documentation.md: file operations
 // ======================================================================
-CommandRegistry.register('cat', async (args, context) => {
+CommandRegistry.register('cat', async (args, context, stdin) => {
     let lineNumbers = false;
     const filePaths: string[] = [];
 
@@ -190,25 +245,28 @@ CommandRegistry.register('cat', async (args, context) => {
         else if (!arg.startsWith('-')) filePaths.push(arg);
     }
 
-    if (filePaths.length === 0) return { output: '', exitCode: 0 };
-
     let output = '';
     let error = '';
     let exitCode = 0;
 
-    for (const filePath of filePaths) {
-        const content = context.vfs.readFile(filePath, context.userId);
-        if (typeof content === 'object' && 'error' in content) {
-            error += `cat: ${filePath}: ${content.error}\n`;
-            exitCode = 1;
-        } else {
-            if (lineNumbers) {
-                const lines = content.split('\n');
-                output += lines.map((line: string, i: number) => `     ${i + 1}\t${line}`).join('\n') + '\n';
+    if (filePaths.length === 0) {
+        if (stdin) {
+            output = stdin;
+        }
+    } else {
+        for (const filePath of filePaths) {
+            const content = context.vfs.readFile(filePath, context.userId);
+            if (typeof content === 'object' && 'error' in content) {
+                error += `cat: ${filePath}: ${content.error}\n`;
+                exitCode = 1;
             } else {
-                output += content + '\n';
+                output += content + (content.endsWith('\n') ? '' : '\n');
             }
         }
+    }
+
+    if (lineNumbers) {
+        output = output.split('\n').map((line, i) => `     ${i + 1}\t${line}`).join('\n');
     }
 
     return { output: output.trimEnd(), error: error.trim(), exitCode };
@@ -218,14 +276,34 @@ CommandRegistry.register('cat', async (args, context) => {
 //  rm — supports -r, -rf
 // ======================================================================
 CommandRegistry.register('rm', async (args, context) => {
-    const recursive = args.includes('-r') || args.includes('-rf') || args.includes('-f');
-    const files = args.filter(a => !a.startsWith('-'));
+    let recursive = false;
+    let force = false;
+    let interactive = false;
+    const paths: string[] = [];
 
-    if (files.length === 0) return { output: '', error: 'rm: missing operand', exitCode: 1 };
+    for (const arg of args) {
+        if (arg === '-r' || arg === '-R') recursive = true;
+        else if (arg === '-f') force = true;
+        else if (arg === '-i') interactive = true;
+        else if (arg === '-rf' || arg === '-fr') { recursive = true; force = true; }
+        else if (!arg.startsWith('-')) paths.push(arg);
+    }
 
-    for (const path of files) {
+    if (paths.length === 0) {
+        if (force) return { output: '', exitCode: 0 };
+        return { output: '', error: 'rm: missing operand', exitCode: 1 };
+    }
+
+    for (const path of paths) {
+        // Handle -i
+        if (interactive && !force && context.prompt) {
+            const confirmed = await context.prompt(`rm: remove file '${path}'? `);
+            if (confirmed.toLowerCase() !== 'y') continue;
+        }
+
         const result = context.vfs.rm(path, recursive, context.userId);
         if (typeof result === 'string') {
+            if (force && result === 'No such file or directory') continue;
             return { output: '', error: `rm: cannot remove '${path}': ${result}`, exitCode: 1 };
         }
     }
@@ -237,18 +315,49 @@ CommandRegistry.register('rm', async (args, context) => {
 //  cp — supports -r, -R
 // ======================================================================
 CommandRegistry.register('cp', async (args, context) => {
-    const recursive = args.includes('-r') || args.includes('-R');
-    const paths = args.filter(a => !a.startsWith('-'));
+    let recursive = false;
+    let interactive = false;
+    let force = false;
+    let preserve = false;
+    const targets: string[] = [];
 
-    if (paths.length < 2) return { output: '', error: 'cp: missing destination file', exitCode: 1 };
+    for (const arg of args) {
+        if (arg === '-r' || arg === '-R') recursive = true;
+        else if (arg === '-i') interactive = true;
+        else if (arg === '-f') force = true;
+        else if (arg === '-p') preserve = true;
+        else if (!arg.startsWith('-')) targets.push(arg);
+    }
 
-    const dest = paths[paths.length - 1];
-    const sources = paths.slice(0, -1);
+    if (targets.length < 2) {
+        return { output: '', error: 'cp: missing file operand', exitCode: 1 };
+    }
 
-    for (const src of sources) {
-        const result = context.vfs.cp(src, dest, recursive, context.userId);
+    const destPath = targets.pop()!;
+    for (const srcPath of targets) {
+        // Handle -i
+        if (interactive && !force && context.vfs.exists(destPath, context.userId) && context.prompt) {
+            const confirmed = await context.prompt(`cp: overwrite '${destPath}'? `);
+            if (confirmed.toLowerCase() !== 'y') continue;
+        }
+
+        const result = context.vfs.cp(srcPath, destPath, recursive, context.userId);
         if (typeof result === 'string') {
             return { output: '', error: `cp: ${result}`, exitCode: 1 };
+        }
+
+        // Handle -p (preserve)
+        if (preserve) {
+            const srcMeta = context.vfs.getMetadata(srcPath, context.userId);
+            const destFinalPath = context.vfs.isDirectory(destPath, context.userId)
+                ? `${destPath}/${srcPath.split('/').pop()}`
+                : destPath;
+            const destMeta = context.vfs.getMetadata(destFinalPath, context.userId);
+
+            if (typeof srcMeta !== 'string' && typeof destMeta !== 'string') {
+                destMeta.permissions = { ...srcMeta.permissions };
+                destMeta.modifiedAt = srcMeta.modifiedAt;
+            }
         }
     }
 
@@ -259,14 +368,40 @@ CommandRegistry.register('cp', async (args, context) => {
 //  mv
 // ======================================================================
 CommandRegistry.register('mv', async (args, context) => {
-    if (args.length < 2) return { output: '', error: 'mv: missing destination', exitCode: 1 };
+    let interactive = false;
+    let force = false;
+    const targets: string[] = [];
 
-    const dest = args[args.length - 1];
-    const src = args[args.length - 2];
+    for (const arg of args) {
+        if (arg === '-i') interactive = true;
+        else if (arg === '-f') force = true;
+        else if (!arg.startsWith('-')) targets.push(arg);
+    }
 
-    const result = context.vfs.mv(src, dest, context.userId);
-    if (typeof result === 'string') {
-        return { output: '', error: `mv: ${result}`, exitCode: 1 };
+    if (targets.length < 2) {
+        return { output: '', error: 'mv: missing operand', exitCode: 1 };
+    }
+
+    const destPath = targets.pop()!;
+    for (const srcPath of targets) {
+        // Handle -i
+        if (interactive && !force && context.vfs.exists(destPath, context.userId) && context.prompt) {
+            const confirmed = await context.prompt(`mv: overwrite '${destPath}'? `);
+            if (confirmed.toLowerCase() !== 'y') continue;
+        }
+
+        const result = context.vfs.mv(srcPath, destPath, context.userId);
+        if (typeof result === 'string') {
+            if (force && result === 'Destination already exists') {
+                context.vfs.rm(destPath, true, context.userId);
+                const retryResult = context.vfs.mv(srcPath, destPath, context.userId);
+                if (typeof retryResult === 'string') {
+                    return { output: '', error: `mv: ${retryResult}`, exitCode: 1 };
+                }
+                continue;
+            }
+            return { output: '', error: `mv: ${result}`, exitCode: 1 };
+        }
     }
 
     return { output: '', exitCode: 0 };
@@ -275,11 +410,12 @@ CommandRegistry.register('mv', async (args, context) => {
 // ======================================================================
 //  grep — supports -i (case insensitive), -v (invert), -n (line numbers)
 // ======================================================================
-CommandRegistry.register('grep', async (args, context, pipedInput) => {
+CommandRegistry.register('grep', async (args, context, stdin) => {
     let caseInsensitive = false;
     let invert = false;
     let lineNumbers = false;
     let countOnly = false;
+    let recursive = false;
     const nonFlags: string[] = [];
 
     for (const arg of args) {
@@ -288,6 +424,7 @@ CommandRegistry.register('grep', async (args, context, pipedInput) => {
             if (arg.includes('v')) invert = true;
             if (arg.includes('n')) lineNumbers = true;
             if (arg.includes('c')) countOnly = true;
+            if (arg.includes('r') || arg.includes('R')) recursive = true;
         } else {
             nonFlags.push(arg);
         }
@@ -303,14 +440,16 @@ CommandRegistry.register('grep', async (args, context, pipedInput) => {
     const searchContent = (content: string, prefix: string) => {
         const lines = content.split('\n');
         let matchCount = 0;
+        let regex: RegExp;
+        try {
+            regex = new RegExp(pattern, caseInsensitive ? 'i' : '');
+        } catch (e) {
+            return 0; // Invalid regex
+        }
+
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i];
-            let matches: boolean;
-            if (caseInsensitive) {
-                matches = line.toLowerCase().includes(pattern.toLowerCase());
-            } else {
-                matches = line.includes(pattern);
-            }
+            let matches = regex.test(line);
             if (invert) matches = !matches;
 
             if (matches) {
@@ -321,24 +460,46 @@ CommandRegistry.register('grep', async (args, context, pipedInput) => {
                 }
             }
         }
-        if (countOnly) {
-            outputLines.push(`${prefix}${matchCount}`);
+        return matchCount;
+    };
+
+    const processPath = (path: string): void => {
+        const resolved = context.vfs.resolve(path, context.userId);
+        if (typeof resolved === 'string') return;
+        const inode = resolved as Inode;
+
+        if (inode.type === 'file') {
+            const content = context.vfs.readFile(path, context.userId);
+            if (typeof content === 'string') {
+                const prefix = (filePaths.length > 1 || recursive) ? `${path}:` : '';
+                const matchCount = searchContent(content, prefix);
+                if (countOnly) outputLines.push(`${prefix}${matchCount}`);
+            }
+        } else if (inode.type === 'directory' && recursive) {
+            if (inode.children) {
+                for (const childId of inode.children) {
+                    const child = context.vfs.getInode(childId);
+                    if (child) {
+                        const childPath = path === '/' ? `/${child.name}` : `${path}/${child.name}`;
+                        processPath(childPath);
+                    }
+                }
+            }
         }
     };
 
     // If no file given, use piped input
     if (filePaths.length === 0) {
-        if (pipedInput) {
-            searchContent(pipedInput, '');
+        if (stdin) {
+            searchContent(stdin, '');
+        } else if (recursive) {
+            processPath(context.cwd);
         } else {
             return { output: '', error: 'grep: No file specified', exitCode: 2 };
         }
     } else {
         for (const fp of filePaths) {
-            const content = context.vfs.readFile(fp, context.userId);
-            if (typeof content !== 'string') continue;
-            const prefix = filePaths.length > 1 ? `${fp}:` : '';
-            searchContent(content, prefix);
+            processPath(fp);
         }
     }
 
@@ -354,18 +515,97 @@ CommandRegistry.register('grep', async (args, context, pipedInput) => {
 CommandRegistry.register('chmod', async (args, context) => {
     if (args.length < 2) return { output: '', error: 'chmod: missing operand', exitCode: 1 };
 
-    const mode = args[0];
-    const paths = args.slice(1);
+    const recursive = args.includes('-R');
+    const filteredArgs = args.filter(a => a !== '-R');
+    const mode = filteredArgs[0];
+    const paths = filteredArgs.slice(1);
+
+    const applyMode = (path: string, inode: Inode) => {
+        if (inode.ownerId !== context.userId && context.userId !== 'root') {
+            return `chmod: changing permissions of '${path}': Operation not permitted`;
+        }
+
+        if (/^[0-7]{3,4}$/.test(mode)) {
+            const result = context.vfs.chmod(path, mode.slice(-3), context.userId);
+            if (typeof result === 'string') return `chmod: ${result}`;
+        } else {
+            const newPermissions = parseSymbolicMode(mode, inode.permissions);
+            if (!newPermissions) return `chmod: invalid mode: '${mode}'`;
+            inode.permissions = newPermissions;
+            inode.modifiedAt = Date.now();
+        }
+        return null;
+    };
+
+    const walk = (path: string): string | null => {
+        const resolved = context.vfs.resolve(path, context.userId);
+        if (typeof resolved === 'string') return resolved;
+        const inode = resolved as Inode;
+
+        const err = applyMode(path, inode);
+        if (err) return err;
+
+        if (recursive && inode.type === 'directory' && inode.children) {
+            for (const childId of inode.children) {
+                const child = context.vfs.getInode(childId);
+                if (child) {
+                    const childPath = path === '/' ? `/${child.name}` : `${path}/${child.name}`;
+                    const walkErr = walk(childPath);
+                    if (walkErr) return walkErr;
+                }
+            }
+        }
+        return null;
+    };
 
     for (const path of paths) {
-        const result = context.vfs.chmod(path, mode, context.userId);
-        if (typeof result === 'string') {
-            return { output: '', error: `chmod: ${result}`, exitCode: 1 };
-        }
+        const err = walk(path);
+        if (err) return { output: '', error: err, exitCode: 1 };
     }
 
     return { output: '', exitCode: 0 };
 });
+
+function parseSymbolicMode(mode: string, current: Inode['permissions']): Inode['permissions'] | null {
+    const perms = JSON.parse(JSON.stringify(current)); // Deep clone
+    const parts = mode.split(',');
+
+    for (const part of parts) {
+        const match = part.match(/^([ugoa]*)([+=-])([rwx]*)$/);
+        if (!match) return null;
+
+        const [, recipients, op, requested] = match;
+        const targets: ('owner' | 'group' | 'others')[] = [];
+        if (!recipients || recipients.includes('a')) {
+            targets.push('owner', 'group', 'others');
+        } else {
+            if (recipients.includes('u')) targets.push('owner');
+            if (recipients.includes('g')) targets.push('group');
+            if (recipients.includes('o')) targets.push('others');
+        }
+
+        const read = requested.includes('r');
+        const write = requested.includes('w');
+        const execute = requested.includes('x');
+
+        for (const target of targets) {
+            if (op === '+') {
+                if (read) perms[target].read = true;
+                if (write) perms[target].write = true;
+                if (execute) perms[target].execute = true;
+            } else if (op === '-') {
+                if (read) perms[target].read = false;
+                if (write) perms[target].write = false;
+                if (execute) perms[target].execute = false;
+            } else if (op === '=') {
+                perms[target].read = read;
+                perms[target].write = write;
+                perms[target].execute = execute;
+            }
+        }
+    }
+    return perms;
+}
 
 // ======================================================================
 //  chown — per project_documentation.md §4.1: Permission management
@@ -512,25 +752,81 @@ CommandRegistry.register('uname', async (args) => {
 // ======================================================================
 //  wc — word, line, character count
 // ======================================================================
-CommandRegistry.register('wc', async (args, context) => {
-    const paths = args.filter(a => !a.startsWith('-'));
+CommandRegistry.register('wc', async (args, context, stdin) => {
+    let countLines = false;
+    let countWords = false;
+    let countChars = false;
 
-    if (paths.length === 0) return { output: '', error: 'wc: missing operand', exitCode: 1 };
+    if (args.includes('-l')) countLines = true;
+    if (args.includes('-w')) countWords = true;
+    if (args.includes('-c') || args.includes('-m')) countChars = true;
 
-    const outputLines: string[] = [];
-    for (const fp of paths) {
-        const content = context.vfs.readFile(fp, context.userId);
-        if (typeof content !== 'string') {
-            outputLines.push(`wc: ${fp}: No such file`);
-            continue;
-        }
-        const lines = content.split('\n').length;
-        const words = content.split(/\s+/).filter(Boolean).length;
-        const chars = content.length;
-        outputLines.push(`  ${lines}  ${words} ${chars} ${fp}`);
+    // Default if no flags: show all
+    if (!countLines && !countWords && !countChars) {
+        countLines = countWords = countChars = true;
     }
 
-    return { output: outputLines.join('\n'), exitCode: 0 };
+    const filePaths = args.filter(a => !a.startsWith('-'));
+    let totalLines = 0;
+    let totalWords = 0;
+    let totalChars = 0;
+
+    const processContent = (content: string) => {
+        // Split by newline, filter out empty strings from trailing newlines, then count.
+        // If content is empty, lines should be 0.
+        const lines = content.length === 0 ? 0 : content.split('\n').filter(l => l.length > 0).length;
+        // Trim to handle leading/trailing whitespace, split by one or more whitespace, filter out empty strings.
+        // If content is empty or only whitespace, words should be 0.
+        const words = content.trim().length === 0 ? 0 : content.trim().split(/\s+/).filter(w => w.length > 0).length;
+        const chars = content.length;
+        return { lines, words, chars };
+    };
+
+    const outputRows: string[] = [];
+
+    if (filePaths.length === 0) {
+        if (stdin) {
+            const { lines, words, chars } = processContent(stdin);
+            totalLines += lines;
+            totalWords += words;
+            totalChars += chars;
+            let row = '';
+            if (countLines) row += `${lines} `;
+            if (countWords) row += `${words} `;
+            if (countChars) row += `${chars} `;
+            outputRows.push(row.trim());
+        } else {
+            return { output: '', error: 'wc: missing operand', exitCode: 1 };
+        }
+    } else {
+        for (const path of filePaths) {
+            const content = context.vfs.readFile(path, context.userId);
+            if (typeof content === 'string') {
+                const { lines, words, chars } = processContent(content);
+                totalLines += lines;
+                totalWords += words;
+                totalChars += chars;
+                let row = '';
+                if (countLines) row += `${lines} `;
+                if (countWords) row += `${words} `;
+                if (countChars) row += `${chars} `;
+                row += ` ${path}`;
+                outputRows.push(row.trim());
+            } else {
+                outputRows.push(`wc: ${path}: No such file or directory`);
+            }
+        }
+        if (filePaths.length > 1) {
+            let row = '';
+            if (countLines) row += `${totalLines} `;
+            if (countWords) row += `${totalWords} `;
+            if (countChars) row += `${totalChars} `;
+            row += ' total';
+            outputRows.push(row.trim());
+        }
+    }
+
+    return { output: outputRows.join('\n'), exitCode: 0 };
 });
 
 // ======================================================================
@@ -539,47 +835,80 @@ CommandRegistry.register('wc', async (args, context) => {
 CommandRegistry.register('find', async (args, context) => {
     const searchPath = args[0] || context.cwd;
     let namePattern = '';
-    let typeFilter = ''; // 'f' for file, 'd' for directory
+    let typeFilter = '';
+    let sizeFilter = '';
+    let permFilter = '';
+    let execCommand: string[] = [];
 
-    for (let i = 0; i < args.length; i++) {
-        if (args[i] === '-name' && args[i + 1]) {
-            namePattern = args[i + 1];
-            i++;
-        }
-        if (args[i] === '-type' && args[i + 1]) {
-            typeFilter = args[i + 1];
-            i++;
+    const findArgs = [...args];
+    for (let i = 0; i < findArgs.length; i++) {
+        if (findArgs[i] === '-name' && findArgs[i + 1]) { namePattern = findArgs[i + 1]; i++; }
+        else if (findArgs[i] === '-type' && findArgs[i + 1]) { typeFilter = findArgs[i + 1]; i++; }
+        else if (findArgs[i] === '-size' && findArgs[i + 1]) { sizeFilter = findArgs[i + 1]; i++; }
+        else if (findArgs[i] === '-perm' && findArgs[i + 1]) { permFilter = findArgs[i + 1]; i++; }
+        else if (findArgs[i] === '-exec') {
+            const endIdx = findArgs.indexOf('\;', i);
+            if (endIdx !== -1) {
+                execCommand = findArgs.slice(i + 1, endIdx);
+                i = endIdx;
+            }
         }
     }
 
     const results: string[] = [];
 
-    const walk = (path: string) => {
+    const walk = async (path: string) => {
         const resolved = context.vfs.resolve(path, context.userId);
         if (typeof resolved === 'string') return;
         const inode = resolved as Inode;
 
-        // Type filter
-        let passesType = true;
-        if (typeFilter === 'f' && inode.type !== 'file') passesType = false;
-        if (typeFilter === 'd' && inode.type !== 'directory') passesType = false;
+        let passes = true;
+        if (typeFilter === 'f' && inode.type !== 'file') passes = false;
+        if (typeFilter === 'd' && inode.type !== 'directory') passes = false;
 
-        const fullPath = path;
-        if (passesType && (!namePattern || matchGlob(inode.name, namePattern))) {
-            results.push(fullPath);
+        if (sizeFilter) {
+            const actualSize = inode.size || 0;
+            const match = sizeFilter.match(/^([+-]?)(\d+)([KMG]?)$/);
+            if (match) {
+                const [, op, valueStr, unit] = match;
+                let targetSize = parseInt(valueStr, 10);
+                if (unit === 'K') targetSize *= 1024;
+                else if (unit === 'M') targetSize *= 1024 * 1024;
+                else if (unit === 'G') targetSize *= 1024 * 1024 * 1024;
+                if (op === '+') passes = actualSize > targetSize;
+                else if (op === '-') passes = actualSize < targetSize;
+                else passes = actualSize === targetSize;
+            }
+        }
+
+        if (permFilter && inode.permissions) {
+            const actualPerms = permissionsToOctal(inode.permissions);
+            if (actualPerms !== permFilter) passes = false;
+        }
+
+        if (namePattern && !matchGlob(inode.name, namePattern)) passes = false;
+
+        if (passes) {
+            results.push(path);
+            if (execCommand.length > 0) {
+                const cmdName = execCommand[0];
+                const cmdArgs = execCommand.slice(1).map(a => a === '{}' ? path : a);
+                const cmdFn = CommandRegistry.get(cmdName);
+                if (cmdFn) await cmdFn(cmdArgs, context);
+            }
         }
 
         if (inode.type === 'directory' && inode.children) {
             for (const childId of inode.children) {
                 const child = context.vfs.getInode(childId);
                 if (child) {
-                    walk(fullPath === '/' ? `/${child.name}` : `${fullPath}/${child.name}`);
+                    await walk(path === '/' ? `/${child.name}` : `${path}/${child.name}`);
                 }
             }
         }
     };
 
-    walk(searchPath);
+    await walk(searchPath);
     return { output: results.join('\n'), exitCode: 0 };
 });
 
@@ -626,30 +955,42 @@ CommandRegistry.register('free', async (args) => {
 // ======================================================================
 //  ps — simulated process list
 // ======================================================================
-CommandRegistry.register('ps', async (args) => {
+CommandRegistry.register('ps', async (args, context) => {
     const header = '  PID TTY          TIME CMD';
-    const lines = [
-        '    1 ?        00:00:01 systemd',
-        '  142 ?        00:00:00 sshd',
-        '  501 pts/0    00:00:00 bash',
-        '  892 pts/0    00:00:00 ps',
-    ];
+    const lines = context.processes.map(p => {
+        const elapsed = Math.floor((Date.now() - p.startTime) / 1000);
+        const mins = Math.floor(elapsed / 60);
+        const secs = elapsed % 60;
+        const timeStr = `00:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        return `${p.pid.toString().padStart(5)} pts/0    ${timeStr} ${p.name}`;
+    });
     return { output: `${header}\n${lines.join('\n')}`, exitCode: 0 };
 });
 
 // ======================================================================
 //  top — simulated system monitor (snapshot)
 // ======================================================================
-CommandRegistry.register('top', async () => {
+CommandRegistry.register('top', async (args, context) => {
+    const uptime = '22:50:00 up 1 day,  3:27,  1 user,  load average: 0.15, 0.12, 0.10';
+    const tasks = `Tasks:   ${context.processes.length} total,   1 running,   ${context.processes.length - 1} sleeping`;
+    const cpu = '%Cpu(s):  2.3 us,  1.0 sy,  0.0 ni, 96.5 id,  0.2 wa';
+    const mem = 'MiB Mem :   7966 total,   3726 free,   2291 used,   1949 buff/cache';
+
+    const header = '  PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND';
+    const rows = context.processes.map(p => {
+        const elapsed = Math.floor((Date.now() - p.startTime) / 1000);
+        const timeStr = `${Math.floor(elapsed / 60)}:${(elapsed % 60).toString().padStart(2, '0')}.00`;
+        return `${p.pid.toString().padStart(5)} ${p.user.padEnd(8)} 20   0    2356   1400    800 S   0.0   0.0   ${timeStr.padStart(7)} ${p.name}`;
+    });
+
     const output = [
-        'top - 22:50:00 up 1 day,  3:27,  1 user,  load average: 0.15, 0.12, 0.10',
-        'Tasks:   4 total,   1 running,   3 sleeping',
-        '%Cpu(s):  2.3 us,  1.0 sy,  0.0 ni, 96.5 id,  0.2 wa',
-        'MiB Mem :   7966 total,   3726 free,   2291 used,   1949 buff/cache',
+        `top - ${uptime}`,
+        tasks,
+        cpu,
+        mem,
         '',
-        '  PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND',
-        '    1 root      20   0    2356   1400    800 S   0.0   0.0   0:01.00 systemd',
-        '  501 guest     20   0    6240   3200   2800 S   0.0   0.0   0:00.10 bash',
+        header,
+        ...rows
     ];
     return { output: output.join('\n'), exitCode: 0 };
 });
@@ -657,9 +998,23 @@ CommandRegistry.register('top', async () => {
 // ======================================================================
 //  kill — simulated
 // ======================================================================
-CommandRegistry.register('kill', async (args) => {
+CommandRegistry.register('kill', async (args, context) => {
     if (args.length === 0) return { output: '', error: 'kill: missing operand', exitCode: 1 };
-    return { output: '', exitCode: 0 }; // Simulated — always succeeds
+
+    // Support -9 flag
+    const force = args.includes('-9');
+    const pids = args.filter(a => !a.startsWith('-')).map(Number);
+
+    if (pids.some(isNaN)) return { output: '', error: 'kill: invalid PID', exitCode: 1 };
+
+    const newProcesses = context.processes.filter(p => !pids.includes(p.pid));
+
+    if (newProcesses.length === context.processes.length) {
+        return { output: '', error: `kill: (${pids.join(' ')}) - No such process`, exitCode: 1 };
+    }
+
+    context.updateProcesses(newProcesses);
+    return { output: '', exitCode: 0 };
 });
 
 // ======================================================================

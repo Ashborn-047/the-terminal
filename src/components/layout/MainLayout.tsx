@@ -1,9 +1,10 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Terminal, BookOpen, Award, Settings, LogOut, ChevronRight, Zap, Flame, BookText } from 'lucide-react';
+import { Terminal, BookOpen, Award, Settings, LogOut, ChevronRight, Zap, Flame, BookText, MessageSquare } from 'lucide-react';
 import { useGamificationStore } from '../../stores/gamificationStore';
 import { useUIStore } from '../../stores/uiStore';
 import { useFeatureAccess } from '../../hooks/useFeatureAccess';
+import { ConnectionStatus } from './ConnectionStatus';
 
 interface SidebarItemProps {
     icon: React.ReactNode;
@@ -34,7 +35,7 @@ export const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }
     const navigate = useNavigate();
     const location = useLocation();
     const { level, streak, getXPProgress, getTitle } = useGamificationStore();
-    const { sidebarOpen } = useUIStore();
+    const { sidebarOpen, username } = useUIStore();
     const { current, needed, percent } = getXPProgress();
     const title = getTitle();
 
@@ -45,7 +46,9 @@ export const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }
         { path: '/terminal', label: 'Terminal', icon: <Terminal size={20} />, locked: false },
         { path: '/labs', label: 'Curriculum', icon: <BookOpen size={20} />, locked: false },
         { path: '/commands', label: 'Commands', icon: <BookText size={20} />, locked: false },
+        { path: '/chat', label: 'AI Tutor', icon: <MessageSquare size={20} />, locked: false },
         { path: '/profile', label: 'Achievements', icon: <Award size={20} />, locked: !features.achievements },
+        { path: '/settings', label: 'Settings', icon: <Settings size={20} />, locked: false },
     ];
 
     return (
@@ -93,6 +96,9 @@ export const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }
 
             {/* Main Content */}
             <main className="flex-1 flex flex-col h-full overflow-hidden">
+                <div className="flex justify-start mb-2">
+                    <ConnectionStatus />
+                </div>
                 <header className="flex justify-between items-center mb-4 p-4 bg-brutal-white border-3 border-brutal-black text-brutal-black shadow-brutal">
                     <div className="flex items-center gap-4">
                         <div className="flex flex-col items-center p-2 border-2 border-brutal-black bg-brutal-yellow font-heading uppercase text-xs min-w-[60px]">
@@ -112,8 +118,10 @@ export const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }
                         </div>
                     </div>
                     <div className="flex items-center gap-4">
-                        <div className="font-heading uppercase text-sm">guest@the-terminal</div>
-                        <div className="w-10 h-10 border-2 border-brutal-black rounded-full bg-brutal-red" />
+                        <div className="font-heading uppercase text-sm">{username}@the-terminal</div>
+                        <div className="w-10 h-10 border-2 border-brutal-black rounded-full bg-brutal-red flex items-center justify-center text-xl shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                            👤
+                        </div>
                     </div>
                 </header>
 

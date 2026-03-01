@@ -6,6 +6,10 @@ export interface CommandContext {
     vfs: VFS;
     env: Record<string, string>;
     history: string[];
+    processes: { pid: number; name: string; user: string; startTime: number }[];
+    updateEnv: (env: Record<string, string>) => void;
+    updateProcesses: (processes: any[]) => void;
+    prompt?: (message: string) => Promise<string>;
 }
 
 export interface CommandResult {
@@ -14,7 +18,7 @@ export interface CommandResult {
     exitCode: number;
 }
 
-export type RedirectionType = 'overwrite' | 'append' | 'none';
+export type RedirectionType = 'overwrite' | 'append' | 'input' | 'stderr' | 'both' | 'none';
 
 export interface CommandAction {
     name: string;

@@ -1,5 +1,12 @@
 import { v4 as uuidv4 } from 'uuid';
-import { Inode, InodePermissions, FileType, VFSSnapshot, VFSPermissions } from './types';
+import {
+    Inode,
+    InodePermissions,
+    FileType,
+    VFSSnapshot,
+    VFSPermissions
+} from './types';
+import { snapshots } from './snapshots';
 
 export const DEFAULT_DIR_PERMISSIONS: InodePermissions = {
     owner: { read: true, write: true, execute: true },
@@ -13,21 +20,36 @@ export const DEFAULT_FILE_PERMISSIONS: InodePermissions = {
     others: { read: true, write: false, execute: false },
 };
 
-/** Convert InodePermissions to octal string like "755" */
+/** Convert InodePermissions to octal string like "755" or "1755" */
 export function permissionsToOctal(perms: InodePermissions): string {
     const toDigit = (p: VFSPermissions) =>
         (p.read ? 4 : 0) + (p.write ? 2 : 0) + (p.execute ? 1 : 0);
-    return `${toDigit(perms.owner)}${toDigit(perms.group)}${toDigit(perms.others)}`;
+    const special = (perms.setuid ? 4 : 0) + (perms.setgid ? 2 : 0) + (perms.sticky ? 1 : 0);
+    const pStr = `${toDigit(perms.owner)}${toDigit(perms.group)}${toDigit(perms.others)}`;
+    return special > 0 ? `${special}${pStr}` : pStr;
 }
 
-/** Convert octal string like "755" to InodePermissions */
+/** Convert octal string like "755" or "1755" to InodePermissions */
 export function octalToPermissions(mode: string): InodePermissions | null {
-    if (!/^[0-7]{3}$/.test(mode)) return null;
+    if (!/^[0-7]{3,4}$/.test(mode)) return null;
+    let special = 0;
+    let pStr = mode;
+    if (mode.length === 4) {
+        special = parseInt(mode[0], 10);
+        pStr = mode.slice(1);
+    }
     const parse = (ch: string): VFSPermissions => {
         const v = parseInt(ch, 10);
         return { read: (v & 4) !== 0, write: (v & 2) !== 0, execute: (v & 1) !== 0 };
     };
-    return { owner: parse(mode[0]), group: parse(mode[1]), others: parse(mode[2]) };
+    return {
+        owner: parse(pStr[0]),
+        group: parse(pStr[1]),
+        others: parse(pStr[2]),
+        setuid: (special & 4) !== 0,
+        setgid: (special & 2) !== 0,
+        sticky: (special & 1) !== 0,
+    };
 }
 
 const MAX_SYMLINK_DEPTH = 20;
@@ -35,11 +57,12 @@ const MAX_SYMLINK_DEPTH = 20;
 export class VFS {
     private rootId: string;
     private inodes: Record<string, Inode>;
+    private umask: string = '0022';
 
     constructor(snapshot?: VFSSnapshot) {
         if (snapshot) {
             this.rootId = snapshot.rootId;
-            this.inodes = snapshot.inodes;
+            this.inodes = { ...snapshot.inodes };
         } else {
             const rootInode: Inode = {
                 id: uuidv4(),
@@ -59,11 +82,67 @@ export class VFS {
         }
     }
 
-    // ======================================================================
-    // Default Filesystem — matches command_engine_vfs.md §2.4 "default" snapshot
-    // ======================================================================
+    /**
+     * VFS Serialization — per Doc 2 §3.1
+     */
+    public serialize(): string {
+        return JSON.stringify({ rootId: this.rootId, inodes: this.inodes });
+    }
+
+    public deserialize(data: string): void {
+        try {
+            const newSnapshot: VFSSnapshot = JSON.parse(data);
+            this.rootId = newSnapshot.rootId;
+            this.inodes = newSnapshot.inodes;
+        } catch (e) {
+            console.error('Failed to deserialize VFS:', e);
+        }
+    }
+
+    public loadSnapshot(name: string): void {
+        const snapshot = snapshots[name];
+        if (snapshot) {
+            this.rootId = snapshot.rootId;
+            this.inodes = JSON.parse(JSON.stringify(snapshot.inodes));
+        } else {
+            console.warn(`Snapshot "${name}" not found.`);
+        }
+    }
+
+    public setUmask(mode: string): boolean {
+        if (!/^[0-7]{3,4}$/.test(mode)) return false;
+        this.umask = mode.padStart(4, '0');
+        return true;
+    }
+
+    public getUmask(): string {
+        return this.umask;
+    }
+
+    private applyUmask(perms: InodePermissions): InodePermissions {
+        const mask = octalToPermissions(this.umask);
+        if (!mask) return perms;
+
+        return {
+            owner: {
+                read: perms.owner.read && !mask.owner.read,
+                write: perms.owner.write && !mask.owner.write,
+                execute: perms.owner.execute && !mask.owner.execute,
+            },
+            group: {
+                read: perms.group.read && !mask.group.read,
+                write: perms.group.write && !mask.group.write,
+                execute: perms.group.execute && !mask.group.execute,
+            },
+            others: {
+                read: perms.others.read && !mask.others.read,
+                write: perms.others.write && !mask.others.write,
+                execute: perms.others.execute && !mask.others.execute,
+            }
+        };
+    }
+
     private initializeDefaultFS() {
-        // Standard directories
         this.mkdir('/', 'bin', 'root');
         this.mkdir('/', 'etc', 'root');
         this.mkdir('/', 'home', 'root');
@@ -76,7 +155,6 @@ export class VFS {
         this.mkdir('/usr', 'bin', 'root');
         this.mkdir('/usr', 'local', 'root');
 
-        // System files
         this.touch('/etc', 'hostname', 'root');
         this.writeFile('/etc/hostname', 'the-terminal', 'root');
         this.touch('/etc', 'passwd', 'root');
@@ -93,25 +171,17 @@ export class VFS {
         );
     }
 
-    // ======================================================================
     // Accessors
-    // ======================================================================
     public getRootId(): string { return this.rootId; }
-    public getInode(id: string): Inode | undefined { return this.inodes[id]; }
 
-    // ======================================================================
-    // Permissions — doc §2.3 checkPermission
-    // ======================================================================
     private hasPermission(inode: Inode, userId: string, type: keyof VFSPermissions): boolean {
         if (userId === 'root') return true;
         if (inode.ownerId === userId) return inode.permissions.owner[type];
+        // Note: simplified group check
         if (inode.groupId === userId) return inode.permissions.group[type];
         return inode.permissions.others[type];
     }
 
-    // ======================================================================
-    // Path Resolution — doc §2.3 resolve() with symlink following, . and ..
-    // ======================================================================
     public resolve(
         path: string,
         userId: string = 'root',
@@ -131,7 +201,6 @@ export class VFS {
 
             if (!currentInode) return 'No such file or directory';
 
-            // Handle . and ..
             if (part === '.') continue;
             if (part === '..') {
                 const parentId = this.findParentId(currentId);
@@ -152,13 +221,11 @@ export class VFS {
 
             const childInode = this.inodes[childId];
 
-            // Symlink following
             if (childInode.type === 'symlink' && followSymlinks) {
                 const target = childInode.target || '';
                 const resolved = this.resolve(target, userId, currentId, true, _depth + 1);
                 if (typeof resolved === 'string') return resolved;
 
-                // If more parts remain, continue resolving from the symlink target
                 if (i < parts.length - 1) {
                     const remaining = parts.slice(i + 1).join('/');
                     return this.resolve(remaining, userId, resolved.id, true, _depth + 1);
@@ -172,16 +239,12 @@ export class VFS {
         return this.inodes[currentId];
     }
 
-    // ======================================================================
-    // File Reading & Writing
-    // ======================================================================
     public readFile(path: string, userId: string = 'root'): string | { error: string } {
         const result = this.resolve(path, userId);
         if (typeof result === 'string') return { error: result };
 
         const inode = result as Inode;
         if (inode.type === 'directory') return { error: 'Is a directory' };
-        if (inode.type === 'symlink') return { error: 'Is a symbolic link' };
 
         if (!this.hasPermission(inode, userId, 'read')) {
             return { error: 'Permission denied' };
@@ -190,26 +253,37 @@ export class VFS {
     }
 
     public writeFile(path: string, content: string, userId: string = 'root'): boolean | { error: string } {
-        const result = this.resolve(path, userId);
-        if (typeof result === 'string') return { error: result };
+        let result = this.resolve(path, userId);
+
+        if (typeof result === 'string') {
+            if (result === 'No such file or directory') {
+                // Try to create the file
+                const parts = path.split('/').filter(p => p.length > 0);
+                const name = parts.pop() || '';
+                const parentPath = path.startsWith('/') ? '/' + parts.join('/') : parts.join('/') || '/';
+
+                const touchResult = this.touch(parentPath, name, userId);
+                if (typeof touchResult === 'string') return { error: touchResult };
+                result = touchResult;
+            } else {
+                return { error: result };
+            }
+        }
 
         const inode = result as Inode;
-        if (inode.type !== 'file') return { error: 'Is a directory' };
+        if (inode.type !== 'file') return { error: 'Not a file' };
 
         if (!this.hasPermission(inode, userId, 'write')) {
             return { error: 'Permission denied' };
         }
 
-        this.inodes[inode.id].content = content;
-        this.inodes[inode.id].size = content.length;
-        this.inodes[inode.id].modifiedAt = Date.now();
+        inode.content = content;
+        inode.size = content.length;
+        inode.modifiedAt = Date.now();
         return true;
     }
 
-    // ======================================================================
-    // Directory & File Creation
-    // ======================================================================
-    public mkdir(parentPath: string, name: string, ownerId: string = 'root'): Inode | string {
+    public mkdir(parentPath: string, name: string, ownerId: string = 'root', mode?: string): Inode | string {
         const parentResult = this.resolve(parentPath, ownerId);
         if (typeof parentResult === 'string') return parentResult;
 
@@ -220,16 +294,26 @@ export class VFS {
             return 'File exists';
         }
 
+        const newId = uuidv4();
+        const initialPerms = mode ? octalToPermissions(mode) : DEFAULT_DIR_PERMISSIONS;
+        if (!initialPerms) return 'Invalid mode';
+
         const newInode: Inode = {
-            id: uuidv4(), type: 'directory', name,
-            permissions: { ...DEFAULT_DIR_PERMISSIONS },
-            ownerId, groupId: ownerId, size: 0,
-            createdAt: Date.now(), modifiedAt: Date.now(), children: [],
+            id: newId,
+            type: 'directory',
+            name,
+            permissions: mode ? initialPerms : this.applyUmask({ ...DEFAULT_DIR_PERMISSIONS }),
+            ownerId,
+            groupId: ownerId,
+            size: 0,
+            createdAt: Date.now(),
+            modifiedAt: Date.now(),
+            children: [],
         };
 
-        this.inodes[newInode.id] = newInode;
+        this.inodes[newId] = newInode;
         parentInode.children = parentInode.children || [];
-        parentInode.children.push(newInode.id);
+        parentInode.children.push(newId);
         parentInode.modifiedAt = Date.now();
         return newInode;
     }
@@ -241,31 +325,34 @@ export class VFS {
         const parentInode = parentResult as Inode;
         if (parentInode.type !== 'directory') return 'Not a directory';
 
-        // If file exists, just update timestamp (real `touch` behavior)
         const existingId = parentInode.children?.find(id => this.inodes[id]?.name === name);
         if (existingId) {
             this.inodes[existingId].modifiedAt = Date.now();
             return this.inodes[existingId];
         }
 
+        const newId = uuidv4();
         const newInode: Inode = {
-            id: uuidv4(), type: 'file', name,
-            permissions: { ...DEFAULT_FILE_PERMISSIONS },
-            ownerId, groupId: ownerId, size: 0,
-            createdAt: Date.now(), modifiedAt: Date.now(), content: '',
+            id: newId,
+            type: 'file',
+            name,
+            permissions: this.applyUmask({ ...DEFAULT_FILE_PERMISSIONS }),
+            ownerId,
+            groupId: ownerId,
+            size: 0,
+            createdAt: Date.now(),
+            modifiedAt: Date.now(),
+            content: '',
         };
 
-        this.inodes[newInode.id] = newInode;
+        this.inodes[newId] = newInode;
         parentInode.children = parentInode.children || [];
-        parentInode.children.push(newInode.id);
+        parentInode.children.push(newId);
         parentInode.modifiedAt = Date.now();
         return newInode;
     }
 
-    // ======================================================================
-    // Symlink Creation — doc §2.2 SymlinkInode
-    // ======================================================================
-    public ln(parentPath: string, name: string, target: string, ownerId: string = 'root'): Inode | string {
+    public ln(parentPath: string, name: string, target: string, ownerId: string = 'root', symbolic: boolean = false): Inode | string {
         const parentResult = this.resolve(parentPath, ownerId);
         if (typeof parentResult === 'string') return parentResult;
 
@@ -276,25 +363,38 @@ export class VFS {
             return 'File exists';
         }
 
-        const newInode: Inode = {
-            id: uuidv4(), type: 'symlink', name,
-            permissions: { ...DEFAULT_DIR_PERMISSIONS }, // symlinks typically have 777
-            ownerId, groupId: ownerId, size: target.length,
-            createdAt: Date.now(), modifiedAt: Date.now(), target,
+        const targetResult = this.resolve(target, ownerId);
+        if (!symbolic && typeof targetResult === 'string') return targetResult;
+        if (!symbolic && (targetResult as Inode).type === 'directory') return 'hard link not allowed for directory';
+
+        const newId = uuidv4();
+        const newInode: Inode = symbolic ? {
+            id: newId,
+            type: 'symlink',
+            name,
+            permissions: { ...DEFAULT_FILE_PERMISSIONS },
+            ownerId,
+            groupId: ownerId,
+            size: target.length,
+            createdAt: Date.now(),
+            modifiedAt: Date.now(),
+            target,
+        } : {
+            ...(targetResult as Inode),
+            id: newId,
+            name,
+            modifiedAt: Date.now(),
         };
 
-        this.inodes[newInode.id] = newInode;
+        this.inodes[newId] = newInode;
         parentInode.children = parentInode.children || [];
-        parentInode.children.push(newInode.id);
+        parentInode.children.push(newId);
         parentInode.modifiedAt = Date.now();
         return newInode;
     }
 
-    // ======================================================================
-    // Remove
-    // ======================================================================
     public rm(path: string, recursive: boolean = false, userId: string = 'root'): boolean | string {
-        const result = this.resolve(path, userId);
+        const result = this.resolve(path, userId, this.rootId, false);
         if (typeof result === 'string') return result;
 
         const inode = result as Inode;
@@ -306,14 +406,26 @@ export class VFS {
 
         const parentId = this.findParentId(inode.id);
         if (!parentId) return 'Internal error: parent not found';
-        const parentInode = this.inodes[parentId];
-        if (!this.hasPermission(parentInode, userId, 'write')) return 'Permission denied';
 
-        if (inode.type === 'directory' && recursive) {
-            const children = [...(inode.children || [])];
+        const parentInode = this.inodes[parentId];
+
+        // Sticky bit check: only owner of file/dir or root can delete
+        if (parentInode.permissions.sticky && userId !== 'root') {
+            if (inode.ownerId !== userId && parentInode.ownerId !== userId) {
+                return 'Operation not permitted (Sticky bit set)';
+            }
+        }
+
+        if (!this.hasPermission(parentInode, userId, 'write')) {
+            return 'Permission denied';
+        }
+
+        if (inode.type === 'directory' && recursive && inode.children) {
+            const children = [...inode.children];
             for (const childId of children) {
-                if (this.inodes[childId]) {
-                    const childPath = `${path === '/' ? '' : path}/${this.inodes[childId].name}`;
+                const child = this.inodes[childId];
+                if (child) {
+                    const childPath = `${path === '/' ? '' : path}/${child.name}`;
                     this.rm(childPath, true, userId);
                 }
             }
@@ -325,9 +437,6 @@ export class VFS {
         return true;
     }
 
-    // ======================================================================
-    // chmod / chown — doc §3.5, gamification_framework achievement "Permission Master"
-    // ======================================================================
     public chmod(path: string, mode: string, userId: string = 'root'): boolean | string {
         const result = this.resolve(path, userId);
         if (typeof result === 'string') return result;
@@ -355,9 +464,37 @@ export class VFS {
         return true;
     }
 
-    // ======================================================================
-    // Copy
-    // ======================================================================
+    private findParentId(inodeId: string): string | null {
+        for (const id in this.inodes) {
+            if (this.inodes[id].children?.includes(inodeId)) return id;
+        }
+        return null;
+    }
+
+    public listChildren(path: string, userId: string = 'root'): Inode[] | null | string {
+        const r = this.resolve(path, userId);
+        if (typeof r === 'string') return r;
+        if (r.type !== 'directory') return 'Not a directory';
+
+        if (!this.hasPermission(r, userId, 'read')) {
+            return 'Permission denied';
+        }
+
+        return (r.children || [])
+            .map(id => this.inodes[id])
+            .filter((n): n is Inode => !!n);
+    }
+
+    public getPath(id: string): string {
+        const inode = this.inodes[id];
+        if (!inode) return '';
+        if (id === this.rootId) return '/';
+        const parentId = this.findParentId(id);
+        if (!parentId) return '';
+        const parentPath = this.getPath(parentId);
+        return parentPath === '/' ? `/${inode.name}` : `${parentPath}/${inode.name}`;
+    }
+
     public cp(srcPath: string, destPath: string, recursive: boolean = false, userId: string = 'root'): boolean | string {
         const srcResult = this.resolve(srcPath, userId);
         if (typeof srcResult === 'string') return srcResult;
@@ -376,8 +513,11 @@ export class VFS {
         const copyRecursive = (inode: Inode, parentId: string, newName: string): void => {
             const newId = uuidv4();
             const copy: Inode = {
-                ...inode, id: newId, name: newName,
-                createdAt: Date.now(), modifiedAt: Date.now(),
+                ...inode,
+                id: newId,
+                name: newName,
+                createdAt: Date.now(),
+                modifiedAt: Date.now(),
                 children: inode.type === 'directory' ? [] : undefined,
             };
             this.inodes[newId] = copy;
@@ -396,9 +536,6 @@ export class VFS {
         return true;
     }
 
-    // ======================================================================
-    // Move / Rename
-    // ======================================================================
     public mv(srcPath: string, destPath: string, userId: string = 'root'): boolean | string {
         const srcResult = this.resolve(srcPath, userId);
         if (typeof srcResult === 'string') return srcResult;
@@ -431,53 +568,30 @@ export class VFS {
         return true;
     }
 
-    // ======================================================================
-    // Utility helpers — doc §2.3
-    // ======================================================================
-    private findParentId(inodeId: string): string | null {
-        for (const id in this.inodes) {
-            if (this.inodes[id].children?.includes(inodeId)) return id;
-        }
-        return null;
+    public getSnapshot(): VFSSnapshot {
+        return { rootId: this.rootId, inodes: { ...this.inodes } };
     }
 
-    public getPath(id: string): string {
-        const inode = this.inodes[id];
-        if (!inode) return '';
-        if (id === this.rootId) return '/';
-        const parentId = this.findParentId(id);
-        if (!parentId) return '';
-        const parentPath = this.getPath(parentId);
-        return parentPath === '/' ? `/${inode.name}` : `${parentPath}/${inode.name}`;
+    public getInode(id: string): Inode | null {
+        return this.inodes[id] || null;
     }
 
-    /** Check if a path exists (convenience for Lab Engine verification) */
+    public getMetadata(path: string, userId: string = 'root'): Inode | string {
+        const result = this.resolve(path, userId);
+        return result;
+    }
+
     public exists(path: string, userId: string = 'root'): boolean {
         return typeof this.resolve(path, userId) !== 'string';
     }
 
-    /** Check if path is a directory */
     public isDirectory(path: string, userId: string = 'root'): boolean {
-        const r = this.resolve(path, userId);
-        return typeof r !== 'string' && r.type === 'directory';
+        const res = this.resolve(path, userId);
+        return typeof res !== 'string' && res.type === 'directory';
     }
 
-    /** Check if path is a file */
     public isFile(path: string, userId: string = 'root'): boolean {
-        const r = this.resolve(path, userId);
-        return typeof r !== 'string' && r.type === 'file';
-    }
-
-    /** List children names of a directory (used by tab completion & ls) */
-    public listChildren(path: string, userId: string = 'root'): Inode[] | null {
-        const r = this.resolve(path, userId);
-        if (typeof r === 'string' || r.type !== 'directory') return null;
-        return (r.children || [])
-            .map(id => this.inodes[id])
-            .filter((n): n is Inode => !!n);
-    }
-
-    public getSnapshot(): VFSSnapshot {
-        return { rootId: this.rootId, inodes: { ...this.inodes } };
+        const res = this.resolve(path, userId);
+        return typeof res !== 'string' && res.type === 'file';
     }
 }

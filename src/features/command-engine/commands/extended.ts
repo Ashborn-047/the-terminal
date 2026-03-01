@@ -547,13 +547,17 @@ CommandRegistry.register('unalias', async () => {
 //  export — set environment variable
 // ======================================================================
 CommandRegistry.register('export', async (args, context) => {
+    const newEnv: Record<string, string> = {};
     for (const arg of args) {
         const eqIdx = arg.indexOf('=');
         if (eqIdx > 0) {
             const key = arg.slice(0, eqIdx);
             const value = arg.slice(eqIdx + 1);
-            context.env[key] = value;
+            newEnv[key] = value;
         }
+    }
+    if (Object.keys(newEnv).length > 0) {
+        context.updateEnv(newEnv);
     }
     return { output: '', exitCode: 0 };
 });
@@ -613,3 +617,51 @@ CommandRegistry.register('file', async (args, context) => {
     if (content.startsWith('#!/')) return { output: `${path}: script, ASCII text executable`, exitCode: 0 };
     return { output: `${path}: ASCII text`, exitCode: 0 };
 });
+
+// ======================================================================
+//  systemctl — simulated service manager
+// ======================================================================
+CommandRegistry.register('systemctl', async (args, context) => {
+    if (args.length === 0) return { output: 'systemctl: missing command', exitCode: 1 };
+
+    const action = args[0];
+    const service = args[1] || '';
+
+    if (action === 'status') {
+        return {
+            output: `● ${service || 'system'}.service\n   Loaded: loaded (/usr/lib/systemd/system/${service || 'system'}.service; enabled; vendor preset: enabled)\n   Active: active (running) since Wed 2025-01-15 10:00:00 UTC; 12h ago\n Main PID: 1 (systemd)`,
+            exitCode: 0
+        };
+    }
+
+    if (context.userId !== 'root') {
+        return { output: '', error: `Access denied. System commands require root privileges.`, exitCode: 1 };
+    }
+
+    return { output: `systemctl: ${action} ${service} (simulated)`, exitCode: 0 };
+});
+
+// ======================================================================
+//  yum / dnf — simulated package managers
+// ======================================================================
+const handlePkgManager = (cmd: string, args: string[], context: any) => {
+    if (args.length === 0) return { output: `${cmd}: missing command`, exitCode: 1 };
+    if (context.userId !== 'root') {
+        return { output: '', error: `Error: This command has to be run with superuser privileges (use sudo).`, exitCode: 1 };
+    }
+
+    const action = args[0];
+    const pkg = args[1] || '';
+
+    if (action === 'install' || action === 'update') {
+        return {
+            output: `Dependencies Resolved\n\nPackage                     Arch   Version                     Repository   Size\n================================================================================\n Installing:\n ${pkg || 'package'}           x86_64 1.2.3-1.el9                 appstream    42 k\n\nTransaction Summary\n================================================================================\nInstall  1 Package\n\nTotal download size: 42 k\nInstalled size: 108 k\nIs this ok [y/N]: y\nDownloading Packages:\nRunning transaction check\nTransaction check succeeded.\nRunning transaction test\nTransaction test succeeded.\nRunning transaction\n  Installing : ${pkg || 'package'}-1.2.3-1.el9.x86_64                                1/1 \n  Verifying  : ${pkg || 'package'}-1.2.3-1.el9.x86_64                                1/1 \n\nInstalled:\n  ${pkg || 'package'}-1.2.3-1.el9.x86_64\n\nComplete!`,
+            exitCode: 0
+        };
+    }
+
+    return { output: `${cmd}: ${action} ${pkg} (simulated)`, exitCode: 0 };
+};
+
+CommandRegistry.register('yum', async (args, context) => handlePkgManager('yum', args, context));
+CommandRegistry.register('dnf', async (args, context) => handlePkgManager('dnf', args, context));
