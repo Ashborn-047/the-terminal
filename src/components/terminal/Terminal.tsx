@@ -6,6 +6,7 @@ export const TerminalComponent: React.FC = () => {
     const { history, cwd, userId, executeCommand } = useTerminal();
     const [input, setInput] = useState('');
     const [historyIndex, setHistoryIndex] = useState(-1);
+    const [flashClass, setFlashClass] = useState('');
     const bottomRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -24,7 +25,17 @@ export const TerminalComponent: React.FC = () => {
             const command = input;
             setInput('');
             setHistoryIndex(-1);
-            await executeCommand(command);
+            const result = await executeCommand(command);
+
+            // Micro-interaction: success flash or error shake
+            if (result) {
+                if (result.exitCode === 0 && result.output) {
+                    setFlashClass('success-flash');
+                } else if (result.error || result.exitCode !== 0) {
+                    setFlashClass('error-shake');
+                }
+                setTimeout(() => setFlashClass(''), 800);
+            }
         } else if (e.key === 'ArrowUp') {
             if (history.length > 0) {
                 const newIndex = Math.min(historyIndex + 1, history.length - 1);
@@ -47,7 +58,7 @@ export const TerminalComponent: React.FC = () => {
 
     return (
         <div
-            className="flex flex-col w-full h-full bg-brutal-black font-mono text-brutal-green p-4 overflow-y-auto cursor-text border-3 border-brutal-white shadow-brutal-lg"
+            className={`flex flex-col w-full h-full bg-brutal-black font-mono text-brutal-green p-4 overflow-y-auto cursor-text border-3 border-brutal-white shadow-brutal-lg ${flashClass}`}
             onClick={handleTerminalClick}
         >
             {/* History */}
@@ -74,7 +85,7 @@ export const TerminalComponent: React.FC = () => {
                 <input
                     ref={inputRef}
                     type="text"
-                    className="flex-1 bg-transparent border-none outline-none text-brutal-white caret-brutal-green"
+                    className="flex-1 bg-transparent border-none outline-none text-brutal-white caret-transparent"
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={handleKeyDown}
@@ -82,6 +93,8 @@ export const TerminalComponent: React.FC = () => {
                     spellCheck={false}
                     autoComplete="off"
                 />
+                {/* Block cursor blink */}
+                <span className="terminal-cursor" />
             </div>
 
             <div ref={bottomRef} className="h-4" />

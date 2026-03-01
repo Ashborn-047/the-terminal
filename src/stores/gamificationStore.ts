@@ -69,23 +69,35 @@ export interface Achievement {
 
 export const ACHIEVEMENTS: Achievement[] = [
     // Milestone
+    { id: 'first-command', name: 'First Command', description: 'Execute your first command', category: 'milestone', icon: '⌨️', hidden: false, criteria: { type: 'counter', target: 'commands-executed', threshold: 1 } },
     { id: 'first-lab', name: 'First Steps', description: 'Complete your first lab', category: 'milestone', icon: '🎯', hidden: false, criteria: { type: 'counter', target: 'labs-completed', threshold: 1 } },
+    { id: 'explorer', name: 'Explorer', description: 'Complete 3 labs', category: 'milestone', icon: '🗺️', hidden: false, criteria: { type: 'counter', target: 'labs-completed', threshold: 3 } },
+    { id: 'dedicated-learner', name: 'Dedicated Learner', description: 'Complete 5 labs', category: 'milestone', icon: '📚', hidden: false, criteria: { type: 'counter', target: 'labs-completed', threshold: 5 } },
     { id: 'ten-labs', name: 'Lab Rat', description: 'Complete 10 labs', category: 'milestone', icon: '🧪', hidden: false, criteria: { type: 'counter', target: 'labs-completed', threshold: 10 } },
     { id: 'level-5', name: 'Rising Star', description: 'Reach Level 5', category: 'milestone', icon: '⭐', hidden: false, criteria: { type: 'counter', target: 'level', threshold: 5 } },
-    { id: 'level-10', name: 'Seasoned', description: 'Reach Level 10', category: 'milestone', icon: '🏆', hidden: false, criteria: { type: 'counter', target: 'level', threshold: 10 } },
+    { id: 'level-10', name: 'Linux Veteran', description: 'Reach Level 10', category: 'milestone', icon: '🏆', hidden: false, criteria: { type: 'counter', target: 'level', threshold: 10 } },
+    { id: 'root-access', name: 'Root Access', description: 'Reach Level 20', category: 'milestone', icon: '👑', hidden: false, criteria: { type: 'counter', target: 'level', threshold: 20 } },
 
     // Skill Mastery
+    { id: 'navigator', name: 'Navigator', description: 'Use cd 10 times', category: 'skill-mastery', icon: '🧭', hidden: false, criteria: { type: 'counter', target: 'cd-count', threshold: 10 } },
+    { id: 'file-creator', name: 'File Creator', description: 'Create 5 files', category: 'skill-mastery', icon: '📄', hidden: false, criteria: { type: 'counter', target: 'files-created', threshold: 5 } },
     { id: 'permission-master', name: 'Permission Master', description: 'Use chmod on 10 different files', category: 'skill-mastery', icon: '🔐', hidden: false, criteria: { type: 'counter', target: 'chmod-count', threshold: 10 } },
     { id: 'grep-guru', name: 'Grep Guru', description: 'Use grep 25 times', category: 'skill-mastery', icon: '🔍', hidden: false, criteria: { type: 'counter', target: 'grep-count', threshold: 25 } },
+    { id: 'pipe-wizard', name: 'Pipe Wizard', description: 'Use 5 pipe chains', category: 'skill-mastery', icon: '🔗', hidden: false, criteria: { type: 'counter', target: 'pipe-count', threshold: 5 } },
+    { id: 'command-master', name: 'Command Master', description: 'Use 25 unique commands', category: 'skill-mastery', icon: '🎓', hidden: false, criteria: { type: 'counter', target: 'unique-commands', threshold: 25 } },
     { id: 'process-terminator', name: 'Process Terminator', description: 'Use kill 5 times', category: 'skill-mastery', icon: '💀', hidden: false, criteria: { type: 'counter', target: 'kill-count', threshold: 5 } },
 
     // Exploration
     { id: 'man-reader', name: 'Man Page Reader', description: 'Read 5 different man pages', category: 'exploration', icon: '📖', hidden: false, criteria: { type: 'counter', target: 'man-pages-read', threshold: 5 } },
     { id: 'history-buff', name: 'Command Historian', description: 'Execute 100 commands', category: 'exploration', icon: '📜', hidden: false, criteria: { type: 'counter', target: 'commands-executed', threshold: 100 } },
+    { id: 'night-owl', name: 'Night Owl', description: 'Complete a lab between midnight and 5am', category: 'exploration', icon: '🦉', hidden: false, criteria: { type: 'event', target: 'night-owl', threshold: 1 } },
+    { id: 'early-bird', name: 'Early Bird', description: 'Complete a lab between 5am and 8am', category: 'exploration', icon: '🐦', hidden: false, criteria: { type: 'event', target: 'early-bird', threshold: 1 } },
 
     // Streak
+    { id: 'streak-3', name: 'Streak Starter', description: 'Maintain a 3-day streak', category: 'streak', icon: '✨', hidden: false, criteria: { type: 'counter', target: 'streak', threshold: 3 } },
     { id: 'streak-7', name: 'Week Warrior', description: 'Maintain a 7-day streak', category: 'streak', icon: '🔥', hidden: false, criteria: { type: 'counter', target: 'streak', threshold: 7 } },
     { id: 'streak-30', name: 'Monthly Master', description: 'Maintain a 30-day streak', category: 'streak', icon: '🌟', hidden: false, criteria: { type: 'counter', target: 'streak', threshold: 30 } },
+    { id: 'streak-90', name: 'Marathon Runner', description: 'Maintain a 90-day streak', category: 'streak', icon: '🏅', hidden: false, criteria: { type: 'counter', target: 'streak', threshold: 90 } },
 
     // Easter Eggs
     { id: 'sandwich', name: 'Sudo Make Me a Sandwich', description: 'Try to make a sandwich', category: 'easter-egg', icon: '🥪', hidden: true, criteria: { type: 'event', target: 'sandwich-attempt', threshold: 1 } },

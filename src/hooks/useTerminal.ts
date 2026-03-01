@@ -77,6 +77,31 @@ export function useTerminal(initialUserId: string = 'guest') {
         if (cmdName === 'grep') incrementCounter('grep-count');
         if (cmdName === 'kill') incrementCounter('kill-count');
         if (cmdName === 'man') incrementCounter('man-pages-read');
+        if (cmdName === 'cd') incrementCounter('cd-count');
+        if (cmdName === 'touch' || cmdName === 'tee') incrementCounter('files-created');
+
+        // Track pipe usage for Pipe Wizard achievement
+        if (pipeline.actions.length > 1) incrementCounter('pipe-count');
+
+        // Track unique commands for Command Master achievement
+        const uniqueKey = `__unique_cmd_${cmdName}`;
+        const { counters } = useGamificationStore.getState();
+        if (cmdName && !counters[uniqueKey]) {
+            incrementCounter(uniqueKey); // mark this command as seen
+            incrementCounter('unique-commands');
+        }
+
+        // Time-based achievements (Night Owl, Early Bird) — fire on lab completion
+        if (currentLabId && labs[currentLabId]) {
+            const lab = labs[currentLabId];
+            const labProgress = progress[currentLabId];
+            if (labProgress?.status === 'completed') {
+                const hour = new Date().getHours();
+                if (hour >= 0 && hour < 5) incrementCounter('night-owl');
+                if (hour >= 5 && hour < 8) incrementCounter('early-bird');
+            }
+        }
+
         checkAchievements();
 
         // Handle special case: cd updates CWD

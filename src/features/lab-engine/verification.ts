@@ -39,15 +39,37 @@ export class VerificationEngine {
                 return exists && inode.type === 'directory';
             case 'file_exists':
                 return exists && inode.type === 'file';
+            case 'file_not_exists':
+                return !exists;
             case 'file_contains':
                 if (!exists || inode.type !== 'file') return false;
                 return inode.content?.includes(condition.content || '') || false;
-            case 'permission_equals':
-                if (!exists) return false;
-                // Simplified comparison - could be expanded for octal
-                return true; // Placeholder
+            case 'file_matches_regex':
+                if (!exists || inode.type !== 'file') return false;
+                try {
+                    const regex = new RegExp(condition.content || '');
+                    return regex.test(inode.content || '');
+                } catch {
+                    return false;
+                }
+            case 'permission_equals': {
+                if (!exists || !condition.mode) return false;
+                const perms = inode.permissions;
+                if (!perms) return false;
+                const toDigit = (p: { read: boolean; write: boolean; execute: boolean }) =>
+                    (p.read ? 4 : 0) + (p.write ? 2 : 0) + (p.execute ? 1 : 0);
+                const octal = `${toDigit(perms.owner)}${toDigit(perms.group)}${toDigit(perms.others)}`;
+                return octal === condition.mode;
+            }
             case 'owner_equals':
                 return exists && inode.ownerId === condition.owner;
+            case 'symlink_target_equals': {
+                // Resolve WITHOUT following symlinks to get the symlink inode itself
+                const symlinkResult = vfs.resolve(condition.path, userId, undefined, false);
+                if (typeof symlinkResult === 'string') return false;
+                const symlinkInode = symlinkResult as any;
+                return symlinkInode.type === 'symlink' && symlinkInode.target === condition.content;
+            }
             default:
                 return false;
         }
