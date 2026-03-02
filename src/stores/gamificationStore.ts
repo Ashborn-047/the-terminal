@@ -4,7 +4,7 @@ import { toastEmitter } from '../components/ToastNotification';
 import { Lab, LabProgress } from '../features/lab-engine/types';
 import { trackEvent } from '../utils/analytics';
 import { useUIStore } from './uiStore';
-import { spacetime } from '../spacetime';
+import { spacetime } from '../lib/spacetime';
 import { logger } from '../utils/logger';
 
 // ======================================================================

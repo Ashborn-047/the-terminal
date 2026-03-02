@@ -1779,11 +1779,11 @@
 - ✅ `src/stores/` matches spec
 - ✅ `src/data/labs/` matches spec
 - ✅ `src/pages/` matches spec
-- ❌ `spacetime-module/` — no Rust module directory
-- ❌ `tests/` — no test directories
-- ❌ `.env.example` — not created
-- ❌ `.eslintrc.js` — not configured
-- ❌ `.prettierrc` — not configured
+- ✅ `spacetime-module/` — Rust module source exists
+- ✅ `tests/` — `src/features/vfs/__tests__/`, etc. exist
+- ✅ `.env.example` — created
+- ✅ `.eslintrc.js` — configured
+- ✅ `.prettierrc` — configured
 
 ---
 
@@ -1791,13 +1791,20 @@
 
 | Category | ✅ Done | 🟡 Partial | ❌ Not Done |
 |----------|---------|------------|------------|
-| Doc 1: Project Overview | 26 | 3 | 28 |
-| Doc 2: VFS & Commands | 48 | 3 | 46 |
-| Doc 3: Frontend Architecture | 22 | 1 | 16 |
-| Doc 4: Gamification | 18 | 2 | 33 |
-| Doc 5: Lab Engine | 30 | 2 | 13 |
-| Doc 6: UI/UX | 33 | 6 | 14 |
-| Doc 7: Onboarding | 16 | 1 | 16 |
+| Doc 1: Project Overview | 45 | 3 | 9 |
+| Doc 2: VFS & Commands | 62 | 3 | 32 |
+| Doc 3: Frontend Architecture | 32 | 1 | 6 |
+| Doc 4: Gamification | 45 | 2 | 6 |
+| Doc 5: Lab Engine | 38 | 2 | 5 |
+| Doc 6: UI/UX | 48 | 2 | 3 |
+| Doc 7: Onboarding | 28 | 1 | 4 |
+| Doc 8: Error Handling | 22 | 2 | 2 |
+| Doc 9: Security | 18 | 1 | 3 |
+| Doc 10: Testing | 21 | 5 | 56 |
+| Doc 11: Deployment | 12 | 2 | 2 |
+| Doc 12: SpacetimeDB | 24 | 2 | 2 |
+| Doc 13: Chat Module | 18 | 1 | 1 |
+| **TOTAL** | **413** | **25** | **131** |
 | Doc 8: Error Handling | 12 | 0 | 34 |
 | Doc 9: Security | 6 | 0 | 33 |
 | Doc 10: Testing | 52 | 0 | 30 |

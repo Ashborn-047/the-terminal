@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
-import { Message, TypingIndicator } from './bindings';
-import { spacetime } from '../../spacetime';
+import { Message, TypingIndicator } from '../../lib/spacetime/bindings';
+import { spacetime } from '../../lib/spacetime';
+import { useSubscription, useSpacetimeConnection } from '../../hooks/useSpacetime';
 
 interface ChatContextType {
     messages: Message[];
@@ -17,31 +18,12 @@ interface ChatContextType {
 const ChatContext = createContext<ChatContextType | null>(null);
 
 export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [messages, setMessages] = useState<Message[]>([]);
-    const [typingUsers, setTypingUsers] = useState<TypingIndicator[]>([]);
     const [currentChannel, setCurrentChannel] = useState<string>('global');
+    const isConnected = useSpacetimeConnection();
 
-    // Sync with Spacetime events via polling (or ideally via onUpdate if available)
-    useEffect(() => {
-        const sync = () => {
-            const msgs = spacetime.getMessages(currentChannel);
-            const typing = spacetime.getTypingIndicators(currentChannel);
-
-            setMessages(prev => {
-                // Simple comparison to avoid re-renders if nothing changed
-                if (prev.length !== msgs.length) return msgs;
-                return JSON.stringify(prev) !== JSON.stringify(msgs) ? msgs : prev;
-            });
-            setTypingUsers(prev => {
-                if (prev.length !== typing.length) return typing;
-                return JSON.stringify(prev) !== JSON.stringify(typing) ? typing : prev;
-            });
-        };
-
-        sync();
-        const interval = setInterval(sync, 1000); // 1s sync interval
-        return () => clearInterval(interval);
-    }, [currentChannel]);
+    // Sync with Spacetime events via reactive subscriptions
+    const messages = useSubscription(() => spacetime.getMessages(currentChannel), [currentChannel]);
+    const typingUsers = useSubscription(() => spacetime.getTypingIndicators(currentChannel), [currentChannel]);
 
     const sendMessage = useCallback(async (content: string) => {
         await spacetime.sendMessage(currentChannel, content);

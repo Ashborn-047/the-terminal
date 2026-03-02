@@ -3,7 +3,7 @@ import { useVFSStore } from '../../stores/vfsStore';
 import { useGamificationStore } from '../../stores/gamificationStore';
 import { useLabStore } from '../../stores/labStore';
 import { useUIStore } from '../../stores/uiStore';
-import { spacetime } from '../../spacetime';
+import { spacetime } from '../../lib/spacetime';
 
 export const DebugOverlay: React.FC = () => {
     const [isVisible, setIsVisible] = useState(false);

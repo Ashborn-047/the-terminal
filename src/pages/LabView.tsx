@@ -6,6 +6,7 @@ import { useGamificationStore } from '../stores/gamificationStore';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { GuidedLabInstructions, DIYLabInstructions } from '../components/lab/LabComponents';
 import { CelebrationModal } from '../components/onboarding/CelebrationModal';
+import { SuccessAnimation } from '../components/ui/SuccessAnimation';
 import { ArrowLeft, RotateCcw } from 'lucide-react';
 
 /**
@@ -22,6 +23,7 @@ const LabView: React.FC = () => {
     const [xpAwarded, setXpAwarded] = React.useState(0);
     const [leveledUp, setLeveledUp] = React.useState<number | undefined>(undefined);
     const [seconds, setSeconds] = React.useState(0);
+    const [isSuccessActive, setIsSuccessActive] = React.useState(false);
 
     const lab = labId ? labs[labId] : null;
     const labProgress = labId ? progress[labId] : null;
@@ -91,7 +93,10 @@ const LabView: React.FC = () => {
             }
             setShowCelebration(true);
         } else {
-            navigate('/labs');
+            setIsSuccessActive(true);
+            setTimeout(() => {
+                navigate('/labs');
+            }, 3000); // Wait for animation
         }
     };
 
@@ -189,6 +194,7 @@ const LabView: React.FC = () => {
                     onDashboard={() => navigate('/')}
                 />
             )}
+            <SuccessAnimation active={isSuccessActive} />
         </div>
     );
 };

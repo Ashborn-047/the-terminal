@@ -3,6 +3,8 @@ import { useGamificationStore, getLevelTitle, xpForLevel, ACHIEVEMENTS } from '.
 import { useLabStore } from '../stores/labStore';
 import { useNavigate } from 'react-router-dom';
 import { BookOpen, Trophy, Flame, Zap, ChevronRight, Terminal } from 'lucide-react';
+import { StreakHeatmap } from '../components/gamification/StreakHeatmap';
+import { SkillTree } from '../components/gamification/SkillTree';
 
 /**
  * HomePage — Dashboard: stats overview, recent activity, quick actions.
@@ -62,6 +64,16 @@ const HomePage: React.FC = () => {
                         style={{ width: `${percent}%` }}
                     />
                 </div>
+            </div>
+
+            {/* Streak Heatmap */}
+            <div className="mb-6">
+                <StreakHeatmap />
+            </div>
+
+            {/* Skill Tree */}
+            <div className="mb-6">
+                <SkillTree />
             </div>
 
             {/* Two Column: In Progress + Achievements */}

@@ -11,7 +11,8 @@ import { ToastProvider } from './components/ToastNotification';
 import { OnboardingWalkthrough } from './components/onboarding/OnboardingWalkthrough';
 import { LevelUpModal } from './components/gamification/LevelUpModal';
 import { ProtectedRoute } from './components/layout/ProtectedRoute';
-import { spacetime } from './spacetime';
+import { ConnectionBanner } from './components/ui/ConnectionBanner';
+import { spacetime } from './lib/spacetime';
 
 // Lazy-loaded pages for code splitting
 const HomePage = React.lazy(() => import('./pages/HomePage'));
@@ -54,7 +55,7 @@ function AppContent() {
     }
 
     const interval = setInterval(() => {
-      spacetime.heartbeat(null).catch(err =>
+      spacetime.heartbeat(undefined).catch(err =>
         logger.error('Heartbeat failed', { err })
       );
     }, 30000); // 30s heartbeat
@@ -82,6 +83,7 @@ function AppContent() {
       {onboardingStep === 0 && (
         <WelcomeModal onComplete={handleOnboardingComplete} />
       )}
+      <ConnectionBanner />
       <MainLayout>
         <ErrorBoundary section="Main Content">
           <Suspense fallback={<PageLoader />}>

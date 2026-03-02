@@ -2,6 +2,7 @@ import React from 'react';
 import { useUIStore } from '../../stores/uiStore';
 import { getLevelTitle } from '../../stores/gamificationStore';
 import { Award, Zap, ChevronRight } from 'lucide-react';
+import { SuccessAnimation } from '../ui/SuccessAnimation';
 
 export const LevelUpModal: React.FC = () => {
     const { levelUpModalOpen, hideLevelUp, lastLeveledUpTo } = useUIStore();
@@ -56,9 +57,26 @@ export const LevelUpModal: React.FC = () => {
 
             {/* Background particles/decorations */}
             <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                {[...Array(24)].map((_, i) => (
+                    <div
+                        key={i}
+                        className="absolute animate-bounce"
+                        style={{
+                            top: `${Math.random() * 100}%`,
+                            left: `${Math.random() * 100}%`,
+                            width: `${Math.random() * 10 + 5}px`,
+                            height: `${Math.random() * 10 + 5}px`,
+                            backgroundColor: ['#00FF9D', '#FF0055', '#FFEE00', '#009DFF'][Math.floor(Math.random() * 4)],
+                            transform: `rotate(${Math.random() * 360}deg)`,
+                            animationDelay: `${Math.random() * 3}s`,
+                            animationDuration: `${Math.random() * 2 + 1}s`,
+                            opacity: 0.6
+                        }}
+                    />
+                ))}
                 {[...Array(12)].map((_, i) => (
                     <Zap
-                        key={i}
+                        key={`zap-${i}`}
                         size={24}
                         className="text-brutal-yellow absolute animate-pulse opacity-50"
                         style={{
@@ -69,6 +87,7 @@ export const LevelUpModal: React.FC = () => {
                     />
                 ))}
             </div>
+            <SuccessAnimation active={levelUpModalOpen} />
         </div>
     );
 };

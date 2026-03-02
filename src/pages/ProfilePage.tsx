@@ -2,6 +2,7 @@ import React from 'react';
 import { useGamificationStore, getLevelTitle, ACHIEVEMENTS } from '../stores/gamificationStore';
 import { SkillTree } from '../components/gamification/SkillTree';
 import { Leaderboard } from '../components/gamification/Leaderboard';
+import { StreakHeatmap } from '../components/gamification/StreakHeatmap';
 
 /**
  * ProfilePage — per frontend_architecture.md §5 routes: /profile
@@ -28,10 +29,12 @@ const ProfilePage: React.FC = () => {
                 <StatCard label="Labs Done" value={String(labsCompleted)} sub="labs completed" color="bg-brutal-blue" />
             </div>
 
-            {/* Skill Tree Section */}
             <section>
                 <h2 className="font-heading text-xl uppercase text-brutal-white mb-4 italic">Advancement Path</h2>
                 <SkillTree />
+                <div className="mt-4">
+                    <StreakHeatmap />
+                </div>
             </section>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
