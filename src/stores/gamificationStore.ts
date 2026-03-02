@@ -101,6 +101,19 @@ export const ACHIEVEMENTS: Achievement[] = [
     { id: 'rm-rf-root', name: 'You Monster', description: 'Try to rm -rf /', category: 'easter-egg', icon: '💣', hidden: true, xpReward: 10, criteria: { type: 'event', target: 'rm-rf-root', threshold: 1 } },
 ];
 
+export type QuestType = 'earn_xp' | 'execute_commands' | 'complete_labs';
+
+export interface DailyQuest {
+    id: string;
+    title: string;
+    type: QuestType;
+    target: number;
+    progress: number;
+    xpReward: number;
+    completed: boolean;
+    claimed: boolean;
+}
+
 interface GamificationState {
     xp: number;
     level: number;
@@ -115,6 +128,8 @@ interface GamificationState {
     unlockedAchievements: string[];
     labsCompleted: number;
     hintsUsed: number;
+    dailyQuests: DailyQuest[];
+    lastQuestGenerationDate: string | null;
 
     awardXP: (amount: number, silent?: boolean) => void;
     hintPenalty: () => void;
@@ -125,6 +140,9 @@ interface GamificationState {
     checkAchievements: () => string[];
     getTitle: () => string;
     getXPProgress: () => { current: number; needed: number; percent: number };
+    generateDailyQuests: () => void;
+    updateQuestProgress: (type: QuestType, amount: number) => void;
+    claimQuestReward: (questId: string) => void;
 }
 
 export const useGamificationStore = create<GamificationState>()(
@@ -138,6 +156,8 @@ export const useGamificationStore = create<GamificationState>()(
             unlockedAchievements: [],
             labsCompleted: 0,
             hintsUsed: 0,
+            dailyQuests: [],
+            lastQuestGenerationDate: null,
 
             awardXP: async (amount, silent) => {
                 const oldLevel = get().level;
@@ -145,6 +165,10 @@ export const useGamificationStore = create<GamificationState>()(
                 const boostedAmount = Math.round(amount * multiplier);
 
                 if (boostedAmount === 0) return;
+
+                if (boostedAmount > 0) {
+                    get().updateQuestProgress('earn_xp', boostedAmount);
+                }
 
                 // For simple XP awards that aren't labs, we might want a generic reducer.
                 // For now, let's just update local state and consider adding an 'award_xp' reducer to the module if needed.
@@ -241,6 +265,7 @@ export const useGamificationStore = create<GamificationState>()(
 
                 get().updateStreak();
                 get().checkAchievements();
+                get().updateQuestProgress('complete_labs', 1);
             },
 
             getStreakMultiplier: () => {
@@ -349,6 +374,61 @@ export const useGamificationStore = create<GamificationState>()(
                 const current = state.totalXpEarned - currentLevelXP;
                 const needed = nextLevelXP - currentLevelXP;
                 return { current, needed, percent: Math.round((current / needed) * 100) };
+            },
+
+            generateDailyQuests: () => {
+                const today = new Date().toISOString().split('T')[0];
+                const state = get();
+                if (state.lastQuestGenerationDate === today) return;
+
+                const newQuests: DailyQuest[] = [
+                    { id: `q1-${today}`, title: 'Gain 250 XP', type: 'earn_xp', target: 250, progress: 0, xpReward: 50, completed: false, claimed: false },
+                    { id: `q2-${today}`, title: 'Complete 2 Labs', type: 'complete_labs', target: 2, progress: 0, xpReward: 100, completed: false, claimed: false },
+                    { id: `q3-${today}`, title: 'Execute 50 Commands', type: 'execute_commands', target: 50, progress: 0, xpReward: 75, completed: false, claimed: false },
+                ];
+
+                set({ dailyQuests: newQuests, lastQuestGenerationDate: today });
+            },
+
+            updateQuestProgress: (type: QuestType, amount: number) => {
+                set((state) => {
+                    let updated = false;
+                    const nextQuests = state.dailyQuests.map((q) => {
+                        if (q.type === type && !q.completed) {
+                            const newProgress = Math.min(q.target, q.progress + amount);
+                            let justCompleted = false;
+
+                            if (newProgress >= q.target && !q.completed) {
+                                justCompleted = true;
+                                updated = true;
+                                toastEmitter.emit({
+                                    type: 'achievement',
+                                    title: 'Daily Quest Complete!',
+                                    message: q.title,
+                                    icon: '✨',
+                                    duration: 6000
+                                });
+                            } else if (newProgress !== q.progress) {
+                                updated = true;
+                            }
+
+                            return { ...q, progress: newProgress, completed: q.completed || justCompleted };
+                        }
+                        return q;
+                    });
+
+                    return updated ? { dailyQuests: nextQuests } : {};
+                });
+            },
+
+            claimQuestReward: (questId: string) => {
+                const q = get().dailyQuests.find(q => q.id === questId);
+                if (q && q.completed && !q.claimed) {
+                    set((state) => ({
+                        dailyQuests: state.dailyQuests.map(quest => quest.id === questId ? { ...quest, claimed: true } : quest)
+                    }));
+                    get().awardXP(q.xpReward);
+                }
             },
         }),
         { name: 'the-terminal-gamification' }

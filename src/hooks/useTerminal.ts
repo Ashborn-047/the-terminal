@@ -137,7 +137,7 @@ export function useTerminal(initialUserId: string = 'guest') {
 
         // Lab Verification Logic
         const { currentLabId, labs, progress, updateProgress, completeLab: completeLabInStore } = useLabStore.getState();
-        const { awardXP, updateStreak, incrementCounter, checkAchievements } = useGamificationStore.getState();
+        const { awardXP, updateStreak, incrementCounter, checkAchievements, updateQuestProgress } = useGamificationStore.getState();
 
         if (currentLabId && labs[currentLabId]) {
             const lab = labs[currentLabId];
@@ -165,6 +165,7 @@ export function useTerminal(initialUserId: string = 'guest') {
 
         // Achievement Counter Tracking — per gamification_framework.md §2.4
         incrementCounter('commands-executed');
+        updateQuestProgress('execute_commands', 1);
         const firstPipeline = segments[0]?.pipeline;
         const cmdName = firstPipeline?.actions[0]?.name;
         if (cmdName === 'chmod') incrementCounter('chmod-count');

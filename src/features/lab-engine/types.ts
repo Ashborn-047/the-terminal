@@ -1,6 +1,6 @@
 import { VFSSnapshot } from '../vfs/types';
 
-export type LabType = 'guided' | 'diy';
+export type LabType = 'guided' | 'diy' | 'boss';
 
 export interface VerificationCondition {
     type: 'directory_exists' | 'file_exists' | 'file_contains' | 'file_matches_regex' | 'file_not_exists' | 'permission_equals' | 'owner_equals' | 'symlink_target_equals';

@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { BookOpen, Trophy, Flame, Zap, ChevronRight, Terminal } from 'lucide-react';
 import { StreakHeatmap } from '../components/gamification/StreakHeatmap';
 import { SkillTree } from '../components/gamification/SkillTree';
+import { DailyQuests } from '../components/gamification/DailyQuests';
 
 /**
  * HomePage — Dashboard: stats overview, recent activity, quick actions.
@@ -66,9 +67,10 @@ const HomePage: React.FC = () => {
                 </div>
             </div>
 
-            {/* Streak Heatmap */}
-            <div className="mb-6">
+            {/* Heatmap & Quests */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                 <StreakHeatmap />
+                <DailyQuests />
             </div>
 
             {/* Skill Tree */}

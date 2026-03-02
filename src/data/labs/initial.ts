@@ -969,4 +969,74 @@ export const INITIAL_LABS: Record<string, Lab> = {
         ],
         completionMessage: '🎉 Congratulations! You\'ve completed the RHCSA Mock Exam! You\'re ready for the real thing!',
     },
+
+    // ─── Boss Challenges ─────────────────────────────────────────
+    'lab-8-boss': {
+        id: 'lab-8-boss',
+        module: 8,
+        title: 'Filesystem Overlord',
+        description: 'Prove your mastery of navigation, file manipulation, and storage.',
+        type: 'boss',
+        xpReward: 500,
+        prerequisites: ['lab-8-2'],
+        verification: {
+            conditions: [
+                { type: 'directory_exists', path: '/home/guest/archive_system', message: 'Create archive_system directory' },
+                { type: 'file_exists', path: '/home/guest/archive_system/backup.tar.gz', message: 'Create a tar.gz backup' }
+            ]
+        },
+        hints: ['Use mkdir and tar -czf.'],
+        completionMessage: 'Filesystem Branch Mastered!'
+    },
+    'lab-15-boss': {
+        id: 'lab-15-boss',
+        module: 15,
+        title: 'Security Chief',
+        description: 'Prove you can lock down a system, manage users, and configure permissions securely.',
+        type: 'boss',
+        xpReward: 500,
+        prerequisites: ['lab-15-2'],
+        verification: {
+            conditions: [
+                { type: 'directory_exists', path: '/home/secure_user', message: 'Create a secure user home directory' },
+                { type: 'permission_equals', path: '/home/secure_user', mode: '700', message: 'Set strict permissions to 700' }
+            ]
+        },
+        hints: ['Use useradd and chmod 700'],
+        completionMessage: 'Permissions Branch Mastered!'
+    },
+    'lab-10-boss': {
+        id: 'lab-10-boss',
+        module: 10,
+        title: 'Network Architect',
+        description: 'Troubleshoot network connectivity and manage crucial system daemons.',
+        type: 'boss',
+        xpReward: 500,
+        prerequisites: ['lab-10-2'],
+        verification: {
+            conditions: [
+                { type: 'file_exists', path: '/home/guest/network_scan.txt', message: 'Save ping results' },
+                { type: 'file_contains', path: '/home/guest/network_scan.txt', content: 'google.com', message: 'Must contain google.com' }
+            ]
+        },
+        hints: ['ping -c 1 google.com > network_scan.txt'],
+        completionMessage: 'Networking Branch Mastered!'
+    },
+    'lab-14-boss': {
+        id: 'lab-14-boss',
+        module: 14,
+        title: 'Automation Guru',
+        description: 'Combine scripting, text processing, and system logging into a final automated report.',
+        type: 'boss',
+        xpReward: 500,
+        prerequisites: ['lab-14-2'],
+        verification: {
+            conditions: [
+                { type: 'file_exists', path: '/home/guest/system_report.sh', message: 'Create a report script' },
+                { type: 'permission_equals', path: '/home/guest/system_report.sh', mode: '755', message: 'Make script executable' }
+            ]
+        },
+        hints: ['Create the script and chmod +x it.'],
+        completionMessage: 'Scripting Branch Mastered!'
+    }
 };
