@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
-import { Message, TypingIndicator } from '../../module_bindings';
-import { spacetimeClient } from '../../utils/spacetimeClient';
-import { useGamificationStore } from '../../stores/gamificationStore';
+import { Message, TypingIndicator } from './bindings';
+import { spacetime } from '../../spacetime';
 
 interface ChatContextType {
     messages: Message[];
@@ -9,8 +8,8 @@ interface ChatContextType {
     currentChannel: string;
     setCurrentChannel: (channel: string) => void;
     sendMessage: (content: string) => Promise<void>;
-    editMessage: (messageId: string, content: string) => Promise<void>;
-    deleteMessage: (messageId: string) => Promise<void>;
+    editMessage: (messageId: bigint, content: string) => Promise<void>;
+    deleteMessage: (messageId: bigint) => Promise<void>;
     startTyping: () => Promise<void>;
     stopTyping: () => Promise<void>;
 }
@@ -22,15 +21,21 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [typingUsers, setTypingUsers] = useState<TypingIndicator[]>([]);
     const [currentChannel, setCurrentChannel] = useState<string>('global');
 
-    // Sync with simulated Spacetime events via polling (to mimic subscriptions)
+    // Sync with Spacetime events via polling (or ideally via onUpdate if available)
     useEffect(() => {
         const sync = () => {
-            const msgs = spacetimeClient.getMessages(currentChannel);
-            const typing = spacetimeClient.getTypingIndicators(currentChannel);
+            const msgs = spacetime.getMessages(currentChannel);
+            const typing = spacetime.getTypingIndicators(currentChannel);
 
-            // Only update if changed to avoid unnecessary re-renders
-            setMessages(prev => JSON.stringify(prev) !== JSON.stringify(msgs) ? msgs : prev);
-            setTypingUsers(prev => JSON.stringify(prev) !== JSON.stringify(typing) ? typing : prev);
+            setMessages(prev => {
+                // Simple comparison to avoid re-renders if nothing changed
+                if (prev.length !== msgs.length) return msgs;
+                return JSON.stringify(prev) !== JSON.stringify(msgs) ? msgs : prev;
+            });
+            setTypingUsers(prev => {
+                if (prev.length !== typing.length) return typing;
+                return JSON.stringify(prev) !== JSON.stringify(typing) ? typing : prev;
+            });
         };
 
         sync();
@@ -39,23 +44,23 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, [currentChannel]);
 
     const sendMessage = useCallback(async (content: string) => {
-        await spacetimeClient.send_message(currentChannel, content);
+        await spacetime.sendMessage(currentChannel, content);
     }, [currentChannel]);
 
-    const editMessage = useCallback(async (messageId: string, content: string) => {
-        await spacetimeClient.edit_message(messageId, content);
+    const editMessage = useCallback(async (messageId: bigint, content: string) => {
+        await spacetime.editMessage(messageId, content);
     }, []);
 
-    const deleteMessage = useCallback(async (messageId: string) => {
-        await spacetimeClient.delete_message(messageId);
+    const deleteMessage = useCallback(async (messageId: bigint) => {
+        await spacetime.deleteMessage(messageId);
     }, []);
 
     const startTyping = useCallback(async () => {
-        await spacetimeClient.start_typing(currentChannel);
+        await spacetime.startTyping(currentChannel);
     }, [currentChannel]);
 
     const stopTyping = useCallback(async () => {
-        await spacetimeClient.stop_typing();
+        await spacetime.stopTyping();
     }, []);
 
     const value = useMemo(() => ({

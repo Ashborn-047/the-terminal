@@ -4,7 +4,7 @@ import { toastEmitter } from '../components/ToastNotification';
 import { Lab, LabProgress } from '../features/lab-engine/types';
 import { trackEvent } from '../utils/analytics';
 import { useUIStore } from './uiStore';
-import { spacetimeClient } from '../utils/spacetimeClient';
+import { spacetime } from '../spacetime';
 import { logger } from '../utils/logger';
 
 // ======================================================================
@@ -146,21 +146,17 @@ export const useGamificationStore = create<GamificationState>()(
 
                 if (boostedAmount === 0) return;
 
-                // Execute Spacetime Reducer (Mocked)
-                try {
-                    const user = spacetimeClient.getUser(spacetimeClient.identity);
-                    if (user) {
-                        user.xp += boostedAmount;
-                        // Synchronize Zustand
-                        set({
-                            xp: user.xp,
-                            totalXpEarned: user.xp,
-                            level: levelFromXP(user.xp)
-                        });
-                    }
-                } catch (e) {
-                    logger.error('Failed to sync XP with SpacetimeDB', { error: e });
-                }
+                // For simple XP awards that aren't labs, we might want a generic reducer.
+                // For now, let's just update local state and consider adding an 'award_xp' reducer to the module if needed.
+                // In a real app, this might be triggered by specific actions.
+                set((state) => {
+                    const nextXp = state.totalXpEarned + boostedAmount;
+                    return {
+                        xp: state.xp + boostedAmount,
+                        totalXpEarned: nextXp,
+                        level: levelFromXP(nextXp)
+                    };
+                });
 
                 if (!silent) {
                     const bonusText = multiplier > 1 ? ` (${multiplier}x streak bonus!)` : '';
@@ -217,20 +213,18 @@ export const useGamificationStore = create<GamificationState>()(
 
                 // CALL SPACETIME REDUCER
                 try {
-                    await spacetimeClient.complete_lab(lab.id, finalAmount);
+                    await spacetime.completeLab(lab.id, BigInt(finalAmount));
 
-                    // Sync Zustand for immediate UI feedback
-                    const user = spacetimeClient.getUser(spacetimeClient.identity);
-                    const pg = spacetimeClient.getProgress(spacetimeClient.identity);
-
-                    if (user && pg) {
-                        set({
-                            xp: user.xp,
-                            totalXpEarned: user.xp,
-                            level: user.level,
-                            labsCompleted: pg.completed_labs.length
-                        });
-                    }
+                    // Sync state manually for immediate UI feedback (optimistic update)
+                    set((state) => {
+                        const nextXp = state.totalXpEarned + finalAmount;
+                        return {
+                            xp: state.xp + finalAmount,
+                            totalXpEarned: nextXp,
+                            level: levelFromXP(nextXp),
+                            labsCompleted: state.labsCompleted + 1
+                        };
+                    });
                 } catch (e) {
                     logger.error('Failed to complete lab in SpacetimeDB', { error: e });
                 }

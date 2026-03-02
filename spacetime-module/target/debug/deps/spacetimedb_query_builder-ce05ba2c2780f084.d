@@ -1,0 +1,10 @@
+E:\My Projects\Linux\spacetime-module\target\debug\deps\spacetimedb_query_builder-ce05ba2c2780f084.d: C:\Users\PUSHAN\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\spacetimedb-query-builder-2.0.2\src\lib.rs C:\Users\PUSHAN\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\spacetimedb-query-builder-2.0.2\src\expr.rs C:\Users\PUSHAN\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\spacetimedb-query-builder-2.0.2\src\join.rs C:\Users\PUSHAN\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\spacetimedb-query-builder-2.0.2\src\table.rs
+
+E:\My Projects\Linux\spacetime-module\target\debug\deps\libspacetimedb_query_builder-ce05ba2c2780f084.rlib: C:\Users\PUSHAN\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\spacetimedb-query-builder-2.0.2\src\lib.rs C:\Users\PUSHAN\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\spacetimedb-query-builder-2.0.2\src\expr.rs C:\Users\PUSHAN\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\spacetimedb-query-builder-2.0.2\src\join.rs C:\Users\PUSHAN\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\spacetimedb-query-builder-2.0.2\src\table.rs
+
+E:\My Projects\Linux\spacetime-module\target\debug\deps\libspacetimedb_query_builder-ce05ba2c2780f084.rmeta: C:\Users\PUSHAN\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\spacetimedb-query-builder-2.0.2\src\lib.rs C:\Users\PUSHAN\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\spacetimedb-query-builder-2.0.2\src\expr.rs C:\Users\PUSHAN\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\spacetimedb-query-builder-2.0.2\src\join.rs C:\Users\PUSHAN\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\spacetimedb-query-builder-2.0.2\src\table.rs
+
+C:\Users\PUSHAN\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\spacetimedb-query-builder-2.0.2\src\lib.rs:
+C:\Users\PUSHAN\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\spacetimedb-query-builder-2.0.2\src\expr.rs:
+C:\Users\PUSHAN\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\spacetimedb-query-builder-2.0.2\src\join.rs:
+C:\Users\PUSHAN\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\spacetimedb-query-builder-2.0.2\src\table.rs:

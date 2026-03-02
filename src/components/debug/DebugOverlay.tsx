@@ -3,7 +3,7 @@ import { useVFSStore } from '../../stores/vfsStore';
 import { useGamificationStore } from '../../stores/gamificationStore';
 import { useLabStore } from '../../stores/labStore';
 import { useUIStore } from '../../stores/uiStore';
-import { spacetimeClient } from '../../utils/spacetimeClient';
+import { spacetime } from '../../spacetime';
 
 export const DebugOverlay: React.FC = () => {
     const [isVisible, setIsVisible] = useState(false);
@@ -160,24 +160,20 @@ export const DebugOverlay: React.FC = () => {
                     {activeTab === 'backend' && (
                         <div className="flex flex-col gap-6">
                             <section>
-                                <h3 className="text-brutal-yellow mb-2 uppercase border-b border-brutal-yellow/30 pb-1">Table: User</h3>
-                                <pre>{JSON.stringify(spacetimeClient.getUser(spacetimeClient.identity), null, 2)}</pre>
+                                <h3 className="text-brutal-yellow mb-2 uppercase border-b border-brutal-yellow/30 pb-1">Users</h3>
+                                <pre>{JSON.stringify(spacetime.getUsers(), null, 2)}</pre>
                             </section>
                             <section>
-                                <h3 className="text-brutal-cyan mb-2 uppercase border-b border-brutal-cyan/30 pb-1">Table: UserProgress</h3>
-                                <pre>{JSON.stringify(spacetimeClient.getProgress(spacetimeClient.identity), null, 2)}</pre>
+                                <h3 className="text-brutal-cyan mb-2 uppercase border-b border-brutal-cyan/30 pb-1">Recent Messages</h3>
+                                <pre>{JSON.stringify(spacetime.getMessages('global').slice(-5), null, 2)}</pre>
                             </section>
                             <section>
-                                <h3 className="text-brutal-green mb-2 uppercase border-b border-brutal-green/30 pb-1">Table: Message (Global)</h3>
-                                <pre>{JSON.stringify(spacetimeClient.getMessages('global').slice(-5), null, 2)}</pre>
+                                <h3 className="text-brutal-green mb-2 uppercase border-b border-brutal-green/30 pb-1">Typing Indicators</h3>
+                                <pre>{JSON.stringify(spacetime.getTypingIndicators('global'), null, 2)}</pre>
                             </section>
                             <section>
-                                <h3 className="text-brutal-yellow mb-2 uppercase border-b border-brutal-yellow/30 pb-1">Table: TypingIndicator (Global)</h3>
-                                <pre>{JSON.stringify(spacetimeClient.getTypingIndicators('global'), null, 2)}</pre>
-                            </section>
-                            <section>
-                                <h3 className="text-brutal-gray mb-2 uppercase border-b border-brutal-gray/30 pb-1">Table: OnlinePresence</h3>
-                                <pre>{JSON.stringify(spacetimeClient.getOnlineUsers(), null, 2)}</pre>
+                                <h3 className="text-brutal-white mb-2 uppercase border-b border-brutal-white/30 pb-1">Leaderboard</h3>
+                                <pre>{JSON.stringify(spacetime.getLeaderboard(), null, 2)}</pre>
                             </section>
                         </div>
                     )}
@@ -185,7 +181,7 @@ export const DebugOverlay: React.FC = () => {
 
                 {/* Footer */}
                 <div className="p-2 bg-brutal-gray text-brutal-black font-heading text-[10px] uppercase text-center border-t-2 border-brutal-black">
-                    Doc 8 Compliant Debugger v1.0
+                    Real-time SpacetimeDB Debugger v2.0
                 </div>
             </div>
         </div>

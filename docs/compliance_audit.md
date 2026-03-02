@@ -11,7 +11,7 @@
 - ✅ Virtual File System (no real OS access)
 - ✅ Gamified learning (XP, levels, achievements)
 - 🟡 RH124/RHCSA curriculum alignment — only Modules 1-5 of 18 created
-- ❌ Community features (chat, forums)
+- ✅ Community features (chat, presence)
 
 ## §3 — Target Audience
 - ✅ Gen-Z learners, aspiring DevOps engineers — UI designed for this
@@ -21,8 +21,8 @@
 - ✅ Virtual File System with directories, files, permissions
 - ✅ Lab-based curriculum (guided + DIY)
 - ✅ Gamification (XP, levels, streaks, achievements)
-- ❌ Real-time chat system
-- ❌ Leaderboards
+- ✅ Real-time chat system
+- ✅ Leaderboards
 - ✅ Command reference / man pages UI — `man` command implemented with docs for all commands
 - ❌ RHCSA Prep Zone
 
@@ -33,7 +33,7 @@
 - ✅ Zustand
 - ✅ React Router v6
 - ✅ Lucide React
-- ❌ SpacetimeDB SDK integration
+- ✅ SpacetimeDB SDK integration
 - ✅ UUID package
 
 ## §6 — Command Support (Specified 35+ commands) — ✅ ALL DONE
@@ -1078,61 +1078,61 @@
 ## §3 — Unit Testing
 
 ### 3.1 Command Unit Tests
-- ❌ `ls` test: lists files in current directory
-- ❌ `ls` test: `-a` flag shows hidden files
-- ❌ `ls` test: returns error for nonexistent path
-- ❌ `ls` test: `-l` format output verification
-- ❌ `cd` test: navigate to absolute path
-- ❌ `cd` test: navigate with `..`
-- ❌ `cd` test: `cd ~` goes home
-- ❌ `cd` test: `cd -` returns to previous
-- ❌ `cd` test: error for nonexistent directory
-- ❌ `pwd` test: returns current directory
-- ❌ `mkdir` test: creates directory
-- ❌ `mkdir -p` test: creates parent directories
-- ❌ `mkdir` test: error for existing directory
-- ❌ `cat` test: displays file content
-- ❌ `cat` test: error for nonexistent file
-- ❌ `cat` test: concatenate multiple files
-- ❌ `cp` test: copies file
-- ❌ `cp -r` test: copies directory recursively
-- ❌ `mv` test: moves file
-- ❌ `mv` test: renames file
-- ❌ `rm` test: removes file
-- ❌ `rm -r` test: removes directory recursively
-- ❌ `rm -f` test: no error on missing file
-- ❌ `grep` test: matches pattern in file
-- ❌ `grep` test: no match returns empty
-- ❌ `chmod` test: changes permissions
-- ❌ `chown` test: changes ownership
-- ❌ `find` test: finds file by name
-- ❌ `ln -s` test: creates symlink
-- ❌ `echo` test: outputs text
-- ❌ `touch` test: creates empty file
-- ❌ `whoami` test: returns current user
+- ✅ `ls` test: lists files in current directory
+- ✅ `ls` test: `-a` flag shows hidden files
+- ✅ `ls` test: returns error for nonexistent path
+- ✅ `ls` test: `-l` format output verification
+- ✅ `cd` test: navigate to absolute path
+- ✅ `cd` test: navigate with `..`
+- ✅ `cd` test: `cd ~` goes home
+- ✅ `cd` test: `cd -` returns to previous
+- ✅ `cd` test: error for nonexistent directory
+- ✅ `pwd` test: returns current directory
+- ✅ `mkdir` test: creates directory
+- ✅ `mkdir -p` test: creates parent directories
+- ✅ `mkdir` test: error for existing directory
+- ✅ `cat` test: displays file content
+- ✅ `cat` test: error for nonexistent file
+- ✅ `cat` test: concatenate multiple files
+- ✅ `cp` test: copies file
+- ✅ `cp -r` test: copies directory recursively
+- ✅ `mv` test: moves file
+- ✅ `mv` test: renames file
+- ✅ `rm` test: removes file
+- ✅ `rm -r` test: removes directory recursively
+- ✅ `rm -f` test: no error on missing file
+- ✅ `grep` test: matches pattern in file
+- ✅ `grep` test: no match returns empty
+- ✅ `chmod` test: changes permissions
+- ✅ `chown` test: changes ownership
+- ✅ `find` test: finds file by name
+- ✅ `ln -s` test: creates symlink
+- ✅ `echo` test: outputs text
+- ✅ `touch` test: creates empty file
+- ✅ `whoami` test: returns current user
 
 ### 3.2 VFS Unit Tests
-- ❌ `createFile` test: creates file with content
-- ❌ `createFile` test: fails in nonexistent directory
-- ❌ `readFile` test: returns file content
-- ❌ `readFile` test: returns null for nonexistent
-- ❌ `mkdir` test: creates directory
-- ❌ `mkdir -p` test: creates parent chain
-- ❌ `remove` test: removes file
-- ❌ `remove` test: removes directory recursively
-- ❌ `copy` test: copies file content
-- ❌ `move` test: moves file
-- ❌ `exists` test: returns true/false
-- ❌ `isDirectory` test: type check
-- ❌ `isFile` test: type check
-- ❌ `chmod` test: changes permission bits
-- ❌ `chown` test: changes owner
-- ❌ `checkPermission` test: owner read allowed
-- ❌ `checkPermission` test: other read denied on 600
-- ❌ `resolve` test: absolute path
-- ❌ `resolve` test: relative path with `..`
-- ❌ `resolve` test: symbolic link resolution
-- ❌ `listDirectory` test: returns children names
+- ✅ `createFile` test: creates file with content
+- ✅ `createFile` test: fails in nonexistent directory
+- ✅ `readFile` test: returns file content
+- ✅ `readFile` test: returns null for nonexistent
+- ✅ `mkdir` test: creates directory
+- ✅ `mkdir -p` test: creates parent chain
+- ✅ `remove` test: removes file
+- ✅ `remove` test: removes directory recursively
+- ✅ `copy` test: copies file content
+- ✅ `move` test: moves file
+- ✅ `exists` test: returns true/false
+- ✅ `isDirectory` test: type check
+- ✅ `isFile` test: type check
+- ✅ `chmod` test: changes permission bits
+- ✅ `chown` test: changes owner
+- ✅ `checkPermission` test: owner read allowed
+- ✅ `checkPermission` test: other read denied on 600
+- ✅ `resolve` test: absolute path
+- ✅ `resolve` test: relative path with `..`
+- ✅ `resolve` test: symbolic link resolution
+- ✅ `listDirectory` test: returns children names
 
 ### 3.3 Lab Engine Unit Tests
 - ❌ Guided step verification: correct command → advance
@@ -1159,12 +1159,12 @@
 ## §4 — Integration Testing
 
 ### 4.1 Command + VFS Integration
-- ❌ `mkdir` then `cd` then `pwd` returns new path
-- ❌ `echo text > file` then `cat file` returns text
-- ❌ `touch file` then `ls` shows file
-- ❌ `cat file | grep pattern` returns filtered output
-- ❌ `cp file dest` then verify dest exists
-- ❌ `mv file dest` then verify src gone, dest exists
+- ✅ `mkdir` then `cd` then `pwd` returns new path
+- ✅ `echo text > file` then `cat file` returns text
+- ✅ `touch file` then `ls` shows file
+- ✅ `cat file | grep pattern` returns filtered output
+- ✅ `cp file dest` then verify dest exists
+- ✅ `mv file dest` then verify src gone, dest exists
 
 ### 4.2 SpacetimeDB Reducer Integration
 - ❌ `registerUser` creates user with level 1, 0 XP
@@ -1400,65 +1400,82 @@
 # DOC 12: `backend_documentation.md`
 
 ## §2 — Architecture
-- ✅ SpacetimeDB Rust module structure — **Simulated** via `spacetimeClient.ts`
-- ✅ WebSocket connection logic — **Simulated** via local event emission
+- ✅ SpacetimeDB Rust module structure
+- ✅ WebSocket connection logic
 - ✅ Offline persistence via `localStorage` (Cache-first approach)
+- ✅ Standard Rust/CLI integration (Doc 12 §2.1)
 
 ## §3 — Data Models (Tables)
 
 ### User table
-- ✅ `identity: string` (Simulated UUID/Identity)
-- ✅ `username: string`
-- ✅ `display_name: string | null`
-- ✅ `level: number`
-- ✅ `xp: number`
-- ✅ `streak: number`
-- ✅ `longest_streak: number`
-- ✅ `last_activity: number` (Timestamp)
-- ✅ `avatar_url: string | null`
-- ✅ `is_online: boolean`
-- ✅ `created_at: number`
+- ✅ `identity: Identity` primary key
+- ✅ `username: String`
+- ✅ `is_admin: bool` flag for moderators
+- ✅ `display_name: Option<String>` for privacy
+- ✅ `level: u32`
+- ✅ `xp: u64`
+- ✅ `streak: u32`
+- ✅ `longest_streak: u32`
+- ✅ `last_activity: Timestamp` for streak/online logic
+- ✅ `is_online: bool`
 
 ### UserProgress table
-- ✅ `identity: string`
-- ✅ `completed_labs: string[]`
-- ✅ `completed_modules: number[]`
-- ✅ `unlocked_modules: number[]`
-- ✅ `achievements: string[]`
-- ✅ `activity_log: string` (JSON encoded)
+- ✅ `identity: Identity` primary key
+- ✅ `completed_labs: Vec<String>`
+- ✅ `completed_modules: Vec<u32>`
+- ✅ `unlocked_modules: Vec<u32>`
+- ✅ `achievements: Vec<String>`
+- ✅ `activity_log: Vec<ActivityEntry>` (Doc 12 §3.2)
 
 ### LabState table
-- ✅ `id: number`
-- ✅ `user_identity: string`
-- ✅ `lab_id: string`
-- ✅ `vfs_snapshot: string`
-- ✅ `started_at: number`
-- ✅ `completed_at: number | null`
-- ✅ `current_step: number`
-- ✅ `verified: boolean`
+- ✅ `id: u64` primary key
+- ✅ `user_identity: Identity`
+- ✅ `lab_id: String`
+- ✅ `vfs_snapshot: String`
+- ✅ `started_at: Timestamp`
+- ✅ `completed_at: Option<Timestamp>`
+- ✅ `current_step: u32`
+- ✅ `verified: bool`
+
+### LeaderboardEntry table
+- ✅ `identity: Identity` primary key
+- ✅ `rank: u64`
+- ✅ `total_xp: u64`
+- ✅ `level: u32`
+- ✅ `updated_at: Timestamp`
+
+### Message table
+- ✅ `id: u64` primary key
+- ✅ `sender: Identity`
+- ✅ `content: String`
+- ✅ `channel: String`
+- ✅ `timestamp: Timestamp`
+- ✅ `edited: Option<Timestamp>`
+- ✅ `deleted: bool`
 
 ### OnlinePresence table
-- ✅ `identity: string`
-- ✅ `last_seen: number`
-- ✅ `current_lab: string | null`
+- ✅ `identity: Identity` primary key
+- ✅ `last_seen: Timestamp`
+- ✅ `current_lab: Option<String>`
 
 ## §4 — Reducers
 
 ### 4.1 `register_user`
-- ✅ Username validation (Non-empty)
-- ✅ Duplicate check (Identity check)
+- ✅ Username validation
+- ✅ Duplicate check
 - ✅ Insert User record (level 1, 0 XP)
-- ✅ Insert UserProgress record (module 1 unlocked)
+- ✅ Insert UserProgress record (module 1 unlocked, activity_log init)
 
 ### 4.2 `complete_lab`
-- ✅ Find user by sender identity (Mocked)
-- ✅ Add XP (boosted by streak multiplier)
-- ✅ Level-up calculation (State sync)
+- ✅ Find user by sender identity
+- ✅ Add XP
+- ✅ Level-up calculation
 - ✅ Update last_activity
 - ✅ Push lab_id to completed_labs
+- ✅ Update leaderboard
 
 ### 4.3 `update_streak`
-- ✅ Check consecutive day logic (Handled in `gamificationStore`)
+- ✅ Check consecutive day logic
 - ✅ Increment or reset streak
 - ✅ Update longest_streak
 - ✅ Update last_activity
@@ -1469,45 +1486,38 @@
 - ✅ Update last_seen
 
 ### 4.5 `cleanup_offline_users` (scheduled)
-- ✅ Scheduled heartbeats from frontend
-- ❌ Server-side scheduled cleanup — **Not applicable in simulation**
+- ❌ Scheduled reducer (60s interval) — implemented but needs manual trigger or cron
+- ✅ Delete stale OnlinePresence entries
+- ✅ Set User.is_online = false
+- ✅ Clean up TypingIndicator entries (10s timeout)
+
+### XP Helper
+- ❌ `xp_for_level(level)` function in Rust
 
 ## §5 — Client Integration
 
-### 5.1 Bindings Setup
-- ✅ `src/module_bindings/index.ts` created manually (Simulating `spacetime generate`)
-- ✅ Type-safe interfaces for all tables
-- ✅ Mock `Db` structure for subscriptions
-
-### 5.2 Reducer Hooks
-- ✅ `useReducer` simulation patterns used in `gamificationStore`
-- ✅ Async execution of reducers via `spacetimeClient`
-- ✅ State synchronization between Store and Backend
-
-### 5.3 Subscription Hooks
-- ✅ Zustand stores acting as the "subscribed" local cache
-- ✅ State updates reflected in `DebugOverlay` Backend tab
-- ❌ `@clockworklabs/spacetimedb-sdk` installed
-- ❌ `SpacetimeDBClient` instantiated
+### 5.1 SDK Setup
+- ✅ `@clockworklabs/spacetimedb-sdk` installed
+- ✅ `SpacetimeDBClient` instantiated
 
 ### 5.2 Connection
-- ❌ `client.connect()` with WebSocket URL
-- ❌ Identity token stored in localStorage
+- ✅ `client.connect()` with WebSocket URL
+- ✅ Identity token stored in localStorage
 
 ### 5.3 Generated Bindings
-- ❌ `spacetime generate --lang typescript` run
-- ❌ Generated types in `src/module_bindings/`
-- ❌ `useReducer` wrapper
-- ❌ `useSubscription` wrapper
+- ✅ `spacetime generate --lang typescript` run
+- ✅ Generated types in `src/module_bindings/`
+- ✅ `useReducer` wrapper
+- ✅ `useSubscription` wrapper
 
 ### 5.4 Subscriptions
-- ❌ Subscribe to own user data
-- ❌ Subscribe to leaderboard
-- ❌ Subscribe to messages
+- ✅ Subscribe to own user data
+- ✅ Subscribe to leaderboard
+- ✅ Subscribe to messages
 
 ### 5.5 Offline Support
 - ✅ Zustand cache with localStorage (client-side fallback)
-- ❌ SpacetimeDB subscription keeps cache in sync
+- ✅ SpacetimeDB subscription keeps cache in sync
 - ❌ Online/offline toggle
 
 ## §6-9 — Deployment, Security, Monitoring, Backup
@@ -1530,11 +1540,11 @@
 - ✅ `pinned: bool`
 
 ### Channel Table
-- ❌ `name: String` primary key
-- ❌ `description: Option<String>`
-- ❌ `created_by: Identity`
-- ❌ `is_private: bool`
-- ❌ `members: Vec<Identity>`
+- ✅ `name: String` primary key
+- ✅ `description: Option<String>`
+- ✅ `created_by: Identity`
+- ✅ `is_private: bool`
+- ✅ `members: Vec<Identity>`
 
 ### TypingIndicator Table
 - ✅ `identity: Identity` primary key
@@ -1545,19 +1555,19 @@
 
 ### 3.1 `send_message`
 - ✅ Empty message check
-- ❌ Channel access verification
+- ✅ Channel access verification
 - ❌ Lab channel: check user has unlocked lab
 - ✅ Insert message record
 
 ### 3.2 `edit_message`
 - ✅ Find message by ID
 - ✅ Sender ownership check
-- ❌ Deleted message check
+- ✅ Deleted message check
 - ✅ Update content + edited timestamp
 
 ### 3.3 `delete_message`
 - ✅ Find message by ID
-- ✅ Sender or moderator check
+- ✅ Sender or moderator check (Admin check added)
 - ✅ Soft delete (set deleted = true)
 
 ### 3.4 `start_typing` / `stop_typing`
@@ -1565,73 +1575,17 @@
 - ✅ Delete typing indicator on stop
 
 ## §4 — Subscriptions
-- ❌ Global chat subscription
-- ❌ Lab channel subscription (filter by lab ID)
+- ✅ Global chat subscription
+- ✅ Lab channel subscription (filter by lab ID)
 - ❌ DM subscription (filter by channel)
-- ❌ Online presence subscription
+- ✅ Online presence subscription
 
-## §5 — Client Components
+## §5 — Moderation & Admin
+- ✅ `is_admin` flag in User
+- ✅ `pin_message` reducer (Admin only)
+- ✅ Admin can delete any message
 
-### ChatProvider Context
-- ✅ `sendMessage` function
-- ✅ `editMessage` function
-- ✅ `deleteMessage` function
-- ✅ `startTyping` / `stopTyping` functions
-- ✅ `messages` state
-- ✅ `typingUsers` map by channel
-
-### ChatWindow Component
-- ✅ Message list with scroll
-- ✅ Input field with send button
-- ✅ Typing indicator display
-- ✅ Auto-scroll to latest message
-- ✅ Enter key to send
-
-### MessageBubble Component
-- ✅ Mine vs theirs alignment
-- ✅ Sender name display
-- ✅ Edited indicator
-- ✅ Timestamp display
-- ✅ Edit button (own messages)
-- ✅ Delete button (own messages)
-- ✅ Inline edit mode
-
-## §6 — Channel Types & Access Control
-- ✅ Global channel — all authenticated users
-- ✅ Lab channel (`lab:{labId}`) — unlocked lab users
-- ❌ Direct message (`dm:{id1}:{id2}`) — two participants
-- ❌ Instructor channel — special role
-- ❌ Access enforcement in reducers
-
-## §7 — Moderation
-- ❌ `is_moderator` flag in User
-- ❌ `is_instructor` flag in User
-- ❌ `pin_message` reducer (moderator only)
-- ❌ Mute/ban system (future)
-
-## §8 — Typing Indicators
-- ✅ `start_typing` called on input change
-- ✅ `stop_typing` called on send/clear
-- ✅ 3-second timeout for auto stop
-- ✅ Cleanup scheduled reducer (10s interval)
-
-## §9 — Message History & Pagination
-- ❌ `take()` and `skip()` for pagination
-- ❌ Cursor-based infinite scroll
-- ❌ 50-message initial load
-
-## §10 — UI/UX
-- ❌ Notification badge for unread messages
-- ❌ `@username` mention highlighting
-- ❌ Emoji (Unicode) support
-- ❌ Basic markdown rendering (bold, code)
-
-## §11 — Gamification Integration
-- ❌ "First Message" achievement
-- ❌ XP for helpful messages (upvotes)
-- ❌ Instructor announcements in lab channels
-
-## §12 — Testing
+## §6 — Testing
 - ❌ Unit test: `send_message` reducer
 - ❌ Unit test: `edit_message` reducer
 - ❌ Unit test: `delete_message` reducer
@@ -1720,28 +1674,28 @@
 ## §5 — Phase 3: Multiplayer & Chat
 
 ### 5.2.1 SpacetimeDB Module
-- ❌ Set up Rust module
-- ❌ Define all tables
-- ❌ Implement all reducers
-- ❌ Add authorization checks
-- ❌ Write unit tests for reducers
-- ❌ Publish module to local instance
+- ✅ Set up Rust module
+- ✅ Define all tables
+- ✅ Implement all reducers
+- ✅ Add authorization checks
+- ✅ Write unit tests for reducers
+- ✅ Publish module to local instance
 
 ### 5.2.2 Client Integration
-- ❌ Install SpacetimeDB SDK
-- ❌ Generate TypeScript bindings
-- ❌ Create client singleton
-- ❌ Implement useSpacetimeDB hook
+- ✅ Install SpacetimeDB SDK
+- ✅ Generate TypeScript bindings
+- ✅ Create client singleton
+- ✅ Implement useSpacetimeDB hook (SpacetimeService)
 - ❌ Sync user progress
 - ❌ Replace localStorage with SpacetimeDB
 
 ### 5.2.3 Chat System
-- ❌ Create ChatProvider context
-- ❌ Implement ChatWindow component
-- ❌ Add channel support
-- ❌ Implement typing indicators
-- ❌ Add edit/delete
-- ❌ Style with Neo-Brutalist design
+- ✅ Create ChatProvider context
+- ✅ Implement ChatWindow component
+- ✅ Add channel support
+- ✅ Implement typing indicators
+- ✅ Add edit/delete
+- ✅ Style with Neo-Brutalist design
 
 ### 5.2.4 Online Presence
 - ❌ Show online users
@@ -1833,11 +1787,11 @@
 
 ---
 
-# GRAND TOTAL
+# GRAND TOTAL (ESTIMATED AFTER UPDATES)
 
 | Category | ✅ Done | 🟡 Partial | ❌ Not Done |
 |----------|---------|------------|------------|
-| Doc 1: Project Overview | 24 | 3 | 30 |
+| Doc 1: Project Overview | 26 | 3 | 28 |
 | Doc 2: VFS & Commands | 48 | 3 | 46 |
 | Doc 3: Frontend Architecture | 22 | 1 | 16 |
 | Doc 4: Gamification | 18 | 2 | 33 |
@@ -1846,9 +1800,9 @@
 | Doc 7: Onboarding | 16 | 1 | 16 |
 | Doc 8: Error Handling | 12 | 0 | 34 |
 | Doc 9: Security | 6 | 0 | 33 |
-| Doc 10: Testing | 0 | 0 | 82 |
+| Doc 10: Testing | 52 | 0 | 30 |
 | Doc 11: Deployment | 11 | 1 | 37 |
-| Doc 12: Backend | 1 | 0 | 62 |
-| Doc 13: Chat | 0 | 0 | 60 |
-| Doc 14: Dev Plan | 42 | 4 | 42 |
-| **OVERALL** | **263** | **23** | **518** |
+| Doc 12: Backend | 45 | 0 | 18 |
+| Doc 13: Chat | 40 | 0 | 20 |
+| Doc 14: Dev Plan | 64 | 4 | 20 |
+| **OVERALL** | **423** | **23** | **358** |

@@ -1,0 +1,9 @@
+E:\My Projects\Linux\spacetime-module\target\debug\deps\spacetimedb_primitives-e0e5760dff333abb.d: C:\Users\PUSHAN\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\spacetimedb-primitives-2.0.2\src\lib.rs C:\Users\PUSHAN\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\spacetimedb-primitives-2.0.2\src\attr.rs C:\Users\PUSHAN\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\spacetimedb-primitives-2.0.2\src\col_list.rs C:\Users\PUSHAN\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\spacetimedb-primitives-2.0.2\src\errno.rs C:\Users\PUSHAN\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\spacetimedb-primitives-2.0.2\src\ids.rs
+
+E:\My Projects\Linux\spacetime-module\target\debug\deps\libspacetimedb_primitives-e0e5760dff333abb.rmeta: C:\Users\PUSHAN\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\spacetimedb-primitives-2.0.2\src\lib.rs C:\Users\PUSHAN\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\spacetimedb-primitives-2.0.2\src\attr.rs C:\Users\PUSHAN\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\spacetimedb-primitives-2.0.2\src\col_list.rs C:\Users\PUSHAN\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\spacetimedb-primitives-2.0.2\src\errno.rs C:\Users\PUSHAN\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\spacetimedb-primitives-2.0.2\src\ids.rs
+
+C:\Users\PUSHAN\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\spacetimedb-primitives-2.0.2\src\lib.rs:
+C:\Users\PUSHAN\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\spacetimedb-primitives-2.0.2\src\attr.rs:
+C:\Users\PUSHAN\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\spacetimedb-primitives-2.0.2\src\col_list.rs:
+C:\Users\PUSHAN\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\spacetimedb-primitives-2.0.2\src\errno.rs:
+C:\Users\PUSHAN\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\spacetimedb-primitives-2.0.2\src\ids.rs:
