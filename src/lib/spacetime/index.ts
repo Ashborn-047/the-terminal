@@ -4,10 +4,21 @@ class SpacetimeService {
     private conn: DbConnection | null = null;
     private onConnectCallbacks: Array<() => void> = [];
     private onUpdateCallbacks: Array<() => void> = [];
+    private isMock: boolean = false;
     private isConnected: boolean = false;
 
     constructor() {
-        this.connect();
+        this.isMock = import.meta.env.VITE_MOCK_SPACETIME === 'true';
+        if (!this.isMock) {
+            try {
+                this.connect();
+            } catch (err) {
+                console.error("SpacetimeDB initialization failed:", err);
+            }
+        } else {
+            console.log("SpacetimeDB running in MOCK mode");
+            this.isConnected = true;
+        }
     }
 
     public connect() {
@@ -44,21 +55,31 @@ class SpacetimeService {
     }
 
     public async registerUser(username: string) {
+        if (this.isMock) {
+            console.log("Mock registration for", username);
+            return;
+        }
         if (!this.conn) throw new Error("Not connected");
         return this.conn.reducers.registerUser({ username });
     }
 
     public async createChannel(name: string, description: string | undefined, isPrivate: boolean) {
+        if (this.isMock) return;
         if (!this.conn) throw new Error("Not connected");
         return this.conn.reducers.createChannel({ name, description, isPrivate });
     }
 
     public async updateStreak() {
+        if (this.isMock) return;
         if (!this.conn) throw new Error("Not connected");
         return this.conn.reducers.updateStreak({});
     }
 
     public async completeLab(labId: string, xpEarned: bigint) {
+        if (this.isMock) {
+            console.log("Mock lab completion for", labId, "XP:", xpEarned);
+            return;
+        }
         if (!this.conn) throw new Error("Not connected");
         return this.conn.reducers.completeLab({ labId, xpEarned });
     }

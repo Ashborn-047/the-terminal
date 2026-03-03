@@ -235,22 +235,29 @@ export const useGamificationStore = create<GamificationState>()(
 
                 const finalAmount = Math.max(0, finalXp - hintPenalty + speedBonus);
 
-                // CALL SPACETIME REDUCER
+                // Perform optimistic local update first so UI reflects progress immediately
+                set((state) => {
+                    const nextXp = state.totalXpEarned + finalAmount;
+                    return {
+                        xp: state.xp + finalAmount,
+                        totalXpEarned: nextXp,
+                        level: levelFromXP(nextXp),
+                        labsCompleted: state.labsCompleted + 1
+                    };
+                });
+                console.log('LAB_DEBUG: processLabCompletion done', {
+                    labsCompleted: get().labsCompleted,
+                    xp: get().xp,
+                    level: get().level
+                });
+
+                // CALL SPACETIME REDUCER (async sync)
                 try {
                     await spacetime.completeLab(lab.id, BigInt(finalAmount));
-
-                    // Sync state manually for immediate UI feedback (optimistic update)
-                    set((state) => {
-                        const nextXp = state.totalXpEarned + finalAmount;
-                        return {
-                            xp: state.xp + finalAmount,
-                            totalXpEarned: nextXp,
-                            level: levelFromXP(nextXp),
-                            labsCompleted: state.labsCompleted + 1
-                        };
-                    });
                 } catch (e) {
-                    logger.error('Failed to complete lab in SpacetimeDB', { error: e });
+                    logger.error('Failed to sync lab completion to SpacetimeDB', { error: e });
+                    // We don't revert local state for now to avoid jumpy UI, 
+                    // persistence middleware will keep it locally.
                 }
 
                 if (hintsCount === 0) {

@@ -150,15 +150,11 @@ export function useTerminal(initialUserId: string = 'guest') {
                     const isComplete = nextIndex >= lab.steps.length;
 
                     updateProgress(currentLabId, {
-                        currentStepIndex: nextIndex,
-                        status: isComplete ? 'completed' : 'in-progress'
+                        currentStepIndex: nextIndex
                     });
 
-                    if (isComplete) {
-                        completeLabInStore(currentLabId);
-                        // Rewards and streaks are handled by the LabView component 
-                        // when it detects completion status.
-                    }
+                    // Rewards, streaks, and setting status to 'completed' are handled 
+                    // by the LabView component's useEffect when it detects currentStepIndex >= total steps.
                 }
             }
         }

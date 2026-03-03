@@ -38,6 +38,11 @@ const LabView: React.FC = () => {
     // Check for guided lab completion
     useEffect(() => {
         if (lab?.type === 'guided' && labProgress && lab.steps && labProgress.currentStepIndex >= lab.steps.length && labProgress.status !== 'completed') {
+            console.log('LAB_DEBUG: Conditions met, triggering handleComplete()', {
+                currentStepIndex: labProgress.currentStepIndex,
+                totalSteps: lab.steps.length,
+                status: labProgress.status
+            });
             handleComplete();
         }
     }, [labProgress?.currentStepIndex]);
@@ -80,9 +85,8 @@ const LabView: React.FC = () => {
 
         // Re-fetch latest progress state for processing rewards
         const finalProgress = useLabStore.getState().progress[lab.id];
-        processLabCompletion(lab, finalProgress);
-
         const newLabsCompleted = prevLabsCompleted + 1;
+        console.log('LAB_DEBUG: handleComplete', { prevLabsCompleted, newLabsCompleted, labId: lab.id });
 
         // If first lab, show celebration
         if (newLabsCompleted === 1) {
