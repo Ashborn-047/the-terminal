@@ -72,4 +72,77 @@ describe('Command Executor', () => {
         const errs = vfs.readFile('/errors.txt', 'root');
         expect(errs).toContain('ls: cannot access');
     });
+
+    it('should handle grep command', async () => {
+        vfs.writeFile('/test.txt', 'line 1\nsearch target\nline 3', 'root');
+        const pipeline = CommandParser.parse('grep "target" test.txt');
+        const result = await executor.execute(pipeline, context);
+        expect(result.output).toBe('search target');
+    });
+
+    it('should handle find command', async () => {
+        vfs.mkdir('/', 'mydir', 'root');
+        vfs.writeFile('/mydir/file1.txt', 'data', 'root');
+        vfs.writeFile('/mydir/file2.log', 'logs', 'root');
+
+        const pipeline = CommandParser.parse('find mydir -name "*.txt"');
+        const result = await executor.execute(pipeline, context);
+        expect(result.output).toContain('mydir/file1.txt');
+        expect(result.output).not.toContain('file2.log');
+    });
+
+    it('should handle chmod command', async () => {
+        vfs.writeFile('/script.sh', 'echo hi', 'root');
+        const pipeline = CommandParser.parse('chmod 755 script.sh');
+        await executor.execute(pipeline, context);
+
+        const inode: any = vfs.resolve('/script.sh', 'root');
+        expect(inode.permissions.owner.execute).toBe(true);
+        expect(inode.permissions.others.write).toBe(false);
+    });
+
+    it('should handle chown command', async () => {
+        vfs.writeFile('/file.txt', 'data', 'root');
+        const pipeline = CommandParser.parse('chown guest file.txt');
+        await executor.execute(pipeline, context);
+
+        const inode: any = vfs.resolve('/file.txt', 'root');
+        expect(inode.ownerId).toBe('guest');
+    });
+
+    it('should handle ln -s command', async () => {
+        vfs.writeFile('/original.txt', 'data', 'root');
+        const pipeline = CommandParser.parse('ln -s original.txt link.txt');
+        await executor.execute(pipeline, context);
+
+        // To verify it's a symlink, get its inode directly without resolving (which follows symlinks)
+        const rootDir: any = vfs.resolve('/', 'root');
+        const linkId = rootDir.children.find((id: string) => vfs.getInode(id)?.name === 'link.txt');
+        const linkInode = vfs.getInode(linkId);
+
+        expect(linkInode?.type).toBe('symlink');
+        expect(linkInode?.target).toBe('original.txt');
+    });
+
+    it('should handle Permission Denied for unauthorized access', async () => {
+        // Create a file owned by root with 700 permissions
+        vfs.writeFile('/root_secret.txt', 'secret data', 'root');
+        vfs.chmod('/root_secret.txt', '700', 'root');
+
+        // Attempt to read it as a guest user
+        context.userId = 'guest';
+        const pipeline = CommandParser.parse('cat /root_secret.txt');
+        const result = await executor.execute(pipeline, context);
+
+        expect(result.exitCode).toBe(1);
+        expect(result.error).toContain('cat: /root_secret.txt: Permission denied');
+    });
+
+    it('should handle Command Not Found errors', async () => {
+        const pipeline = CommandParser.parse('nonexistentcommand arg1');
+        const result = await executor.execute(pipeline, context);
+
+        expect(result.exitCode).toBe(127);
+        expect(result.error).toContain('Command not found. [CODE: E_001]');
+    });
 });

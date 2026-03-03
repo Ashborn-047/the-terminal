@@ -653,7 +653,7 @@ CommandRegistry.register('ln', async (args, context) => {
         ? '/' + parts.join('/')
         : (parts.length > 0 ? parts.join('/') : context.cwd);
 
-    const result = context.vfs.ln(parentPath || context.cwd, name, target, context.userId);
+    const result = context.vfs.ln(parentPath || context.cwd, name, target, context.userId, symbolic);
     if (typeof result === 'string') {
         return { output: '', error: `ln: ${result}`, exitCode: 1 };
     }
