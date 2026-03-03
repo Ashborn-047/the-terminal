@@ -13,3 +13,6 @@ Thumbs.db
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+
+# Compliance Audit (Local Only)
+/docs/compliance_audit.md
