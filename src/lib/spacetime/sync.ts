@@ -53,6 +53,18 @@ export const initSpacetimeSync = () => {
                 useLabStore.setState({ progress: localProgress });
                 logger.debug('Synced lab progress from SpacetimeDB');
             }
+
+            if (progress.activityLog) {
+                const history: Record<string, number> = {};
+                progress.activityLog.forEach((entry: any) => {
+                    const date = new Date(Number(entry.timestamp / 1000n)).toISOString().split('T')[0];
+                    const parts = entry.metadata.split(':');
+                    const xp = parts.length > 1 ? parseInt(parts[1]) : 50;
+                    history[date] = (history[date] || 0) + xp;
+                });
+                useGamificationStore.getState().setActivityHistory(history);
+                logger.debug('Synced activity history from SpacetimeDB');
+            }
         }
 
         // Update Leaderboard

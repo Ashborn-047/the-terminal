@@ -366,7 +366,12 @@ pub fn complete_lab(ctx: &ReducerContext, lab_id: String, xp_earned: u64) -> Res
         .find(&ctx.sender())
         .ok_or("Progress not found")?;
     if !progress.completed_labs.contains(&lab_id) {
-        progress.completed_labs.push(lab_id);
+        progress.completed_labs.push(lab_id.clone());
+        progress.activity_log.push(ActivityEntry {
+            timestamp: ctx.timestamp,
+            action: "lab_completed".into(),
+            metadata: format!("{}:{}", lab_id, xp_earned),
+        });
     }
     ctx.db.user_progress().identity().update(progress);
 

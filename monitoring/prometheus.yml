@@ -1,0 +1,16 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'spacetime-db-metrics'
+    static_configs:
+      - targets: ['localhost:3000']
+    metrics_path: '/metrics'
+    scheme: 'http'
+    
+  - job_name: 'frontend-custom-metrics'
+    static_configs:
+      - targets: ['localhost:8080']
+    
+# NOTE: To visualize this, import a Grafana dashboard and bind it to this Prometheus data source.

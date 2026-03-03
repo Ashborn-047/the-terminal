@@ -144,6 +144,7 @@ interface GamificationState {
     generateDailyQuests: () => void;
     updateQuestProgress: (type: QuestType, amount: number) => void;
     claimQuestReward: (questId: string) => void;
+    setActivityHistory: (history: Record<string, number>) => void;
 }
 
 export const useGamificationStore = create<GamificationState>()(
@@ -443,6 +444,10 @@ export const useGamificationStore = create<GamificationState>()(
                     }));
                     get().awardXP(q.xpReward);
                 }
+            },
+
+            setActivityHistory: (history: Record<string, number>) => {
+                set({ activityHistory: history });
             },
         }),
         { name: 'the-terminal-gamification' }

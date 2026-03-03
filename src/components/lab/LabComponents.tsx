@@ -18,29 +18,42 @@ interface LabCardProps {
 
 export const LabCard: React.FC<LabCardProps> = ({ lab, status, progress, onStart }) => {
     return (
-        <div className={`border-3 border-brutal-black p-4 bg-brutal-white text-brutal-black shadow-brutal mb-4
-            ${status === 'locked' ? 'opacity-50' : ''}`}>
+        <div
+            className={`border-3 border-brutal-black p-4 bg-brutal-white text-brutal-black shadow-brutal mb-4 transition-all
+            ${status === 'locked' ? 'opacity-50 grayscale' : 'hover:scale-[1.02]'} 
+            ${status === 'completed' ? 'border-brutal-green' : ''}`}
+            role="article"
+            aria-labelledby={`lab-title-${lab.id}`}
+        >
             <div className="flex justify-between items-start mb-2">
-                <h3 className="font-heading uppercase text-lg">{lab.title}</h3>
-                <span className={`px-2 py-1 text-xs font-heading uppercase border-2 border-brutal-black
-                    ${lab.type === 'guided' ? 'bg-brutal-yellow' : 'bg-brutal-blue text-brutal-white'}`}>
+                <h3 id={`lab-title-${lab.id}`} className="font-heading uppercase text-lg underline decoration-2">{lab.title}</h3>
+                <span
+                    className={`px-2 py-1 text-xs font-heading uppercase border-2 border-brutal-black
+                    ${lab.type === 'guided' ? 'bg-brutal-yellow' : 'bg-brutal-blue text-brutal-white'}`}
+                    aria-label={`Lab type: ${lab.type}`}
+                >
                     {lab.type}
                 </span>
             </div>
-            <p className="text-sm mb-3">{lab.description}</p>
+            <p className="text-sm mb-3 font-mono">{lab.description}</p>
 
-            <div className="flex justify-between items-center">
-                <span className="font-heading text-sm text-brutal-green">+{lab.xpReward} XP</span>
+            <div className="flex justify-between items-center mt-auto">
+                <span className="font-heading text-sm text-brutal-green font-bold" aria-label="Reward">
+                    +{lab.xpReward} XP
+                </span>
 
                 {status === 'completed' && (
-                    <span className="flex items-center gap-1 bg-brutal-green text-brutal-black px-3 py-1 font-heading uppercase text-xs border-2 border-brutal-black">
-                        <CheckCircle size={14} /> COMPLETED
+                    <span
+                        className="flex items-center gap-1 bg-brutal-green text-brutal-black px-3 py-1 font-heading uppercase text-xs border-2 border-brutal-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                        aria-label="Status: Completed"
+                    >
+                        <CheckCircle size={14} aria-hidden="true" /> COMPLETED
                     </span>
                 )}
 
                 {status === 'in-progress' && (
-                    <div className="flex items-center gap-2">
-                        <div className="w-24 h-4 border-2 border-brutal-black bg-brutal-dark p-0 overflow-hidden">
+                    <div className="flex items-center gap-3" aria-label={`Progress: ${progress || 0}%`}>
+                        <div className="w-24 h-4 border-2 border-brutal-black bg-brutal-dark p-0 overflow-hidden" role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}>
                             <div
                                 className="h-full bg-brutal-green brutal-stripes border-r border-brutal-white transition-all duration-500"
                                 style={{ width: `${progress || 0}%` }}
@@ -48,7 +61,8 @@ export const LabCard: React.FC<LabCardProps> = ({ lab, status, progress, onStart
                         </div>
                         <button
                             onClick={() => onStart(lab.id)}
-                            className="px-3 py-1 font-heading uppercase text-xs border-2 border-brutal-black bg-brutal-yellow hover:bg-brutal-green transition-colors"
+                            aria-label="Continue Lab"
+                            className="px-3 py-1 font-heading uppercase text-xs border-2 border-brutal-black bg-brutal-yellow hover:bg-brutal-green transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none"
                         >
                             CONTINUE
                         </button>
@@ -58,15 +72,19 @@ export const LabCard: React.FC<LabCardProps> = ({ lab, status, progress, onStart
                 {status === 'available' && (
                     <button
                         onClick={() => onStart(lab.id)}
-                        className="flex items-center gap-1 px-3 py-1 font-heading uppercase text-xs border-2 border-brutal-black bg-brutal-white hover:bg-brutal-green transition-colors"
+                        aria-label="Start Lab"
+                        className="flex items-center gap-1 px-3 py-1 font-heading uppercase text-xs border-2 border-brutal-black bg-brutal-white hover:bg-brutal-green transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none"
                     >
-                        <Play size={14} /> START
+                        <Play size={14} aria-hidden="true" /> START
                     </button>
                 )}
 
                 {status === 'locked' && (
-                    <span className="flex items-center gap-1 text-brutal-gray font-heading uppercase text-xs">
-                        <Lock size={14} /> LOCKED
+                    <span
+                        className="flex items-center gap-1 text-brutal-gray font-heading uppercase text-xs opacity-50"
+                        aria-label="Status: Locked"
+                    >
+                        <Lock size={14} aria-hidden="true" /> LOCKED
                     </span>
                 )}
             </div>

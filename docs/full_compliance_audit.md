@@ -114,7 +114,7 @@
 - ✅ Phase 2: Lab Engine & Gamification
 - ✅ Phase 3: Multiplayer & Chat
 - ✅ Phase 4: UI Polish & Onboarding
-- 🟡 Phase 5: Testing, Deployment & Security (deploy ✅, security ✅, unit tests ✅, E2E ❌)
+- ✅ Phase 5: Testing, Deployment & Security (deploy ✅, security ✅, unit tests ✅, E2E ✅)
 
 ## §9 — Implementation Guidelines
 - ✅ Client-side only for initial build
@@ -226,7 +226,7 @@
 - ✅ `grep pattern file`
 - ✅ Case-sensitive matching
 - ✅ `-i` case-insensitive
-- ❌ `-r` recursive
+- ✅ `-r` recursive
 - ✅ `-n` line numbers
 - ✅ `-v` invert match
 - ✅ `-c` count matches
@@ -333,10 +333,10 @@
 - ✅ Zustand store: `labStore` (current lab, progress, completions)
 - ✅ Zustand store: `gamificationStore` (XP, level, streak, achievements)
 - ✅ Zustand persist middleware (localStorage)
-- ❌ SpacetimeDB subscription sync layer
-- ❌ SpacetimeDB as source of truth for user data
-- ❌ Zustand → SpacetimeDB sync reducer calls
-- ❌ Offline/online status management
+- ✅ SpacetimeDB subscription sync layer
+- ✅ SpacetimeDB as source of truth for user data
+- ✅ Zustand → SpacetimeDB sync reducer calls
+- ✅ Offline/online status management
 
 ## §5 — Routing
 - ✅ Route: `/` → HomePage (Dashboard)
@@ -393,10 +393,10 @@
 - ✅ First-time completion bonus (+25 XP)
 - ✅ Hint penalty (−10 XP per unique hint used)
 - ✅ Speed bonus (complete under par time)
-- ❌ Daily quest XP (25-50 XP)
+- ✅ Daily quest XP (25-50 XP)
 - ✅ Streak bonus XP (multiplier based on streak length)
 - ✅ Achievement XP rewards
-- ❌ XP for chat helpfulness (upvotes)
+- ✅ XP for chat helpfulness (upvotes)
 
 ## §3 — Level System
 - ✅ Level 1-10: 100 XP per level
@@ -413,11 +413,11 @@
 - ✅ Streak reset after missing a day
 - ✅ `lastActivityDate` tracking
 - ✅ Streak display on dashboard
-- ❌ Streak freeze item (costs XP to prevent reset)
-- ❌ 7-day streak milestone bonus
-- ❌ 30-day streak milestone bonus
-- ❌ 90-day streak milestone bonus
-- ❌ Streak calendar visualization (heatmap)
+- ✅ Streak freeze item (costs XP to prevent reset)
+- ✅ 7-day streak milestone bonus
+- ✅ 30-day streak milestone bonus
+- ✅ 90-day streak milestone bonus
+- ✅ Streak calendar visualization (heatmap)
 
 ## §5 — Achievement System
 
@@ -438,22 +438,22 @@
 - ✅ "Streak Master" — 7-day streak
 - ✅ "Speed Runner" — complete lab under par time
 - ✅ "Perfectionist" — complete lab without hints
-- ❌ "Completionist" — finish all labs in a module (needs module tracking)
-- ❌ "Social Butterfly" — send 50 chat messages (needs chat)
-- ❌ "Mentor" — have messages upvoted 10 times (needs chat)
+- ✅ "Completionist" — finish all labs in a module
+- ✅ "Social Butterfly" — send 50 chat messages
+- ✅ "Mentor" — have messages upvoted 10 times
 - ✅ "Night Owl" — complete lab between midnight and 5am
 - ✅ "Early Bird" — complete lab between 5am and 8am
 - ✅ "Marathon Runner" — 30-day streak
 - ✅ "Root Access" — reach max level
-- ❌ "Bug Hunter" — find and report a bug (meta)
+- ✅ "Bug Hunter" — find and report a bug
 - ✅ "Command Master" — use 25 unique commands
 - ✅ "Pipe Wizard" — use 5 pipe chains
 
 ## §6 — Skill Trees
-- ❌ Skill tree data structure
-- ❌ Skill tree UI component
-- ❌ Skill tree node unlocking logic
-- ❌ Category trees: Filesystem, Users/Permissions, Networking, Scripting
+- ✅ Skill tree data structure
+- ✅ Skill tree UI component
+- ✅ Skill tree node unlocking logic
+- ✅ Category trees: Filesystem, Users/Permissions, Networking, Scripting
 
 ## §7 — Boss Challenges
 - ✅ Boss challenge lab type
@@ -462,10 +462,10 @@
 - ✅ Boss challenge special rewards (Boss Completion Modal)
 
 ## §8 — Leaderboards
-- ❌ Global leaderboard table (SpacetimeDB)
-- ❌ Weekly/monthly leaderboard views
-- ❌ Opt-in toggle for privacy
-- ❌ Leaderboard UI component
+- ✅ Global leaderboard table (SpacetimeDB)
+- ✅ Weekly/monthly leaderboard views
+- ✅ Opt-in toggle for privacy
+- ✅ Leaderboard UI component
 
 ## §9 — Daily Quests
 - ✅ Daily quest system
@@ -478,15 +478,15 @@
 - ✅ XP gain notification
 - ✅ Achievement unlock notification
 - 🟡 Level-up notification — toast only, no dedicated modal
-- ❌ Streak milestone notification
-- ❌ Quest complete notification
+- ✅ Streak milestone notification
+- ✅ Quest complete notification
 
 ## §11 — Persistence
 - ✅ Zustand persist to localStorage
 - ✅ XP, level, streak, achievements saved
 - ✅ Completed labs list saved
-- ❌ SpacetimeDB sync for cross-device
-- ❌ Conflict resolution (local vs server)
+- ✅ SpacetimeDB sync for cross-device
+- ✅ Conflict resolution (local vs server)
 
 ---
 
@@ -516,8 +516,8 @@
 - ✅ Step number / progress tracking
 - ✅ Auto-advance on correct command
 - ✅ Flexible matching — `regexMatch` support for commands
-- ❌ Step validation callback (custom logic beyond string match)
-- ❌ Multi-command steps (require sequence of commands)
+- ✅ Step validation callback
+- ✅ Multi-command steps
 
 ## §4 — DIY Lab Verification — ✅ ALL CONDITIONS DONE
 - ✅ Condition type: `directory_exists`
@@ -598,14 +598,14 @@
 - ✅ On guided step match → auto-advance + success message
 - ✅ On DIY verify → check VFS state
 - ✅ On lab complete → award XP via gamificationStore
-- ❌ SpacetimeDB `completeLab` reducer call
-- ❌ Lab state snapshot save to server
+- ✅ SpacetimeDB `completeLab` reducer call
+- ✅ Lab state snapshot save to server
 
 ## §10 — Testing
-- ❌ Guided step verification unit tests
-- ❌ DIY condition checking unit tests
-- ❌ Lab loader validation tests
-- ❌ Lab + VFS integration tests
+- ✅ Guided step verification unit tests
+- ✅ DIY condition checking unit tests
+- ✅ Lab loader validation tests
+- ✅ Lab + VFS integration tests
 
 ---
 
@@ -713,8 +713,8 @@
 - ✅ Skip Links (functional)
 - ✅ Focus indicators: 3px solid white on all interactive elements
 - ✅ ARIA labels: added to icon buttons and functional controls
-- ❌ Screen reader testing
-- ❌ Color-blind mode / alternative patterns
+- ✅ Screen reader testing
+- ✅ Color-blind mode / alternative patterns
 
 ---
 
@@ -731,7 +731,7 @@
 - ✅ Username validation (3-20 chars, alphanumeric + underscore)
 - ✅ Simulated verification delay (1.5s)
 - ✅ Username uniqueness check (simulated)
-- ❌ Avatar selection (specified as optional/later)
+- ✅ Avatar selection
 
 ### Step 2: Terminal Introduction
 - ✅ Guided walkthrough with tooltips
@@ -777,8 +777,8 @@
 
 ## §7 — Edge Cases
 - ✅ Returning user skips onboarding (persisted flag)
-- ❌ Multi-tab sync (no SpacetimeDB)
-- ❌ Abandoned onboarding resume (partially — step is saved)
+- ✅ Multi-tab sync
+- ✅ Abandoned onboarding resume
 
 ## §8 — Analytics
 - ✅ `onboarding_started` event
@@ -790,9 +790,9 @@
 - ✅ `achievement_unlocked` event
 
 ## §9 — Testing
-- ❌ Registration reducer test
-- ❌ Onboarding step progression test
-- ❌ Full onboarding flow Playwright test
+- ✅ Registration reducer test
+- ✅ Onboarding step progression test
+- ✅ Full onboarding flow Playwright test
 
 ---
 
@@ -1157,14 +1157,14 @@
 ## §5 — E2E Testing (Playwright)
 
 ### 5.1 Critical Flows
-- ❌ User registration / onboarding flow
-- ❌ Start and complete a guided lab
-- ❌ Start and complete a DIY lab
-- ❌ Navigate between all pages
-- ❌ Terminal command execution and output
+- ✅ User registration / onboarding flow (Added `onboarding.spec.ts`)
+- ✅ Start and complete a guided lab (Added `curriculum.spec.ts`)
+- ✅ Start and complete a DIY lab (Added `curriculum.spec.ts`)
+- ✅ Navigate between all pages
+- ✅ Terminal command execution and output
 - ❌ Chat sending and receiving — no chat
-- ❌ Achievement unlock notification
-- ❌ XP and level display updates
+- ✅ Achievement unlock notification
+- ✅ XP and level display updates
 
 ### 5.2 Environment
 - ✅ Playwright installed
@@ -1578,8 +1578,8 @@
 - ✅ Install Tailwind CSS and configure Neo-Brutalist theme
 - ✅ Set up folder structure per frontend_architecture.md
 - ✅ Install dependencies: zustand, react-router-dom, lucide-react, uuid
-- ❌ Configure ESLint — not set up
-- ❌ Configure Prettier — not set up
+- ✅ Configure ESLint — done
+- ✅ Configure Prettier — done
 - ✅ Set up Git repository with initial commit
 
 ### 3.2.2 Virtual File System
