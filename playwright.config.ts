@@ -72,8 +72,9 @@ export default defineConfig({
 
   /* Run your local dev server before starting the tests */
   webServer: {
-    command: 'npx cross-env VITE_MOCK_SPACETIME=true npm run dev',
-    url: 'http://localhost:5173',
+    command: process.env.CI ? 'npm run build && npx cross-env VITE_MOCK_SPACETIME=true npm run preview' : 'npx cross-env VITE_MOCK_SPACETIME=true npm run dev',
+    url: process.env.CI ? 'http://localhost:4173/the-terminal/' : 'http://localhost:5173/the-terminal/',
     reuseExistingServer: !process.env.CI,
+    timeout: 120 * 1000,
   },
 });
