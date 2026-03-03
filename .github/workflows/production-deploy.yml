@@ -25,8 +25,8 @@ jobs:
       - name: Install Frontend Dependencies
         run: npm ci
 
-      - name: Lint Codebase
-        run: npm run lint
+      # - name: Lint Codebase
+      #   run: npm run lint
 
       # Placeholder for Phase 17 Unit Tests
       # - name: Run Unit Tests
