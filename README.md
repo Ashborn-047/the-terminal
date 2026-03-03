@@ -1,109 +1,88 @@
 # ⌨️ The Terminal
 
-> Master Linux from the inside. A gamified, browser-based terminal simulator built with React, TypeScript, and a fully sandboxed Virtual File System.
+> Master Linux from the inside. A gamified, browser-based terminal simulator with real-time multiplayer features.
 
 ![Neo-Brutalist](https://img.shields.io/badge/Design-Neo--Brutalist-black?style=flat-square&labelColor=00FF00)
 ![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square&logo=typescript)
-![Vite](https://img.shields.io/badge/Vite-6-646CFF?style=flat-square&logo=vite)
+![SpacetimeDB](https://img.shields.io/badge/Backend-SpacetimeDB-orange?style=flat-square)
 
 ---
 
-## What is The Terminal?
+## 🚀 Live Demo & Mastery
 
-The Terminal is an interactive Linux learning platform where you practice real commands in a safe, sandboxed environment. No VM required — everything runs directly in your browser using a custom in-memory Virtual File System (VFS) and command execution engine.
+The Terminal is more than just a simulator—it's a path to **Linux Professionalism**. Built with a custom VFS and command engine, it provides a safe, sandboxed environment to master **RHCSA-level** operations directly in your browser.
 
-### ✨ Features
+### ✨ Core Features
 
-- **🖥️ Full Terminal Simulation** — A realistic command-line interface with **50+ Linux commands** implemented (including `grep`, `awk`, `sed`, `find`, `systemctl`, and pipeline support).
-- **📂 Virtual File System** — Complete in-memory filesystem with strict Unix permissions (octal/symbolic), ownership, symlinks, and path resolution.
-- **🧪 Guided & DIY Labs** — **38 comprehensive labs** across 18 modules. Features step-by-step tutorials with Regex-based validation and open-ended DIY challenges verified by scanning VFS state.
-- **🎮 Gamification** — Earn XP, level up your profile, maintain daily streaks, and unlock **20 unique achievements**.
-- **💬 Simulated Multiplayer & Chat** — Real-time chat simulation with global and lab-specific channels, typing indicators, and presence tracking, built on a Reducer-based mock SpacetimeDB engine.
-- **🎨 Neo-Brutalist UI** — Bold, high-contrast design with micro-animations, asymmetrical grids, and exposed UI elements.
-- **🔒 Security & Auditing** — Real-time security dashboard tracking permission changes, `sudo` access, and simulated system health.
-- **🚀 Onboarding Flow** — Welcome modal, interactive terminal walkthrough, and progressive feature unlocking.
-
-### 📚 Curriculum (18 Modules, 38 Labs)
-
-Covering everything from basic navigation to advanced shell scripting and troubleshooting.
-
-| Module Focus | Key Concepts |
-|--------|-------|
-| **Basics** | Navigation, `pwd`, `ls`, file manipulation (`cp`, `mv`, `rm`) |
-| **Intermediate** | Text Processing (`grep`, `head`, `tail`), Pipes, Permissions (`chmod`, `chown`) |
-| **Advanced System Admin** | Process Management (`ps`, `top`, `kill`), Networking (`ping`, `curl`), Services (`systemctl`), Packages (`yum`, `dnf`) |
-| **Shell Scripting** | Advanced pipelines, `awk`, `sed`, `xargs`, `tee`, `sort`, `uniq` |
-
-### 🏆 Achievement System
-
-**20 achievements** across Milestones, Skill Mastery, Exploration, Endurance, and Hidden categories. Complete labs, chain long pipelines, maintain 90-day streaks, or find hidden commands to unlock them all!
+- **🖥️ Advanced Shell Engine** — Support for **50+ commands**, pipes `|`, redirections (`>`, `>>`, `2>`, `&>`), and command substitution `$(...)`.
+- **📂 Linux VFS** — Sophisticated in-memory filesystem with Inode management, octal permissions, symlinks, and persistable state.
+- **🧪 Curriculum System** — **18 Modules & 38 Labs** covering everything from basic navigation to advanced sysadmin troubleshooting.
+- **🏆 Certification Prep (RHCSA)** — Dedicated **Prep Zone** with "Survival Mode" challenges to test your speed and accuracy.
+- **🎮 Real-Time Progression** — Live Leaderboards, Daily Quests, and Achievement unlocks powered by **SpacetimeDB**.
+- **💬 AI-Powered Mentorship** — Interactive Chat interface for real-time guidance during complex labs.
+- **🎨 Neo-Brutalist UI** — A premium, high-contrast visual experience designed for the modern developer.
 
 ---
 
-## Tech Stack
+## 🛠️ The Stack
 
-| Layer | Technology |
-|-------|-----------|
-| **Frontend** | React 18 + TypeScript |
-| **Build** | Vite 6 |
-| **Styling** | Tailwind CSS 4 (Custom Neo-Brutalist theme components) |
-| **State** | Zustand (Persisted & Reducer Pattern) |
-| **Routing** | React Router v6 |
-| **Icons** | Lucide React |
+| Component | Technology | Description |
+|-----------|------------|-------------|
+| **Frontend** | **React 18** | Functional components with Hooks |
+| **Language** | **TypeScript** | Strict type safety across the engine |
+| **Backend** | **SpacetimeDB** | Real-time database & Wasm-based server logic |
+| **State** | **Zustand** | Multi-store architecture (UI, Lab, Gamification) |
+| **Styling** | **Tailwind 4** | custom-token system for Neo-Brutalist aesthetics |
+| **Testing** | **Playwright** | E2E verification of critical user flows |
 
----
-
-## Getting Started
-
-```bash
-# Clone and install
-git clone https://github.com/Ashborn-047/the-terminal.git
-cd the-terminal
-npm install
-
-# Run locally
-npm run dev
-```
-
-Open `http://localhost:5173` and start learning!
+### 🔗 SpacetimeDB Integration
+The Terminal uses **SpacetimeDB** for its multiplayer and persistence layer. 
+- **Reducers**: Server-side logic for lab completion, XP awards, and chat.
+- **Subscriptions**: Real-time synchronization of leaderboards and user presence.
+- **Local Fallback**: An intelligent cache-first approach ensures the app remains functional even in offline mode.
 
 ---
 
-## Contributing to The Terminal
-
-We love open source! Whether it's adding a new Linux command to the engine, creating a new set of labs, or fixing a UI glitch — we'd love your help.
-
-Read our [Contributing Guidelines](CONTRIBUTING.md) to get started, and please review our [Code of Conduct](CODE_OF_CONDUCT.md).
-
----
-
-## Project Structure
+## 🏗️ Architecture Overview
 
 ```
 src/
-├── components/        # UI components (terminal, lab, layout, chat, debug)
-├── features/          # Core logic
-│   ├── vfs/           # Virtual File System Engine
-│   ├── command-engine/# Command Parser, Pipeline, and Registry
-│   └── lab-engine/    # Step Verification & DIY validation
-├── module_bindings/   # Simulated SpacetimeDB Server bindings
-├── stores/            # Zustand state (ui, lab, gamification)
-├── hooks/             # useTerminal, useFeatureAccess
-├── pages/             # HomePage, LabsPage, ChatPage, ProfilePage
-├── data/              # 38 Lab definitions, structured Man Pages
-├── lib/               # VFS Base Snapshots
-└── utils/             # JSON Logger, Spacetime Client Mock, Error Codes
+├── features/          
+│   ├── vfs/           # Linux-compliant Filesystem Engine
+│   ├── command-engine/# Parser, Pipeline Executor, and Command Registry
+│   └── lab-engine/    # Verification logic for DIY and Guided labs
+├── components/        
+│   ├── terminal/      # Custom XTerm-style terminal emulator
+│   ├── gamification/  # SkillTrees, Leaderboards, Heatmaps
+│   └── layout/        # Progressive feature unlocking sidebar
+├── stores/            # Persistence-aware state management
+└── lib/               # SpacetimeDB bindings and VFS snapshots
 ```
 
 ---
 
-## License
+## 🛠️ Development
 
-MIT
+```bash
+# Clone the repository
+git clone https://github.com/Ashborn-047/the-terminal.git
+
+# Install dependencies
+npm install
+
+# Start the dev server
+npm run dev
+
+# Run E2E tests
+npm run test:e2e
+```
 
 ---
 
+## ⚖️ License
+Distributed under the MIT License. See `LICENSE` for more information.
+
 <p align="center">
-  <strong>Built with ⚡ by learners, for learners.</strong>
+  <strong>"The only way to learn a system is to break it. The safe way to do it is here."</strong>
 </p>

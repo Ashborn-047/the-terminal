@@ -18,13 +18,15 @@ export interface CommandResult {
     exitCode: number;
 }
 
-export type RedirectionType = 'overwrite' | 'append' | 'input' | 'stderr' | 'both' | 'none';
+export type RedirectionType = 'overwrite' | 'append' | 'input' | 'stderr' | 'both' | 'heredoc' | 'none';
 
 export interface CommandAction {
     name: string;
     args: string[];
     redirectionType: RedirectionType;
     redirectionPath?: string;
+    heredocData?: string;
+    background?: boolean;
 }
 
 export interface CommandPipeline {

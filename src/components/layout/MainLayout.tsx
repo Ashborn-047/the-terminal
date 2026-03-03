@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Terminal, BookOpen, Award, Settings, LogOut, ChevronRight, Zap, Flame, BookText, MessageSquare } from 'lucide-react';
+import { Terminal, BookOpen, Award, Settings, LogOut, ChevronRight, Zap, Flame, BookText, MessageSquare, Shield } from 'lucide-react';
 import { useGamificationStore } from '../../stores/gamificationStore';
 import { useUIStore } from '../../stores/uiStore';
 import { useFeatureAccess } from '../../hooks/useFeatureAccess';
@@ -10,26 +10,56 @@ import { DebugOverlay } from '../debug/DebugOverlay';
 interface SidebarItemProps {
     icon: React.ReactNode;
     label: string;
+    path: string;
     active?: boolean;
     locked?: boolean;
+    requirement?: string;
+    progress?: { current: number; total: number };
     onClick?: () => void;
 }
 
-const SidebarItem: React.FC<SidebarItemProps> = ({ icon, label, active, locked, onClick }) => (
-    <button
-        onClick={locked ? undefined : onClick}
-        className={`flex items-center gap-3 w-full p-3 mb-2 font-heading uppercase text-sm border-2 transition-all ${locked
-            ? 'bg-brutal-dark text-brutal-gray border-brutal-gray cursor-not-allowed opacity-50'
-            : active
-                ? 'bg-brutal-green text-brutal-black border-brutal-black shadow-brutal translate-x-[-2px] translate-y-[-2px]'
-                : 'bg-brutal-white text-brutal-black border-brutal-black hover:bg-brutal-yellow'
-            }`}
-    >
-        {icon}
-        <span className="flex-1 text-left">{label}</span>
-        {locked && <span className="text-[10px]">🔒</span>}
-        {active && !locked && <ChevronRight size={16} />}
-    </button>
+const SidebarItem: React.FC<SidebarItemProps> = ({ icon, label, path, active, locked, requirement, progress, onClick }) => (
+    <div className="relative group">
+        <button
+            onClick={locked ? undefined : onClick}
+            className={`flex items-center gap-3 w-full p-3 mb-1 font-heading uppercase text-sm border-2 transition-all ${locked
+                ? 'bg-brutal-dark text-brutal-gray/50 border-brutal-gray/30 cursor-not-allowed'
+                : active
+                    ? 'bg-brutal-green text-brutal-black border-brutal-black shadow-brutal translate-x-[-2px] translate-y-[-2px]'
+                    : 'bg-brutal-white text-brutal-black border-brutal-black hover:bg-brutal-yellow hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]'
+                }`}
+        >
+            <div className={`${locked ? 'opacity-30' : 'opacity-100'}`}>{icon}</div>
+            <span className="flex-1 text-left">{label}</span>
+            {locked && <span className="text-[10px] animate-pulse">🔒</span>}
+            {active && !locked && <ChevronRight size={16} />}
+        </button>
+
+        {locked && (
+            <div className="px-3 pb-2 flex flex-col gap-1">
+                <div className="flex justify-between items-center text-[9px] font-mono uppercase text-brutal-gray">
+                    <span>{requirement}</span>
+                    {progress && <span>{progress.current}/{progress.total}</span>}
+                </div>
+                {progress && (
+                    <div className="h-1 w-full bg-brutal-black border border-brutal-gray/30">
+                        <div
+                            className="h-full bg-brutal-blue transition-all duration-500"
+                            style={{ width: `${(progress.current / progress.total) * 100}%` }}
+                        />
+                    </div>
+                )}
+            </div>
+        )}
+
+        {/* Tooltip on Hover for locked items */}
+        {locked && (
+            <div className="absolute left-full ml-4 top-0 w-48 bg-brutal-black border-2 border-brutal-white p-2 z-50 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity shadow-brutal">
+                <p className="text-[10px] font-mono text-brutal-green uppercase mb-1">Access Restricted</p>
+                <p className="text-xs text-brutal-white">{requirement}</p>
+            </div>
+        )}
+    </div>
 );
 
 export const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -46,10 +76,46 @@ export const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }
         { path: '/', label: 'Dashboard', icon: <Zap size={20} />, locked: false },
         { path: '/terminal', label: 'Terminal', icon: <Terminal size={20} />, locked: false },
         { path: '/labs', label: 'Curriculum', icon: <BookOpen size={20} />, locked: false },
-        { path: '/commands', label: 'Commands', icon: <BookText size={20} />, locked: !features.commandReference },
-        { path: '/chat', label: 'AI Tutor', icon: <MessageSquare size={20} />, locked: !features.chat },
-        { path: '/profile', label: 'Achievements', icon: <Award size={20} />, locked: !features.achievements },
-        { path: '/settings', label: 'Settings', icon: <Settings size={20} />, locked: !features.settings },
+        {
+            path: '/commands',
+            label: 'Commands',
+            icon: <BookText size={20} />,
+            locked: !features.commandReference,
+            requirement: "Complete 5 labs to unlock docs",
+            progress: { current: Math.min(5, useGamificationStore.getState().labsCompleted), total: 5 }
+        },
+        {
+            path: '/chat',
+            label: 'AI Tutor',
+            icon: <MessageSquare size={20} />,
+            locked: !features.chat,
+            requirement: "Complete 3 labs for AI assistance",
+            progress: { current: Math.min(3, useGamificationStore.getState().labsCompleted), total: 3 }
+        },
+        {
+            path: '/profile',
+            label: 'Achievements',
+            icon: <Award size={20} />,
+            locked: !features.achievements,
+            requirement: "Complete 2 labs to view medals",
+            progress: { current: Math.min(2, useGamificationStore.getState().labsCompleted), total: 2 }
+        },
+        {
+            path: '/prep-zone',
+            label: 'RHCSA Prep',
+            icon: <Shield size={20} />,
+            locked: useGamificationStore.getState().level < 5,
+            requirement: "Reach Level 5 for certification prep",
+            progress: { current: Math.min(5, useGamificationStore.getState().level), total: 5 }
+        },
+        {
+            path: '/settings',
+            label: 'Settings',
+            icon: <Settings size={20} />,
+            locked: !features.settings,
+            requirement: "Reach Level 3 to customize system",
+            progress: { current: Math.min(3, useGamificationStore.getState().level), total: 3 }
+        },
     ];
 
     return (
@@ -68,14 +134,12 @@ export const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }
                 </div>
 
                 <nav className="flex-1">
-                    {navItems.map(({ path, label, icon, locked }) => (
+                    {navItems.map((item) => (
                         <SidebarItem
-                            key={path}
-                            icon={icon}
-                            label={label}
-                            active={location.pathname === path}
-                            locked={locked}
-                            onClick={() => navigate(path)}
+                            key={item.path}
+                            {...item}
+                            active={location.pathname === item.path}
+                            onClick={() => navigate(item.path)}
                         />
                     ))}
                 </nav>

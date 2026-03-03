@@ -1003,7 +1003,8 @@ export const INITIAL_LABS: Record<string, Lab> = {
             ]
         },
         hints: ['Use useradd and chmod 700'],
-        completionMessage: 'Permissions Branch Mastered!'
+        completionMessage: 'Permissions Branch Mastered!',
+        tags: ['rhcsa', 'security']
     },
     'lab-10-boss': {
         id: 'lab-10-boss',
@@ -1020,7 +1021,8 @@ export const INITIAL_LABS: Record<string, Lab> = {
             ]
         },
         hints: ['ping -c 1 google.com > network_scan.txt'],
-        completionMessage: 'Networking Branch Mastered!'
+        completionMessage: 'Networking Branch Mastered!',
+        tags: ['rhcsa', 'networking']
     },
     'lab-14-boss': {
         id: 'lab-14-boss',
@@ -1037,6 +1039,7 @@ export const INITIAL_LABS: Record<string, Lab> = {
             ]
         },
         hints: ['Create the script and chmod +x it.'],
-        completionMessage: 'Scripting Branch Mastered!'
+        completionMessage: 'Scripting Branch Mastered!',
+        tags: ['rhcsa', 'scripting']
     }
 };

@@ -41,6 +41,18 @@ export class CommandExecutor {
                 const fullPath = this.getAbsolutePath(expandedRedirPath, context.cwd);
                 const fileContent = this.vfs.readFile(fullPath, context.userId);
                 input = typeof fileContent === 'string' ? fileContent : '';
+            } else if (action.redirectionType === 'heredoc' && action.redirectionPath) {
+                const delimiter = action.redirectionPath;
+                let heredocLines = [];
+                if (context.prompt) {
+                    let line = '';
+                    while (true) {
+                        line = await context.prompt('> ');
+                        if (line === delimiter) break;
+                        heredocLines.push(line);
+                    }
+                }
+                input = heredocLines.join('\n');
             }
 
             const result = await commandFn(expandedArgs, context, input);
@@ -77,6 +89,19 @@ export class CommandExecutor {
             } else {
                 lastOutput = result.output;
             }
+        }
+
+        if (pipeline.actions.length > 0 && pipeline.actions[pipeline.actions.length - 1].background) {
+            const pid = Math.floor(Math.random() * 9000) + 1000;
+            const bgAction = pipeline.actions[pipeline.actions.length - 1];
+            context.updateProcesses([
+                ...context.processes,
+                { pid, name: bgAction.name, user: context.userId, startTime: Date.now() }
+            ]);
+            return {
+                output: `[1] ${pid}`,
+                exitCode: 0
+            };
         }
 
         return {

@@ -31,6 +31,11 @@ export class CommandParser {
                 if (remaining[i] === '&' && remaining[i + 1] === '&') {
                     splitIndex = i; operator = '&&'; opLen = 2; break;
                 }
+                if (remaining[i] === '&' && remaining[i + 1] !== '&') {
+                    // Possible background operator - treat as separator for now if at end of command part
+                    // but usually background is handled per pipeline. Here we treat it as ';' for compound flow.
+                    splitIndex = i; operator = ';'; opLen = 1; break;
+                }
                 if (remaining[i] === '|' && remaining[i + 1] === '|') {
                     splitIndex = i; operator = '||'; opLen = 2; break;
                 }
@@ -109,11 +114,22 @@ export class CommandParser {
             commandPart = parts[0].trim();
             action.redirectionType = 'append';
             action.redirectionPath = parts[1].trim();
+        } else if (commandPart.includes('<<')) {
+            const parts = commandPart.split('<<');
+            commandPart = parts[0].trim();
+            action.redirectionType = 'heredoc';
+            action.redirectionPath = parts[1].trim(); // Delimiter
         } else if (commandPart.includes('>')) {
             const parts = commandPart.split('>');
             commandPart = parts[0].trim();
             action.redirectionType = 'overwrite';
             action.redirectionPath = parts[1].trim();
+        }
+
+        // Handle background operator &
+        if (commandPart.endsWith('&') && !commandPart.endsWith('&&')) {
+            action.background = true;
+            commandPart = commandPart.substring(0, commandPart.length - 1).trim();
         }
 
         // Handle input redirection separately as it can coexist with output

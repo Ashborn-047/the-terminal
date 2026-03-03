@@ -6,3 +6,10 @@ dist/
 .DS_Store
 Thumbs.db
 .vite/
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
