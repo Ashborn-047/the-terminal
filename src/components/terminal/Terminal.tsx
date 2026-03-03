@@ -127,6 +127,7 @@ export const TerminalComponent: React.FC = () => {
                 <input
                     ref={inputRef}
                     type="text"
+                    aria-label="Terminal Input"
                     className="flex-1 bg-transparent border-none outline-none text-brutal-white caret-transparent"
                     value={input}
                     onChange={(e) => setInput(e.target.value)}

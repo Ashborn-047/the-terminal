@@ -2,27 +2,26 @@ import React from 'react';
 import { useGamificationStore } from '../../stores/gamificationStore';
 
 export const StreakHeatmap: React.FC = () => {
-    const { streak } = useGamificationStore();
+    const { streak, activityHistory } = useGamificationStore();
 
-    // Simulate a 30-day history based on the current streak
-    const days = Array.from({ length: 30 }, (_, i) => {
+    // Render 35 days (5 weeks) of history
+    const totalDays = 35;
+    const days = Array.from({ length: totalDays }, (_, i) => {
         const date = new Date();
-        date.setDate(date.getDate() - (29 - i));
+        date.setDate(date.getDate() - (totalDays - 1 - i));
         const dateStr = date.toISOString().split('T')[0];
 
-        // If it's today and we have a streak, it's active
-        // If it's within the 'current' streak range back from lastActivityDate, it's active
-        let isActive = false;
-        if (streak.lastActivityDate) {
-            const lastDate = new Date(streak.lastActivityDate);
-            const currentDate = new Date(dateStr);
-            const diffDays = Math.floor((lastDate.getTime() - currentDate.getTime()) / (1000 * 3600 * 24));
-            if (diffDays >= 0 && diffDays < streak.current) {
-                isActive = true;
-            }
+        const xpEarned = activityHistory?.[dateStr] || 0;
+
+        let intensityClass = 'bg-brutal-gray/10';
+        if (xpEarned > 0) {
+            if (xpEarned >= 500) intensityClass = 'bg-[#00ff9d] shadow-[0_0_8px_rgba(0,255,157,0.8)] border-[#00ff9d]';
+            else if (xpEarned >= 200) intensityClass = 'bg-[#00cc7d] border-[#00cc7d]';
+            else if (xpEarned >= 50) intensityClass = 'bg-[#00995e] border-[#00995e]';
+            else intensityClass = 'bg-[#00663f] border-[#00663f]';
         }
 
-        return { date: dateStr, isActive };
+        return { date: dateStr, xp: xpEarned, intensityClass };
     });
 
     return (
@@ -32,27 +31,27 @@ export const StreakHeatmap: React.FC = () => {
                 <span className="text-[10px] bg-brutal-green text-brutal-black px-1 leading-none">{streak.current} DAY STREAK</span>
             </h3>
 
-            <div className="grid grid-cols-10 gap-1 lg:grid-cols-15">
+            <div className="grid grid-cols-7 gap-1 lg:gap-1.5 md:grid-cols-7">
                 {days.map((day, i) => (
                     <div
                         key={i}
-                        title={day.date}
-                        className={`aspect-square border border-brutal-gray/30 transition-transform hover:scale-110 ${day.isActive ? 'bg-brutal-green shadow-[0_0_8px_rgba(0,255,157,0.5)]' : 'bg-brutal-gray/10'
-                            }`}
+                        title={`${day.date}: ${day.xp} XP`}
+                        className={`aspect-square border border-brutal-gray/30 transition-transform hover:scale-110 ${day.intensityClass}`}
                     />
                 ))}
             </div>
 
             <div className="mt-4 flex items-center justify-between text-[10px] text-brutal-gray uppercase font-mono">
-                <span>30 Days Ago</span>
+                <span>35 Days Ago</span>
                 <div className="flex items-center gap-1">
                     <span>Less</span>
                     <div className="w-2 h-2 bg-brutal-gray/10 border border-brutal-gray/30" />
-                    <div className="w-2 h-2 bg-brutal-green/50 border border-brutal-green" />
-                    <div className="w-2 h-2 bg-brutal-green border border-brutal-white shadow-[0_0_5px_rgba(0,255,157,0.8)]" />
+                    <div className="w-2 h-2 bg-[#00663f] border border-[#00663f]" />
+                    <div className="w-2 h-2 bg-[#00995e] border border-[#00995e]" />
+                    <div className="w-2 h-2 bg-[#00cc7d] border border-[#00cc7d]" />
+                    <div className="w-2 h-2 bg-[#00ff9d] shadow-[0_0_4px_rgba(0,255,157,0.8)] border-[#00ff9d]" />
                     <span>More</span>
                 </div>
-                <span>Today</span>
             </div>
         </div>
     );

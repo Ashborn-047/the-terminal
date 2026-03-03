@@ -1,4 +1,4 @@
-use spacetimedb::{table, reducer, Identity, ReducerContext, Timestamp, Table};
+use spacetimedb::{Identity, ReducerContext, Table, Timestamp, reducer, table};
 
 #[table(public, accessor = user)]
 pub struct User {
@@ -18,7 +18,7 @@ pub struct User {
     pub created_at: Timestamp,
 }
 
-#[derive(spacetimedb::SpacetimeType)]
+#[derive(spacetimedb::SpacetimeType, Clone)]
 pub struct ActivityEntry {
     pub timestamp: Timestamp,
     pub action: String,
@@ -80,6 +80,7 @@ pub struct Message {
     pub edited: Option<Timestamp>,
     pub deleted: bool,
     pub pinned: bool,
+    pub upvotes: u32,
 }
 
 #[table(public, accessor = online_presence)]
@@ -97,6 +98,66 @@ pub struct TypingIndicator {
     pub channel: String,
     pub started_at: Timestamp,
 }
+
+#[table(public, accessor = rate_limit)]
+pub struct RateLimit {
+    #[primary_key]
+    pub identity: Identity,
+    pub last_action: Timestamp,
+    pub action_count: u32,
+}
+
+#[table(public, accessor = quest)]
+pub struct Quest {
+    #[primary_key]
+    pub id: u64,
+    pub title: String,
+    pub description: String,
+    pub xp_reward: u64,
+}
+
+#[table(public, accessor = user_quest)]
+pub struct UserQuest {
+    #[primary_key]
+    pub identity: Identity,
+    pub active_quest_ids: Vec<u64>,
+    pub completed_quest_ids: Vec<u64>,
+    pub last_quest_refresh_at: Timestamp,
+}
+
+#[reducer]
+pub fn init_quests(ctx: &ReducerContext) -> Result<(), String> {
+    if ctx.db.quest().iter().count() > 0 {
+        return Ok(());
+    }
+
+    ctx.db.quest().insert(Quest {
+        id: 1,
+        title: "Welcome Hero".into(),
+        description: "Complete your first lab to start your journey.".into(),
+        xp_reward: 100,
+    });
+
+    ctx.db.quest().insert(Quest {
+        id: 2,
+        title: "Chatterbox".into(),
+        description: "Send 5 messages in the global chat.".into(),
+        xp_reward: 50,
+    });
+
+    ctx.db.quest().insert(Quest {
+        id: 3,
+        title: "Master Navigator".into(),
+        description: "Visit all main sections: Dashboard, Curriculum, Terminal, Profile.".into(),
+        xp_reward: 75,
+    });
+
+    Ok(())
+}
+
+// =====================================================================
+//  Reducers
+// =====================================================================
 
 #[reducer]
 pub fn register_user(ctx: &ReducerContext, username: String) -> Result<(), String> {
@@ -135,13 +196,25 @@ pub fn register_user(ctx: &ReducerContext, username: String) -> Result<(), Strin
         }],
     });
 
+    ctx.db.user_quest().insert(UserQuest {
+        identity: ctx.sender(),
+        active_quest_ids: Vec::new(),
+        completed_quest_ids: Vec::new(),
+        last_quest_refresh_at: ctx.timestamp,
+    });
+
     update_leaderboard(ctx, ctx.sender())?;
 
     Ok(())
 }
 
 #[reducer]
-pub fn create_channel(ctx: &ReducerContext, name: String, description: Option<String>, is_private: bool) -> Result<(), String> {
+pub fn create_channel(
+    ctx: &ReducerContext,
+    name: String,
+    description: Option<String>,
+    is_private: bool,
+) -> Result<(), String> {
     if ctx.db.channel().name().find(&name).is_some() {
         return Err("Channel already exists".into());
     }
@@ -151,7 +224,11 @@ pub fn create_channel(ctx: &ReducerContext, name: String, description: Option<St
         description,
         created_by: ctx.sender(),
         is_private,
-        members: if is_private { vec![ctx.sender()] } else { Vec::new() },
+        members: if is_private {
+            vec![ctx.sender()]
+        } else {
+            Vec::new()
+        },
     });
 
     Ok(())
@@ -159,10 +236,15 @@ pub fn create_channel(ctx: &ReducerContext, name: String, description: Option<St
 
 #[reducer]
 pub fn update_streak(ctx: &ReducerContext) -> Result<(), String> {
-    let mut user = ctx.db.user().identity().find(&ctx.sender()).ok_or("User not found")?;
+    let mut user = ctx
+        .db
+        .user()
+        .identity()
+        .find(&ctx.sender())
+        .ok_or("User not found")?;
     let last_activity = user.last_activity.to_micros_since_unix_epoch();
     let current_time = ctx.timestamp.to_micros_since_unix_epoch();
-    
+
     let one_day_micros = 24 * 60 * 60 * 1_000_000;
     let gap = current_time - last_activity;
 
@@ -171,6 +253,17 @@ pub fn update_streak(ctx: &ReducerContext) -> Result<(), String> {
             user.streak += 1;
             if user.streak > user.longest_streak {
                 user.longest_streak = user.streak;
+            }
+            // Milestone Bonuses §4
+            let bonus = match user.streak {
+                7 => 100,
+                30 => 500,
+                90 => 2000,
+                _ => 0,
+            };
+            user.xp += bonus;
+            while user.xp >= xp_for_level(user.level + 1) {
+                user.level += 1;
             }
         }
     } else {
@@ -184,8 +277,79 @@ pub fn update_streak(ctx: &ReducerContext) -> Result<(), String> {
 }
 
 #[reducer]
+pub fn complete_quest(ctx: &ReducerContext, quest_id: u64) -> Result<(), String> {
+    let mut user_quest = ctx
+        .db
+        .user_quest()
+        .identity()
+        .find(&ctx.sender())
+        .ok_or("UserQuest not found")?;
+    if user_quest.completed_quest_ids.contains(&quest_id) {
+        return Err("Quest already completed".into());
+    }
+
+    let quest = ctx
+        .db
+        .quest()
+        .id()
+        .find(&quest_id)
+        .ok_or("Quest not found")?;
+
+    user_quest.completed_quest_ids.push(quest_id);
+    user_quest.active_quest_ids.retain(|&id| id != quest_id);
+    ctx.db.user_quest().identity().update(user_quest);
+
+    let mut user = ctx
+        .db
+        .user()
+        .identity()
+        .find(&ctx.sender())
+        .ok_or("User not found")?;
+    user.xp += quest.xp_reward;
+    while user.xp >= xp_for_level(user.level + 1) {
+        user.level += 1;
+    }
+    ctx.db.user().identity().update(user);
+
+    update_leaderboard(ctx, ctx.sender())?;
+    Ok(())
+}
+
+#[reducer]
+pub fn upvote_message(ctx: &ReducerContext, message_id: u64) -> Result<(), String> {
+    let mut msg = ctx
+        .db
+        .message()
+        .id()
+        .find(&message_id)
+        .ok_or("Message not found")?;
+    msg.upvotes += 1;
+    ctx.db.message().id().update(msg.clone());
+
+    // Reward sender with XP §2
+    let mut sender = ctx
+        .db
+        .user()
+        .identity()
+        .find(&msg.sender_identity)
+        .ok_or("Sender not found")?;
+    sender.xp += 5; // 5 XP per upvote
+    while sender.xp >= xp_for_level(sender.level + 1) {
+        sender.level += 1;
+    }
+    ctx.db.user().identity().update(sender);
+
+    Ok(())
+}
+
+#[reducer]
 pub fn complete_lab(ctx: &ReducerContext, lab_id: String, xp_earned: u64) -> Result<(), String> {
-    let mut user = ctx.db.user().identity().find(&ctx.sender()).ok_or("User not found")?;
+    let mut user = ctx
+        .db
+        .user()
+        .identity()
+        .find(&ctx.sender())
+        .ok_or("User not found")?;
     user.xp += xp_earned;
 
     while user.xp >= xp_for_level(user.level + 1) {
@@ -195,7 +359,12 @@ pub fn complete_lab(ctx: &ReducerContext, lab_id: String, xp_earned: u64) -> Res
     user.last_activity = ctx.timestamp;
     ctx.db.user().identity().update(user);
 
-    let mut progress = ctx.db.user_progress().identity().find(&ctx.sender()).ok_or("Progress not found")?;
+    let mut progress = ctx
+        .db
+        .user_progress()
+        .identity()
+        .find(&ctx.sender())
+        .ok_or("Progress not found")?;
     if !progress.completed_labs.contains(&lab_id) {
         progress.completed_labs.push(lab_id);
     }
@@ -207,9 +376,45 @@ pub fn complete_lab(ctx: &ReducerContext, lab_id: String, xp_earned: u64) -> Res
 }
 
 #[reducer]
-pub fn send_message(ctx: &ReducerContext, channel_name: String, content: String) -> Result<(), String> {
+pub fn send_message(
+    ctx: &ReducerContext,
+    channel_name: String,
+    content: String,
+) -> Result<(), String> {
     if content.trim().is_empty() {
         return Err("Message cannot be empty".into());
+    }
+
+    // Rate Limiting Logic: Max 5 messages per 10 seconds
+    let mut rate_limit = ctx
+        .db
+        .rate_limit()
+        .identity()
+        .find(&ctx.sender())
+        .unwrap_or(RateLimit {
+            identity: ctx.sender(),
+            last_action: ctx.timestamp,
+            action_count: 0,
+        });
+
+    let ten_seconds = 10 * 1_000_000;
+    if ctx.timestamp.to_micros_since_unix_epoch()
+        - rate_limit.last_action.to_micros_since_unix_epoch()
+        > ten_seconds
+    {
+        rate_limit.action_count = 1;
+        rate_limit.last_action = ctx.timestamp;
+    } else {
+        rate_limit.action_count += 1;
+        if rate_limit.action_count > 5 {
+            return Err("Rate limit exceeded. Please wait before sending more messages.".into());
+        }
+    }
+
+    if ctx.db.rate_limit().identity().find(&ctx.sender()).is_some() {
+        ctx.db.rate_limit().identity().update(rate_limit);
+    } else {
+        ctx.db.rate_limit().insert(rate_limit);
     }
 
     if let Some(chan) = ctx.db.channel().name().find(&channel_name) {
@@ -227,6 +432,7 @@ pub fn send_message(ctx: &ReducerContext, channel_name: String, content: String)
         edited: None,
         deleted: false,
         pinned: false,
+        upvotes: 0,
     });
 
     Ok(())
@@ -251,8 +457,14 @@ pub fn edit_message(ctx: &ReducerContext, message_id: u64, content: String) -> R
 pub fn delete_message(ctx: &ReducerContext, message_id: u64) -> Result<(), String> {
     if let Some(mut msg) = ctx.db.message().id().find(&message_id) {
         let is_owner = msg.sender_identity == ctx.sender();
-        let is_admin = ctx.db.user().identity().find(&ctx.sender()).map(|u| u.is_admin).unwrap_or(false);
-        
+        let is_admin = ctx
+            .db
+            .user()
+            .identity()
+            .find(&ctx.sender())
+            .map(|u| u.is_admin)
+            .unwrap_or(false);
+
         if !is_owner && !is_admin {
             return Err("Not authorized".into());
         }
@@ -266,7 +478,13 @@ pub fn delete_message(ctx: &ReducerContext, message_id: u64) -> Result<(), Strin
 
 #[reducer]
 pub fn pin_message(ctx: &ReducerContext, message_id: u64, pinned: bool) -> Result<(), String> {
-    let is_admin = ctx.db.user().identity().find(&ctx.sender()).map(|u| u.is_admin).unwrap_or(false);
+    let is_admin = ctx
+        .db
+        .user()
+        .identity()
+        .find(&ctx.sender())
+        .map(|u| u.is_admin)
+        .unwrap_or(false);
     if !is_admin {
         return Err("Only admins can pin messages".into());
     }
@@ -334,7 +552,7 @@ pub fn cleanup_offline_users(ctx: &ReducerContext) -> Result<(), String> {
     let timestamp = ctx.timestamp;
     let threshold_micros = timestamp.to_micros_since_unix_epoch() - (120 * 1_000_000);
     let typing_threshold_micros = timestamp.to_micros_since_unix_epoch() - (10 * 1_000_000);
-    
+
     let mut to_cleanup_presence = Vec::new();
     for presence in ctx.db.online_presence().iter() {
         if presence.last_seen.to_micros_since_unix_epoch() < threshold_micros {
@@ -373,9 +591,14 @@ fn xp_for_level(level: u32) -> u64 {
 }
 
 fn update_leaderboard(ctx: &ReducerContext, identity: Identity) -> Result<(), String> {
-    let user = ctx.db.user().identity().find(&identity).ok_or("User not found")?;
+    let user = ctx
+        .db
+        .user()
+        .identity()
+        .find(&identity)
+        .ok_or("User not found")?;
     let timestamp = ctx.timestamp;
-    
+
     if let Some(mut entry) = ctx.db.leaderboard_entry().identity().find(&identity) {
         entry.total_xp = user.xp;
         entry.level = user.level;

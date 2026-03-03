@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
 import { Message } from '../../module_bindings';
-import { Edit2, Trash2, Check, X } from 'lucide-react';
+import { Edit2, Trash2, Check, X, ThumbsUp } from 'lucide-react';
 
 interface MessageBubbleProps {
-    message: Message;
+    message: Message & { upvotes?: number };
     isMine: boolean;
     onEdit: (id: string, content: string) => void;
     onDelete: (id: string) => void;
+    onUpvote?: (id: string) => void;
 }
 
-export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isMine, onEdit, onDelete }) => {
+export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isMine, onEdit, onDelete, onUpvote }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [editContent, setEditContent] = useState(message.content);
 
@@ -61,6 +62,21 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isMine, o
                 ) : (
                     <div className="font-mono text-sm leading-relaxed whitespace-pre-wrap">
                         {message.content}
+                    </div>
+                )}
+
+                {!isEditing && (
+                    <div className="flex justify-between items-center mt-3 pt-3 border-t border-brutal-black/10">
+                        <div className="flex items-center gap-1">
+                            <button
+                                onClick={() => onUpvote?.(message.id)}
+                                className={`flex items-center gap-1.5 px-2 py-1 border-2 border-brutal-black text-[10px] font-bold transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none ${isMine ? 'bg-brutal-black text-brutal-green hover:bg-brutal-dark' : 'bg-brutal-green text-brutal-black hover:bg-brutal-green/80'
+                                    }`}
+                            >
+                                <ThumbsUp size={12} />
+                                <span>{message.upvotes || 0}</span>
+                            </button>
+                        </div>
                     </div>
                 )}
 

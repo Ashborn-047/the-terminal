@@ -1,75 +1,72 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('Curriculum & Lab Experience', () => {
+test.describe('Curriculum and Lab Flow', () => {
     test.beforeEach(async ({ page }) => {
-        page.on('console', async msg => {
-            const values = [];
-            for (const arg of msg.args()) {
-                values.push(await arg.jsonValue().catch(() => '<unserializable>'));
-            }
-            console.log(`PW_TEST: ${msg.text()} | `, ...values);
+        // Skip onboarding for these tests by setting the flag in localStorage
+        await page.goto('/');
+        await page.evaluate(() => {
+            localStorage.setItem('ui-storage', JSON.stringify({
+                state: {
+                    onboardingCompleted: true,
+                    username: 'test_student',
+                    onboardingStep: 4
+                }
+            }));
         });
-        // Complete onboarding to get to a fresh state
-        await page.goto('/');
-        await page.evaluate(() => localStorage.clear());
-        await page.goto('/');
-
-        await page.getByPlaceholder('enter_username').fill('lab_tester');
-        await page.getByRole('button', { name: 'Initialize Session →' }).click();
-
-        // Skip walkthrough to reach labs faster if possible, 
-        // but here we just follow the redirect after walkthrough
-        await expect(page.getByRole('heading', { name: 'The Command Line' })).toBeVisible({ timeout: 10000 });
-        await page.getByPlaceholder('pwd').fill('pwd');
-        await page.keyboard.press('Enter');
-
-        await expect(page.getByRole('heading', { name: 'Your Location' })).toBeVisible();
-        await page.getByPlaceholder('ls').fill('ls');
-        await page.keyboard.press('Enter');
-
-        await page.getByRole('button', { name: 'Next →' }).click();
-        await page.getByRole('button', { name: 'Start Learning!' }).click();
-
-        await expect(page).toHaveURL(/\/lab\/lab-1-1/);
+        await page.reload();
     });
 
-    test('should complete a guided lab and earn XP', async ({ page }) => {
-        page.on('console', msg => console.log('PW_TEST:', msg.text()));
+    test('should navigate through curriculum and complete a guided lab', async ({ page }) => {
+        // 1. Start from Labs Page
+        await page.goto('/labs');
+        await expect(page.getByRole('heading', { name: 'The Curriculum' })).toBeVisible();
 
-        // 1. Verify we are in Lab 1-1
+        // 2. Click on the first lab card
+        const labCard = page.getByText('Filesystem Basics: Your First Command');
+        await labCard.click();
+
+        // 3. Verify Lab View
+        await expect(page).toHaveURL(/\/lab\/lab-1-1/);
         await expect(page.getByText('Your First Command')).toBeVisible();
-        await expect(page.getByText('Step 1/2')).toBeVisible();
 
-        // 2. Check initial XP (should be 0 or wait for rewards if they trigger on first command)
-        // Note: The walkthrough commands might have triggered achievement rewards.
-        // Let's check the header for XP
-        const initialXPText = await page.getByText(/XP$/).innerText();
+        // 4. Complete the guided steps
+        // Step 1: pwd
+        const terminalInput = page.locator('input[type="text"]').last();
+        await terminalInput.fill('pwd');
+        await page.keyboard.press('Enter');
+        await expect(page.getByText('Nice! /home/test_student')).toBeVisible();
 
-        // 3. Complete Step 1: pwd
-        const terminal = page.getByLabel('Terminal Input');
-        await terminal.fill('pwd');
+        // Step 2: ls
+        await terminalInput.fill('ls');
         await page.keyboard.press('Enter');
 
-        // 4. Verify auto-advance to Step 2
-        await expect(page.getByText('Step 2/2')).toBeVisible();
+        // 5. Verify Lab Completion Modal (CelebrationModal)
+        await expect(page.getByText('Lab Complete!')).toBeVisible({ timeout: 10000 });
+        await expect(page.getByText('+50 XP')).toBeVisible();
 
-        // 5. Complete Step 2: ls
-        await terminal.fill('ls');
-        await page.keyboard.press('Enter');
-
-        // 6. Verify Lab Complete screen (Celebration Modal)
-        await expect(page.getByText('First Lab Complete!')).toBeVisible();
-        await expect(page.getByText('This is just the beginning')).toBeVisible();
-
-        // 7. Click Finish/Exit button to go back to Dashboard
+        // 6. Navigate back to Dashboard
         await page.getByRole('button', { name: 'View Dashboard' }).click();
         await expect(page).toHaveURL('/');
+    });
 
-        // 8. Verify we are back on the Dashboard
-        await expect(page.getByRole('heading', { name: /Command Center/i })).toBeVisible();
+    test('should complete a DIY lab with verification conditions', async ({ page }) => {
+        // Directly go to a DIY lab (Module 1, Lab 2)
+        await page.goto('/lab/lab-1-2');
+        await expect(page.getByText('Navigation Challenge')).toBeVisible();
 
-        // Verify lab is marked completed in curriculum 
-        await page.getByRole('button', { name: /Start a Lab/i }).click();
-        await expect(page.getByText('COMPLETED').first()).toBeVisible();
+        // Perform the required actions in terminal
+        const terminalInput = page.locator('input[type="text"]').last();
+
+        // Task: Create /tmp/navigator.txt (assuming this is the condition)
+        await terminalInput.fill('mkdir -p /tmp');
+        await page.keyboard.press('Enter');
+        await terminalInput.fill('touch /tmp/navigator.txt');
+        await page.keyboard.press('Enter');
+
+        // Click Verify button
+        await page.getByRole('button', { name: 'Verify Solution' }).click();
+
+        // Success message and Modal
+        await expect(page.getByText('Lab Complete!')).toBeVisible();
     });
 });

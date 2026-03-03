@@ -1,0 +1,86 @@
+name: Production Deployment Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - release/*
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Frontend Dependencies
+        run: npm ci
+
+      - name: Lint Codebase
+        run: npm run lint
+
+      # Placeholder for Phase 17 Unit Tests
+      # - name: Run Unit Tests
+      #   run: npm run test:unit
+      
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
+
+      - name: Run E2E Tests (Mocked Backend)
+        env:
+          VITE_MOCK_SPACETIME: true
+        run: npx playwright test
+
+      - name: Build Frontend
+        run: npm run build
+
+      - name: Setup Rust (for SpacetimeDB)
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+
+      - name: Install SpacetimeDB CLI
+        run: curl -sSf https://install.spacetimedb.com | sh
+      
+      - name: Check Rust Module
+        working-directory: ./spacetime-module
+        run: cargo check
+
+  deploy-staging:
+    needs: test-and-build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Deploy to Vercel/Netlify (Staging)
+        run: echo "Deploying Frontend to Staging..."
+
+  deploy-production:
+    needs: deploy-staging
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/release/')
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install SpacetimeDB CLI
+        run: curl -sSf https://install.spacetimedb.com | sh
+      - name: Publish SpacetimeDB Backend
+        env:
+          SPACETIME_TOKEN: ${{ secrets.SPACETIME_TOKEN }}
+        run: spacetime publish -s linux_terminal_prod -c spacetime-module
+      - name: Deploy to Vercel/Netlify (Production)
+        run: echo "Deploying Frontend to Production..."

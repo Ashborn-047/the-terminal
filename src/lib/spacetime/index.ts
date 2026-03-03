@@ -8,7 +8,8 @@ class SpacetimeService {
     private isConnected: boolean = false;
 
     constructor() {
-        this.isMock = import.meta.env.VITE_MOCK_SPACETIME === 'true';
+        // Default to mock mode if not explicitly disabled
+        this.isMock = import.meta.env.VITE_MOCK_SPACETIME !== 'false';
         if (!this.isMock) {
             try {
                 this.connect();
@@ -23,7 +24,7 @@ class SpacetimeService {
 
     public connect() {
         const uri = "https://maincloud.spacetimedb.com";
-        const databaseName = "terminal-backend";
+        const databaseName = "the-terminal-linux-v1";
 
         this.conn = DbConnection.builder()
             .withUri(uri)
@@ -109,6 +110,16 @@ class SpacetimeService {
         return this.conn.reducers.startTyping({ channel });
     }
 
+    public async completeQuest(questId: bigint) {
+        if (!this.conn) throw new Error("Not connected");
+        return this.conn.reducers.completeQuest({ questId });
+    }
+
+    public async upvoteMessage(messageId: bigint) {
+        if (!this.conn) throw new Error("Not connected");
+        return this.conn.reducers.upvoteMessage({ messageId });
+    }
+
     public async stopTyping() {
         if (!this.conn) throw new Error("Not connected");
         return this.conn.reducers.stopTyping({});
@@ -117,6 +128,10 @@ class SpacetimeService {
     public async heartbeat(currentLab: string | undefined) {
         if (!this.conn) throw new Error("Not connected");
         return this.conn.reducers.heartbeat({ currentLab });
+    }
+
+    public getIsConnected() {
+        return this.isConnected;
     }
 
     public subscribeToAll() {
@@ -157,8 +172,67 @@ class SpacetimeService {
         return all.sort((a: any, b: any) => Number(b.totalXp - a.totalXp));
     }
 
-    public getIsConnected() {
-        return this.isConnected;
+    public getLocalUser() {
+        if (this.isMock) {
+            return {
+                identity: "mock-identity",
+                username: "GuestPlayer",
+                level: 5,
+                xp: 1250n,
+                streak: 3,
+                longestStreak: 7,
+                isOnline: true
+            } as any;
+        }
+        if (!this.conn || !this.isConnected) return null;
+        const identity = this.conn.identity;
+        if (!identity) return null;
+        return this.conn.db.user.identity.find(identity);
+    }
+
+    public getUserProgress() {
+        if (this.isMock) {
+            return {
+                identity: "mock-identity",
+                completedLabs: ["lab-1-1"],
+                currentLab: "lab-1-1",
+                xpTotal: 1250n,
+                lastDailyActive: 0n,
+                streakDays: 3
+            } as any;
+        }
+        if (!this.conn || !this.isConnected) return null;
+        const identity = this.conn.identity;
+        if (!identity) return null;
+        return this.conn.db.user_progress.identity.find(identity);
+    }
+
+    public getQuests() {
+        if (this.isMock) {
+            return [
+                { id: 1n, title: "Welcome Hero", description: "Complete your first lab to start your journey.", xpReward: 100n },
+                { id: 2n, title: "Chatterbox", description: "Send 5 messages in the global chat.", xpReward: 50n },
+                { id: 3n, title: "Master Navigator", description: "Visit all main sections: Dashboard, Curriculum, Terminal, Profile.", xpReward: 75n }
+            ] as any;
+        }
+        if (!this.conn || !this.isConnected) return [];
+        return Array.from(this.conn.db.quest.iter());
+    }
+
+    public getUserQuests() {
+        if (this.isMock) {
+            return {
+                identity: "mock-identity",
+                activeQuestIds: [1n, 2n, 3n],
+                completedQuestIds: [],
+                lastDailyQuestReset: 0n,
+                upvotedMessageIds: []
+            } as any;
+        }
+        if (!this.conn || !this.isConnected) return null;
+        const identity = this.conn.identity;
+        if (!identity) return null;
+        return this.conn.db.user_quest.identity.find(identity);
     }
 
     public onUpdate(cb: () => void) {

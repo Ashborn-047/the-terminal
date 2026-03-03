@@ -100,6 +100,18 @@ export const GuidedLabInstructions: React.FC<GuidedLabProps> = ({ lab, currentSt
 
     const step = lab.steps[currentStepIndex];
 
+    if (!step) {
+        return (
+            <div className="border-3 border-brutal-black p-4 bg-brutal-green text-brutal-black shadow-brutal">
+                <div className="flex items-center gap-2 mb-2">
+                    <Award size={20} />
+                    <h4 className="font-heading uppercase text-lg">Lab Complete!</h4>
+                </div>
+                <p>{lab.completionMessage}</p>
+            </div>
+        );
+    }
+
     return (
         <div className="border-3 border-brutal-black p-4 bg-brutal-dark text-brutal-white shadow-brutal">
             <div className="flex justify-between items-center mb-3">
@@ -111,25 +123,27 @@ export const GuidedLabInstructions: React.FC<GuidedLabProps> = ({ lab, currentSt
 
             <p className="text-sm mb-4 border-l-4 border-brutal-yellow pl-3">{step.instruction}</p>
 
-            {step.hint && (
-                <div className="mt-3">
-                    {!showHint ? (
-                        <button
-                            onClick={() => {
-                                setShowHint(true);
-                                onHintUsed?.(currentStepIndex);
-                            }}
-                            className="flex items-center gap-1 text-xs text-brutal-yellow hover:text-brutal-green font-bold uppercase border-b-2 border-brutal-yellow transition-all"
-                        >
-                            <HelpCircle size={14} /> [GET_HINT]
-                        </button>
-                    ) : (
-                        <div className="bg-brutal-black border-2 border-brutal-yellow p-2 text-xs text-brutal-yellow">
-                            💡 {step.hint}
-                        </div>
-                    )}
-                </div>
-            )}
+            {
+                step.hint && (
+                    <div className="mt-3">
+                        {!showHint ? (
+                            <button
+                                onClick={() => {
+                                    setShowHint(true);
+                                    onHintUsed?.(currentStepIndex);
+                                }}
+                                className="flex items-center gap-1 text-xs text-brutal-yellow hover:text-brutal-green font-bold uppercase border-b-2 border-brutal-yellow transition-all"
+                            >
+                                <HelpCircle size={14} /> [GET_HINT]
+                            </button>
+                        ) : (
+                            <div className="bg-brutal-black border-2 border-brutal-yellow p-2 text-xs text-brutal-yellow">
+                                💡 {step.hint}
+                            </div>
+                        )}
+                    </div>
+                )
+            }
 
             {/* Step progress dots */}
             <div className="flex gap-1 mt-4">
@@ -141,7 +155,7 @@ export const GuidedLabInstructions: React.FC<GuidedLabProps> = ({ lab, currentSt
                     />
                 ))}
             </div>
-        </div>
+        </div >
     );
 };
 

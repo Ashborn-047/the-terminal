@@ -3,6 +3,7 @@ import { Send, Terminal as TerminalIcon, Globe, Lock, Unlock } from 'lucide-reac
 import { MessageBubble } from './MessageBubble';
 import { useChat } from '../../features/chat/ChatProvider';
 import { useLabStore } from '../../stores/labStore';
+import { spacetime } from '../../lib/spacetime';
 
 export const ChatWindow: React.FC = () => {
     const {
@@ -92,19 +93,24 @@ export const ChatWindow: React.FC = () => {
                 )}
                 {messages.map((m) => (
                     <MessageBubble
-                        key={m.id}
-                        message={m}
-                        isMine={m.sender === 'guest-identity'}
-                        onEdit={editMessage}
-                        onDelete={deleteMessage}
+                        key={m.id.toString()}
+                        message={{
+                            ...m,
+                            id: m.id.toString(),
+                            timestamp: Number(m.timestamp)
+                        } as any}
+                        isMine={m.senderIdentity.toString() === spacetime.getLocalUser()?.identity.toString()}
+                        onEdit={(id, content) => editMessage(BigInt(id), content)}
+                        onDelete={(id) => deleteMessage(BigInt(id))}
+                        onUpvote={(id) => spacetime.upvoteMessage(BigInt(id))}
                     />
                 ))}
 
                 {/* Typing indicators */}
-                {typingUsers.filter(u => u.identity !== 'guest-identity').map(u => (
-                    <div key={u.identity} className="flex justify-start">
+                {typingUsers.filter(u => u.identity.toString() !== spacetime.getLocalUser()?.identity.toString()).map(u => (
+                    <div key={u.identity.toString()} className="flex justify-start">
                         <div className="bg-brutal-dark/50 text-brutal-green border-2 border-brutal-green border-dashed p-2 text-[10px] font-mono uppercase flex items-center gap-2">
-                            User_{u.identity.slice(0, 4)} is typing
+                            User_{u.identity.toString().slice(0, 4)} is typing
                             <span className="flex gap-1">
                                 <span className="w-1 h-1 bg-brutal-green rounded-full animate-bounce"></span>
                                 <span className="w-1 h-1 bg-brutal-green rounded-full animate-bounce [animation-delay:0.2s]"></span>

@@ -1,64 +1,26 @@
 # Security Policy
 
+## Supported Versions
+
+The Terminal project actively supports security patches for the following major versions:
+
+| Version | Supported          |
+| ------- | ------------------ |
+| v1.x    | :white_check_mark: |
+| v0.x    | :x:                |
+
 ## Reporting a Vulnerability
 
-If you discover a security vulnerability in **The Terminal**, please report it responsibly.
+If you discover a security vulnerability within The Terminal (e.g., cross-site scripting vulnerabilities in the terminal emulator, unsafe local storage access, or unauthenticated SpacetimeDB interactions), please follow these steps:
 
-### How to Report
-- Email: [Create an issue with the "security" label](https://github.com/Ashborn-047/the-terminal/issues/new?labels=security)
-- Please include a description of the vulnerability and steps to reproduce.
+1. **Do not open a public issue.** This gives malicious actors an opportunity to exploit the bug before we can patch it.
+2. Please email `security@linux-terminal.academy` (placeholder) with a detailed description of the issue.
+3. We will respond within 48 hours to acknowledge the report and provide an estimated timeline for the fix.
 
-### Response Time
-- We aim to acknowledge reports within **48 hours**
-- We aim to publish fixes within **7 days** for critical issues
+## Implementation Principles
 
-## Security Architecture
+The educational Terminal simulator relies on several specific security boundaries:
 
-### Client-Side Security
-The Terminal is a **client-side only** application. All code runs in the browser.
-
-- **No real OS access**: The Virtual File System (VFS) is entirely simulated in-memory
-- **Sandboxed commands**: Commands like `ping`, `curl`, `ssh` return simulated output — no real network requests
-- **Input validation**: Username validation (3-20 chars, alphanumeric + underscore), command parsing with sanitization
-- **No credential storage**: No passwords or tokens are stored; localStorage is used only for progress data
-- **Content Security**: No `eval()` or dynamic code execution in command processing
-
-### Command Sandboxing
-All commands execute within an isolated VFS context:
-- File operations only affect the virtual filesystem
-- Network commands simulate responses without real HTTP/ICMP requests
-- `sudo` elevates to a virtual `root` user (no system-level privilege escalation)
-- Process commands (`ps`, `top`, `kill`) show simulated output
-
-### Data Privacy
-- All user data (progress, XP, achievements) stored in **localStorage only**
-- No data transmitted to external servers (until backend is implemented)
-- No analytics or tracking scripts
-- No cookies
-
-## Dependencies
-
-| Package | Purpose | Risk Level |
-|---------|---------|------------|
-| React 18 | UI framework | Low |
-| Vite | Build tool | Low |
-| Zustand | State management | Low |
-| React Router | Client routing | Low |
-| Lucide React | Icons | Low |
-| UUID | ID generation | Low |
-
-## Future Security (When Backend Added)
-When SpacetimeDB backend is implemented:
-- WebSocket Secure (WSS) connections
-- SpacetimeDB Identity-based authentication
-- Reducer-level authorization checks
-- Rate limiting on reducer calls
-- Server-side input validation
-- Audit logging for sensitive operations
-
-## Best Practices for Contributors
-1. Never use `eval()` or `Function()` constructors
-2. Always validate/sanitize user input before processing
-3. Use TypeScript strict mode for type safety
-4. Keep dependencies up to date (`npm audit`)
-5. Review command implementations for injection vulnerabilities
+- **Browser Context Isolation:** The Virtual File System (VFS) is strictly limited to the browser's `localStorage` and memory. It *must never* attempt to interact with the host operating system's true filesystem.
+- **Input Sanitization:** User commands submitted to the terminal component are stripped of malicious HTML tags. React naturally escapes injections in the terminal output display. 
+- **SpacetimeDB Validation:** Future Rust backend modules (`spacetime-module`) must implement strict authentication checks. The client assumes the server is authoritative and does not trust data sent via the SpacetimeDB WebSocket without verification.

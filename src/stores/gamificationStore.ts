@@ -125,6 +125,7 @@ interface GamificationState {
         freezesRemaining: number;
     };
     counters: Record<string, number>;
+    activityHistory: Record<string, number>;
     unlockedAchievements: string[];
     labsCompleted: number;
     hintsUsed: number;
@@ -153,6 +154,7 @@ export const useGamificationStore = create<GamificationState>()(
             totalXpEarned: 0,
             streak: { current: 0, longest: 0, lastActivityDate: null, freezesRemaining: 1 },
             counters: {},
+            activityHistory: {},
             unlockedAchievements: [],
             labsCompleted: 0,
             hintsUsed: 0,
@@ -175,10 +177,15 @@ export const useGamificationStore = create<GamificationState>()(
                 // In a real app, this might be triggered by specific actions.
                 set((state) => {
                     const nextXp = state.totalXpEarned + boostedAmount;
+                    const today = new Date().toISOString().split('T')[0];
                     return {
                         xp: state.xp + boostedAmount,
                         totalXpEarned: nextXp,
-                        level: levelFromXP(nextXp)
+                        level: levelFromXP(nextXp),
+                        activityHistory: {
+                            ...state.activityHistory,
+                            [today]: (state.activityHistory?.[today] || 0) + boostedAmount
+                        }
                     };
                 });
 

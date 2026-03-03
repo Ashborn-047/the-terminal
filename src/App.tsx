@@ -13,6 +13,7 @@ import { LevelUpModal } from './components/gamification/LevelUpModal';
 import { ProtectedRoute } from './components/layout/ProtectedRoute';
 import { ConnectionBanner } from './components/ui/ConnectionBanner';
 import { spacetime } from './lib/spacetime';
+import { initSpacetimeSync } from './lib/spacetime/sync';
 
 // Lazy-loaded pages for code splitting
 const HomePage = React.lazy(() => import('./pages/HomePage'));
@@ -41,6 +42,7 @@ function AppContent() {
 
   // Initialize SpacetimeDB subscription
   React.useEffect(() => {
+    initSpacetimeSync();
     spacetime.onConnect(() => {
       spacetime.subscribeToAll();
     });
@@ -111,7 +113,7 @@ function AppContent() {
 function App() {
   return (
     <ToastProvider>
-      <BrowserRouter>
+      <BrowserRouter basename="/the-terminal">
         <AppContent />
       </BrowserRouter>
     </ToastProvider>

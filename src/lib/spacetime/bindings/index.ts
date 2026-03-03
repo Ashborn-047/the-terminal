@@ -46,6 +46,8 @@ import StopTypingReducer from "./stop_typing_reducer";
 import CreateChannelReducer from "./create_channel_reducer";
 import UpdateStreakReducer from "./update_streak_reducer";
 import PinMessageReducer from "./pin_message_reducer";
+import CompleteQuestReducer from "./complete_quest_reducer";
+import UpvoteMessageReducer from "./upvote_message_reducer";
 
 // Import all procedure arg schemas
 
@@ -58,6 +60,8 @@ import TypingIndicatorRow from "./typing_indicator_table";
 import UserRow from "./user_table";
 import UserProgressRow from "./user_progress_table";
 import ChannelRow from "./channel_table";
+import QuestRow from "./quest_table";
+import UserQuestRow from "./user_quest_table";
 
 /** Type-only namespace exports for generated type groups. */
 
@@ -173,6 +177,32 @@ const tablesSchema = __schema({
       { name: 'channel_name_key', constraint: 'unique', columns: ['name'] },
     ],
   }, ChannelRow),
+  quest: __table({
+    name: 'quest',
+    indexes: [
+      {
+        name: 'id', algorithm: 'btree', columns: [
+          'id',
+        ]
+      },
+    ],
+    constraints: [
+      { name: 'quest_id_key', constraint: 'unique', columns: ['id'] },
+    ],
+  }, QuestRow),
+  user_quest: __table({
+    name: 'user_quest',
+    indexes: [
+      {
+        name: 'identity', algorithm: 'btree', columns: [
+          'identity',
+        ]
+      },
+    ],
+    constraints: [
+      { name: 'user_quest_identity_key', constraint: 'unique', columns: ['identity'] },
+    ],
+  }, UserQuestRow),
 });
 
 /** The schema information for all reducers in this module. This is defined the same way as the reducers would have been defined in the server, except the body of the reducer is omitted in code generation. */
@@ -189,6 +219,8 @@ const reducersSchema = __reducers(
   __reducerSchema("create_channel", CreateChannelReducer),
   __reducerSchema("update_streak", UpdateStreakReducer),
   __reducerSchema("pin_message", PinMessageReducer),
+  __reducerSchema("complete_quest", CompleteQuestReducer),
+  __reducerSchema("upvote_message", UpvoteMessageReducer),
 );
 
 /** The schema information for all procedures in this module. This is defined the same way as the procedures would have been defined in the server. */
@@ -236,6 +268,8 @@ export type TypingIndicator = __Infer<typeof TypingIndicatorRow>;
 export type User = __Infer<typeof UserRow>;
 export type UserProgress = __Infer<typeof UserProgressRow>;
 export type Channel = __Infer<typeof ChannelRow>;
+export type Quest = __Infer<typeof QuestRow>;
+export type UserQuest = __Infer<typeof UserQuestRow>;
 
 /** Builder class to configure a new subscription to the remote SpacetimeDB instance. */
 export class SubscriptionBuilder extends __SubscriptionBuilderImpl<typeof REMOTE_MODULE> { }

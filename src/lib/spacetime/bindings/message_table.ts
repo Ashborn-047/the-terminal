@@ -19,4 +19,5 @@ export default __t.row({
   edited: __t.option(__t.timestamp()),
   deleted: __t.bool(),
   pinned: __t.bool(),
+  upvotes: __t.u32(),
 });
