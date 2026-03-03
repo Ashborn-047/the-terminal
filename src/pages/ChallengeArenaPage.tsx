@@ -4,13 +4,13 @@ import { useNavigate } from 'react-router-dom';
 import { useLabStore } from '../stores/labStore';
 import { useGamificationStore } from '../stores/gamificationStore';
 
-const CertificationDashboard: React.FC = () => {
+const ChallengeArenaPage: React.FC = () => {
     const navigate = useNavigate();
     const { labs, progress } = useLabStore();
     const { level } = useGamificationStore();
 
-    const rhcsaLabs = Object.values(labs).filter(l => l.tags?.includes('rhcsa') || l.id.startsWith('M15') || l.id.startsWith('M18'));
-    const completedRhcsa = rhcsaLabs.filter(l => progress[l.id]?.status === 'completed').length;
+    const challengeLabs = Object.values(labs).filter(l => l.tags?.includes('challenge') || l.tags?.includes('rhcsa') || l.id.endsWith('-boss'));
+    const completedChallenges = challengeLabs.filter(l => progress[l.id]?.status === 'completed').length;
     const locked = level < 5;
 
     return (
@@ -20,24 +20,24 @@ const CertificationDashboard: React.FC = () => {
                 <div className="flex items-center gap-4 mb-2">
                     <Shield size={32} className="text-brutal-green" />
                     <h1 className="font-heading text-5xl uppercase tracking-tighter italic text-brutal-white">
-                        RHCSA Prep Zone
+                        Challenge Arena
                     </h1>
                 </div>
                 <p className="text-brutal-gray font-mono uppercase text-sm tracking-widest max-w-2xl">
-                    Red Hat Certified System Administrator (RHCSA) simulation environment.
-                    Master real-world sysadmin tasks under pressure.
+                    High-stakes simulation environment.
+                    Master real-world sysadmin tasks under pressure and prove your skills.
                 </p>
                 <div className="mt-6 flex gap-8">
                     <div className="flex flex-col">
-                        <span className="text-xs font-mono uppercase text-brutal-gray">Training Progress</span>
+                        <span className="text-xs font-mono uppercase text-brutal-gray">Arena Progress</span>
                         <div className="flex items-center gap-2">
                             <div className="h-3 w-48 bg-brutal-black border border-brutal-gray/30 overflow-hidden">
                                 <div
                                     className="h-full bg-brutal-green brutal-stripes"
-                                    style={{ width: `${(completedRhcsa / Math.max(1, rhcsaLabs.length)) * 100}%` }}
+                                    style={{ width: `${(completedChallenges / Math.max(1, challengeLabs.length)) * 100}%` }}
                                 />
                             </div>
-                            <span className="font-heading text-brutal-green">{completedRhcsa}/{rhcsaLabs.length}</span>
+                            <span className="font-heading text-brutal-green">{completedChallenges}/{challengeLabs.length}</span>
                         </div>
                     </div>
                 </div>
@@ -48,7 +48,7 @@ const CertificationDashboard: React.FC = () => {
                     <AlertCircle size={64} className="text-brutal-red mx-auto mb-6 animate-pulse" />
                     <h2 className="font-heading text-3xl uppercase text-brutal-white mb-4">Access Denied: Level 5 Required</h2>
                     <p className="text-brutal-gray font-mono max-w-md mx-auto mb-8">
-                        The certification preparation environment contains high-stakes challenges.
+                        The Challenge Arena contains high-stakes terminal simulations.
                         Reach level 5 or complete 10 fundamental labs to unlock.
                     </p>
                     <button
@@ -80,13 +80,13 @@ const CertificationDashboard: React.FC = () => {
                         <div className="bg-brutal-blue p-3 border-2 border-brutal-black w-fit mb-4 group-hover:scale-110 transition-transform">
                             <Trophy size={28} className="text-brutal-white" />
                         </div>
-                        <h3 className="font-heading text-xl uppercase text-brutal-white mb-2 italic">Mock EX200 Exam</h3>
+                        <h3 className="font-heading text-xl uppercase text-brutal-white mb-2 italic">Ultimate Mastery Test</h3>
                         <p className="text-xs text-brutal-gray font-mono flex-1 mb-6">
                             Complete 15 specific sysadmin tasks in one session. No hints allowed.
                             The ultimate test of your terminal mastery.
                         </p>
                         <button className="w-full bg-brutal-blue text-brutal-white border-2 border-brutal-black py-3 font-heading uppercase hover:bg-brutal-black transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none">
-                            Start Exam
+                            Start Challenge
                         </button>
                     </div>
 
@@ -95,10 +95,10 @@ const CertificationDashboard: React.FC = () => {
                         <div className="bg-brutal-yellow p-3 border-2 border-brutal-black w-fit mb-4 group-hover:scale-110 transition-transform">
                             <BookOpen size={28} className="text-brutal-black" />
                         </div>
-                        <h3 className="font-heading text-xl uppercase text-brutal-white mb-2 italic">Study Guides</h3>
+                        <h3 className="font-heading text-xl uppercase text-brutal-white mb-2 italic">Skill Grimoire</h3>
                         <p className="text-xs text-brutal-gray font-mono flex-1 mb-6">
-                            Theoretic breakdowns of key RHCSA domains. Link concepts directly to their
-                            practical lab counterparts.
+                            Deep dives into core Linux domains. Link theoretical concepts
+                            directly to their practical laboratory counterparts.
                         </p>
                         <button className="w-full bg-brutal-yellow text-brutal-black border-2 border-brutal-black py-3 font-heading uppercase hover:bg-brutal-black hover:text-brutal-white transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none">
                             Open Grimoire
@@ -109,7 +109,7 @@ const CertificationDashboard: React.FC = () => {
 
             <div className="mt-12 p-6 border-2 border-brutal-gray/30 bg-brutal-black/50 backdrop-blur-sm">
                 <h4 className="font-heading text-sm uppercase text-brutal-green mb-4 flex items-center gap-2">
-                    <CheckCircle2 size={16} /> Key RHCSA Domains Tracked
+                    <CheckCircle2 size={16} /> Skill Domains Tracked
                 </h4>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-[10px] font-mono text-brutal-gray uppercase">
                     <div className="flex items-center gap-2 italic">
@@ -119,10 +119,10 @@ const CertificationDashboard: React.FC = () => {
                         <div className="w-1.5 h-1.5 bg-brutal-blue" /> Storage & Filesystems
                     </div>
                     <div className="flex items-center gap-2 italic">
-                        <div className="w-1.5 h-1.5 bg-brutal-pink" /> Security (SELinux/Firewall)
+                        <div className="w-1.5 h-1.5 bg-brutal-pink" /> Security & Automation
                     </div>
                     <div className="flex items-center gap-2 italic">
-                        <div className="w-1.5 h-1.5 bg-brutal-yellow" /> Services & Systemd
+                        <div className="w-1.5 h-1.5 bg-brutal-yellow" /> Network & Services
                     </div>
                 </div>
             </div>
@@ -130,4 +130,4 @@ const CertificationDashboard: React.FC = () => {
     );
 };
 
-export default CertificationDashboard;
+export default ChallengeArenaPage;

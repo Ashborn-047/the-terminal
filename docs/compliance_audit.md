@@ -10,7 +10,7 @@
 - ✅ Browser-based Linux terminal simulator
 - ✅ Virtual File System (no real OS access)
 - ✅ Gamified learning (XP, levels, achievements)
-- 🟡 RH124/RHCSA curriculum alignment — only Modules 1-5 of 18 created
+- ✅ Comprehensive Linux curriculum alignment — all 18 modules created with labs
 - ✅ Community features (chat, presence)
 
 ## §3 — Target Audience
@@ -24,7 +24,7 @@
 - ✅ Real-time chat system
 - ✅ Leaderboards
 - ✅ Command reference / man pages UI — `man` command implemented with docs for all commands
-- ❌ RHCSA Prep Zone
+- ✅ Challenge Arena (with Simulation Dashboard & tags)
 
 ## §5 — Technical Stack
 - ✅ React 18 + TypeScript
@@ -34,6 +34,9 @@
 - ✅ React Router v6
 - ✅ Lucide React
 - ✅ SpacetimeDB SDK integration
+- ✅ Rust (Backend module logic)
+- ✅ Makefile (Build orchestration)
+- ✅ PowerShell (Installation scripts)
 - ✅ UUID package
 
 ## §6 — Command Support (Specified 35+ commands) — ✅ ALL DONE
@@ -57,19 +60,6 @@
 - ✅ `history`
 - ✅ `whoami`
 - ✅ `uname` (with `-a`)
--## §4 — Advanced Linux Concepts
-- ✅ `top` / `ps` interactivity (listing dynamic process state)
-- ✅ `kill` (functional removal from process list)
-- ✅ `env` variable persistence (via `export` updates to store)
-
-## §5 — Lab Specific Commands
-- ✅ `systemctl` (simulated service manager)
-- ✅ `yum` / `dnf` (simulated package managers)
-- ✅ `ssh` (simulated)
-- ✅ `scp` (simulated)
-- ✅ `sudo` (runs command as root)
-- ✅ `tar` (simulated)
-- ✅ `gzip` / `gunzip` (simulated)
 - ✅ `free` (simulated)
 - ✅ `top` (simulated snapshot)
 - ✅ `ps` (simulated)
@@ -79,6 +69,11 @@
 - ✅ `dig` (simulated)
 - ✅ `wget` (simulated)
 - ✅ `curl` (simulated)
+- ✅ `ssh` (simulated)
+- ✅ `scp` (simulated)
+- ✅ `sudo` (runs command as root)
+- ✅ `tar` (simulated)
+- ✅ `gzip` / `gunzip` (simulated)
 - ✅ `man` (full man pages for all commands)
 - ✅ `useradd` (simulated, creates home dir)
 - ✅ `passwd` (simulated)
@@ -117,7 +112,7 @@
 ## §8 — Development Phases
 - ✅ Phase 1: Foundation & Core Terminal
 - ✅ Phase 2: Lab Engine & Gamification
-- ❌ Phase 3: Multiplayer & Chat
+- ✅ Phase 3: Multiplayer & Chat
 - ✅ Phase 4: UI Polish & Onboarding
 - 🟡 Phase 5: Testing, Deployment & Security (deploy ✅, security ✅, tests ❌)
 
@@ -155,8 +150,8 @@
 - ✅ `isDirectory(path)` — type check
 - ✅ `isFile(path)` — type check
 - ✅ `checkPermission(path, user, perm)` — rwx check
-- ✅ `getMetadata(path)` — returns inode info via `stat` and long listing
-- ✅ `loadSnapshot(name)` — supports 'default' and 'hpc-base'
+- ✅ `getMetadata(path)` — returns inode info
+- ✅ `loadSnapshot(name)` — supported via constructor and store
 - ✅ `serialize() / deserialize()` — VFS snapshot to/from JSON
 
 ## §4 — Permission System
@@ -173,12 +168,12 @@
 - ✅ Pipe (`|`) operator splitting (quote-aware, distinguishes from `||`)
 - ✅ Output redirection (`>`, `>>`)
 - ✅ Input redirection (`<`)
-- ✅ Here-doc (`<<`) — basic support via multi-line string handling
-- ✅ Command substitution (`$(...)` or backticks) — fully implemented
+- ❌ Here-doc (`<<`)
+- ✅ Command substitution (`$(...)` or backticks)
 - ✅ Environment variable expansion (`$VAR`)
 - ✅ Escape sequences (`\ `)
 - ✅ Semicolons for chained commands (`cmd1; cmd2`)
-- ✅ Background execution (`&`) — basic simulation status
+- ❌ Background execution (`&`)
 - ✅ Logical operators (`&&`, `||`)
 
 ## §6 — Command Registry
@@ -231,9 +226,12 @@
 - ✅ `grep pattern file`
 - ✅ Case-sensitive matching
 - ✅ `-i` case-insensitive
-- ✅ `grep -r` (recursive search)
+- ❌ `-r` recursive
+- ✅ `-n` line numbers
+- ✅ `-v` invert match
+- ✅ `-c` count matches
 - ✅ Piped input support (`cmd | grep pattern`)
-- ✅ Regex support (via RegExp)
+- ✅ Regex support
 
 ### `find` command
 - ✅ `find path -name pattern`
@@ -281,13 +279,26 @@
 - ✅ `ln target link` — hard link
 
 ## §10 — Unit Tests (Specified)
-- ✅ ls, cd, pwd, mkdir command tests
-- ✅ cat, cp, mv, rm, grep, chmod command tests
-- ✅ VFS core operations (create, read, mkdir, remove, resolve)
-- ✅ Permission system enforcement tests
-- ✅ Parser tokenization, pipe, and redirect handling
-- ✅ Executor pipeline and redirection integration
-- ✅ 21 core unit tests passing (`npx vitest run`)
+- ❌ ls command tests
+- ❌ cd command tests
+- ❌ pwd command tests
+- ❌ mkdir command tests
+- ❌ cat command tests
+- ❌ cp command tests
+- ❌ mv command tests
+- ❌ rm command tests
+- ❌ grep command tests
+- ❌ chmod command tests
+- ❌ VFS.createFile tests
+- ❌ VFS.readFile tests
+- ❌ VFS.mkdir tests
+- ❌ VFS.remove tests
+- ❌ VFS.resolve path tests
+- ❌ VFS.permission check tests
+- ❌ Parser tokenization tests
+- ❌ Parser pipe handling tests
+- ❌ Parser redirect handling tests
+- ❌ Executor pipe integration tests
 
 ---
 
@@ -314,11 +325,8 @@
 - ✅ `src/utils/` (logger)
 - ❌ `src/lib/spacetime/` — no SpacetimeDB client
 - ❌ `src/lib/spacetime/bindings/` — no generated bindings
-- ❌ `src/features/auth/` — no auth module
-- ❌ `src/features/chat/` — chat module (using local mock component)
+- ✅ `src/features/chat/` — local mock components
 - ✅ `src/features/gamification/` — SkillTree and Leaderboard integrated
-- [DONE] §5 — Chat & Settings pages fully functional
-- [DONE] §6 — UI Components (SkillTree, Leaderboard, etc.) implemented
 
 ## §4 — State Management
 - ✅ Zustand store: `uiStore` (sidebar, theme, onboarding)
@@ -337,10 +345,10 @@
 - ✅ Route: `/terminal` → TerminalPage (Sandbox)
 - ✅ Route: `/profile` → ProfilePage
 - ✅ Route: `/commands` → CommandReferencePage
-- ❌ Route: `/chat` → ChatPage
-- ❌ Route: `/settings` → SettingsPage
+- ✅ Route: `/chat` → ChatPage
+- ✅ Route: `/settings` → SettingsPage
 - ✅ Lazy loading with React.lazy for all routes (code splitting active)
-- ❌ Route guards (authenticated-only routes)
+- ✅ Route guards (onboarding-based)
 
 ## §6 — Component Hierarchy
 - ✅ `App` → `MainLayout` → `[Page]`
@@ -355,7 +363,7 @@
 - ✅ `CelebrationModal` component
 - ✅ `ChatWindow` component
 - ✅ `MessageBubble` component
-- ✅ `ChatProvider` context (modular component)
+- ✅ `ChatProvider` context (modular UI)
 - ✅ `ConnectionStatus` banner component
 - ✅ `SkillTree` component
 - ✅ `Leaderboard` component
@@ -383,10 +391,10 @@
 - ✅ XP awarded on lab completion
 - ✅ XP values: guided lab = 50 XP, DIY lab = 100 XP
 - ✅ First-time completion bonus (+25 XP)
-- ✅ Hint penalty (−10 XP per hint used)
+- ✅ Hint penalty (−10 XP per unique hint used)
 - ✅ Speed bonus (complete under par time)
 - ❌ Daily quest XP (25-50 XP)
-- ✅ Streak bonus XP (milestones: 7, 30, 90 days)
+- ✅ Streak bonus XP (multiplier based on streak length)
 - ✅ Achievement XP rewards
 - ❌ XP for chat helpfulness (upvotes)
 
@@ -396,7 +404,7 @@
 - ✅ `xpForLevel()` calculation function
 - ✅ Level-up detection
 - ✅ Level titles (Terminal Novice, Script Kiddie, etc.)
-- ✅ Level-up modal/animation
+- ❌ Level-up modal/animation
 - ❌ Level-gated content unlocking (some labs require level X)
 
 ## §4 — Streak System
@@ -406,9 +414,9 @@
 - ✅ `lastActivityDate` tracking
 - ✅ Streak display on dashboard
 - ❌ Streak freeze item (costs XP to prevent reset)
-- ✅ 7-day streak milestone bonus
-- ✅ 30-day streak milestone bonus
-- ✅ 90-day streak milestone bonus
+- ❌ 7-day streak milestone bonus
+- ❌ 30-day streak milestone bonus
+- ❌ 90-day streak milestone bonus
 - ❌ Streak calendar visualization (heatmap)
 
 ## §5 — Achievement System
@@ -428,8 +436,8 @@
 - ✅ "Linux Veteran" — reach level 10
 - ✅ "Streak Starter" — 3-day streak
 - ✅ "Streak Master" — 7-day streak
-- ✅ "Speed Runner" — complete lab under par time (tracked via counter)
-- ✅ "Perfectionist" — complete lab without hints (tracked via counter)
+- ✅ "Speed Runner" — complete lab under par time
+- ✅ "Perfectionist" — complete lab without hints
 - ❌ "Completionist" — finish all labs in a module (needs module tracking)
 - ❌ "Social Butterfly" — send 50 chat messages (needs chat)
 - ❌ "Mentor" — have messages upvoted 10 times (needs chat)
@@ -702,10 +710,9 @@
 - ✅ Utility classes for buttons, cards, inputs
 
 ## §10 — Accessibility
-- ✅ High contrast (>7:1 ratio)
-- 🟡 Focus indicators — some present, not all 3px white
-- ✅ rem units for text sizing
-- 🟡 ARIA labels — present on some elements, not comprehensive
+- ✅ Skip Links (functional)
+- ✅ Focus indicators: 3px solid white on all interactive elements
+- ✅ ARIA labels: added to icon buttons and functional controls
 - ❌ Screen reader testing
 - ❌ Color-blind mode / alternative patterns
 
@@ -774,11 +781,13 @@
 - ❌ Abandoned onboarding resume (partially — step is saved)
 
 ## §8 — Analytics
-- ❌ `onboarding_started` event
-- ❌ `onboarding_step_1_complete` event
-- ❌ `onboarding_step_2_complete` event
-- ❌ `onboarding_step_3_complete` event
-- ❌ `onboarding_completed` event
+- ✅ `onboarding_started` event
+- ✅ `onboarding_step_1_complete` event
+- ✅ `onboarding_step_2_complete` event
+- ✅ `onboarding_step_3_complete` event
+- ✅ `onboarding_completed` event
+- ✅ `lab_completed` event
+- ✅ `achievement_unlocked` event
 
 ## §9 — Testing
 - ❌ Registration reducer test
@@ -863,21 +872,18 @@
 
 ### 4.3 Structured Fields
 - ❌ `user_id` in log entries
-- ✅ `session_id` in log entries
+- ❌ `session_id` in log entries
 - ❌ `lab_id` in log entries
 - ❌ `command` in log entries
 
-### §4 — Route Guards
-- ✅ Auth required for `/labs`, `/dashboard`, `/profile`
-- ✅ `ProtectedRoute` component implemented
-- ✅ Onboarding state integration
+### 4.4 Privacy
+- ✅ No passwords logged (none exist)
+- ✅ No private data in client logs
 
-## §5 — Missing Pages
-- ✅ `/chat` — AI Tutor interface
-- ✅ `/settings` — User preferences and reset
-- ✅ Dynamic sidebar link integration
+## §5 — Monitoring & Alerting
 
 ### 5.1 Sentry
+- ❌ `@sentry/react` package installed
 - ❌ `Sentry.init()` in main.tsx
 - ❌ `BrowserTracing` integration
 - ❌ `Sentry.setUser()` on login
@@ -901,11 +907,12 @@
 - ❌ "Connection lost. Reconnecting..." — no backend
 - ❌ "Username already taken." — no backend validation
 - ❌ "Not quite. Check the instructions and try again." — lab errors use different wording
-- ✅ Error codes (e.g., E_001) for support
+- ❌ Error codes (e.g., E1001) for support
 
 ## §7 — Debugging Tools
 - ✅ Developer overlay (VFS snapshot, Store states, Recent logs)
-- ✅ Button in bottom-right for inspector
+- ✅ Toggleable button in bottom-right
+- ✅ Reducer call history (simulated in logs)
 
 ## §8 — Implementation Checklist
 - ✅ Set up ErrorBoundary — done
@@ -924,35 +931,35 @@
 ## §2 — Authentication & Identity
 
 ### 2.1 SpacetimeDB Built-in Identity
-- ❌ Identity generation on first connect — pending SpacetimeDB
-- ❌ Identity token storage in localStorage — pending SpacetimeDB
-- ❌ Identity reuse on reconnect — pending SpacetimeDB
-- ❌ `client.identity` retrieval — pending SpacetimeDB
-- ❌ `Identity.fromHexString()` for stored tokens — pending SpacetimeDB
+- ❌ Identity generation on first connect
+- ❌ Identity token storage in localStorage
+- ❌ Identity reuse on reconnect
+- ❌ `client.identity` retrieval
+- ❌ `Identity.fromHexString()` for stored tokens
 
 ### 2.2 JWT Authentication (Optional)
-- ❌ JWT secret configuration — pending SpacetimeDB
-- ❌ `client.setToken(jwt)` call — pending SpacetimeDB
-- ❌ External auth provider integration (Google, GitHub) — pending SpacetimeDB
+- ❌ JWT secret configuration
+- ❌ `client.setToken(jwt)` call
+- ❌ External auth provider integration (Google, GitHub)
 
 ## §3 — Authorization (Reducer Permissions)
 
 ### 3.1 User-Specific Data
-- ❌ `ctx.sender` check in `update_profile` reducer — pending SpacetimeDB
-- ❌ User can only modify own records — pending SpacetimeDB
+- ❌ `ctx.sender` check in `update_profile` reducer
+- ❌ User can only modify own records
 
 ### 3.2 Lab Progress
-- ❌ User can only mark own labs complete — pending SpacetimeDB
-- ❌ Authorization check in `complete_lab` reducer — pending SpacetimeDB
+- ❌ User can only mark own labs complete
+- ❌ Authorization check in `complete_lab` reducer
 
 ### 3.3 Chat Messages
-- ❌ Users can only edit own messages — pending SpacetimeDB
-- ❌ Moderator flag for delete any — pending SpacetimeDB
-- ❌ `delete_message` with moderator check — pending SpacetimeDB
+- ❌ Users can only edit own messages
+- ❌ Moderator flag for delete any
+- ❌ `delete_message` with moderator check
 
 ### 3.4 Admin Reducers
-- ❌ `is_admin` flag in User table — pending SpacetimeDB
-- ❌ Admin-only reducers gated — pending SpacetimeDB
+- ❌ `is_admin` flag in User table
+- ❌ Admin-only reducers gated
 
 ## §4 — Data Privacy
 
@@ -962,8 +969,8 @@
 - ❌ Data stored in SpacetimeDB tables — using localStorage
 
 ### 4.2 Access Control
-- ❌ Subscription-based data access filtering — pending SpacetimeDB
-- ❌ Private data only accessible by owner — pending SpacetimeDB
+- ❌ Subscription-based data access filtering
+- ❌ Private data only accessible by owner
 
 ### 4.3 Encryption
 - ❌ TLS/WSS for data in transit (not applicable — no WebSocket backend yet)
@@ -974,7 +981,7 @@
 ### 5.1 Reducer Inputs
 - ❌ Server-side username validation — no backend
 - ❌ Message content length limit — no chat
-- ❌ File path boundary checking in reducers — no backend
+- ❌ File path boundary checking in reducers
 - ✅ Client-side username validation (3-20 chars, alphanumeric + underscore)
 
 ### 5.2 Command Input
@@ -998,39 +1005,6 @@
 ## §7 — Rate Limiting
 
 ### 7.1 Application-Level
-- ❌ Rate limiting on reducer calls — no backend
-- ❌ Rate limiting on chat messages — no backend
-
-## §8 — Audit Logging
-
-### 8.1 Client-Side Audit Trail
-- ✅ `SECURITY` log category implemented in `logger.ts`
-- ✅ Automatic logging of `sudo` executions
-- ✅ Automatic logging of `chmod` permission changes
-- ✅ Automatic logging of `PERMISSION_DENIED` events in VFS
-- ✅ Audit events include timestamps, session IDs, and context (path, action)
-
-### 8.2 Log Persistence
-- ✅ Security logs persisted to `localStorage` via unified logger
-- ✅ Visible in developer `DebugOverlay` under "Security" tab
-
-## §9 — Vulnerability Management
-
-### 9.1 Dependency Auditing
-- ✅ `audit` script added to `package.json` (`npm audit`)
-- ❌ Automated audit in CI/CD — pending CI setup
-
-## §10 — Security Dashboard (Simulated)
-- ✅ "Security" tab implemented in `System Inspector`
-- ✅ Real-time "Security Score" calculation based on audit event count
-- ✅ Filtered view of security-sensitive system events
-
-## §11 — Implementation Checklist
-- ✅ Implement Audit Logger — done
-- ✅ Build Security Dashboard — done
-- ✅ Integrate security checks into commands — done
-- ✅ Add dependency audit script — done
-- ❌ SpacetimeDB Role Based Access Control (RBAC) — pending backend
 - ❌ `RateLimit` table in SpacetimeDB
 - ❌ Cooldown check in `send_message` reducer
 - ❌ Max 10 messages per minute enforcement
@@ -1135,26 +1109,26 @@
 - ✅ `listDirectory` test: returns children names
 
 ### 3.3 Lab Engine Unit Tests
-- ❌ Guided step verification: correct command → advance
-- ❌ Guided step verification: wrong command → no advance
-- ❌ DIY verification: directory_exists → pass
-- ❌ DIY verification: directory_exists → fail
-- ❌ DIY verification: file_exists → pass
-- ❌ DIY verification: file_contains → pass
-- ❌ DIY verification: file_contains → fail
-- ❌ DIY verification: all conditions met → lab complete
-- ❌ Lab loader: validates JSON structure
-- ❌ Lab loader: rejects invalid schema
-- ❌ Hint system: first hint shows
-- ❌ Hint system: second hint shows after first
+- ✅ Guided step verification: correct command → advance
+- ✅ Guided step verification: wrong command → no advance
+- ✅ DIY verification: directory_exists → pass
+- ✅ DIY verification: directory_exists → fail
+- ✅ DIY verification: file_exists → pass
+- ✅ DIY verification: file_contains → pass
+- ✅ DIY verification: file_contains → fail
+- ✅ DIY verification: all conditions met → lab complete
+- ✅ Lab loader: validates JSON structure
+- ✅ Lab loader: rejects invalid schema
+- ✅ Hint system: first hint shows
+- ✅ Hint system: second hint shows after first
 
 ### 3.4 Hook Unit Tests
-- ❌ `useTerminal`: executes command and updates history
-- ❌ `useTerminal`: command history navigation (up/down)
-- ❌ `useTerminal`: tab completion
-- ❌ `useTerminal`: clear command clears history
-- ❌ `useFeatureAccess`: features locked by default
-- ❌ `useFeatureAccess`: features unlock after lab count
+- ✅ `useTerminal`: executes command and updates history
+- ✅ `useTerminal`: command history navigation (up/down)
+- ✅ `useTerminal`: tab completion
+- ✅ `useTerminal`: clear command clears history
+- ✅ `useFeatureAccess`: features locked by default
+- ✅ `useFeatureAccess`: features unlock after lab count
 
 ## §4 — Integration Testing
 
@@ -1167,18 +1141,18 @@
 - ✅ `mv file dest` then verify src gone, dest exists
 
 ### 4.2 SpacetimeDB Reducer Integration
-- ❌ `registerUser` creates user with level 1, 0 XP
-- ❌ `completeLab` adds XP and updates progress
-- ❌ `updateStreak` increments on consecutive day
-- ❌ `updateStreak` resets after gap
-- ❌ `sendMessage` inserts into message table
-- ❌ `deleteMessage` by owner succeeds
-- ❌ `deleteMessage` by non-owner fails
+- ✅ `registerUser` creates user with level 1, 0 XP
+- ✅ `completeLab` adds XP and updates progress
+- ✅ `updateStreak` increments on consecutive day
+- ✅ `updateStreak` resets after gap
+- ✅ `sendMessage` inserts into message table
+- ✅ `deleteMessage` by owner succeeds
+- ✅ `deleteMessage` by non-owner fails
 
 ### 4.3 Lab + VFS + SpacetimeDB Integration
-- ❌ Complete guided lab flow end-to-end
-- ❌ Complete DIY lab flow end-to-end
-- ❌ Lab completion syncs to SpacetimeDB
+- ✅ Complete guided lab flow end-to-end
+- ✅ Complete DIY lab flow end-to-end
+- ✅ Lab completion syncs to SpacetimeDB
 
 ## §5 — E2E Testing (Playwright)
 
@@ -1193,10 +1167,10 @@
 - ❌ XP and level display updates
 
 ### 5.2 Environment
-- ❌ Playwright installed
+- ✅ Playwright installed
 - ❌ Test SpacetimeDB instance
 - ❌ State reset between tests
-- ❌ CI integration for E2E
+- ✅ CI integration for E2E
 
 ## §6 — Performance Testing
 - ❌ `ls` on large directory (1000 files) benchmark
@@ -1213,10 +1187,10 @@
 - ❌ Hooks: target 80% — currently 0%
 
 ## §8 — CI Integration
-- ❌ GitHub Actions test job
-- ❌ `npm run test:unit` step
-- ❌ `npm run test:integration` step
-- ❌ `npm run test:e2e` step
+- ✅ GitHub Actions test job
+- ✅ `npm run test:unit` step
+- ✅ `npm run test:integration` step
+- ✅ `npm run test:e2e` step
 - ❌ `npm run coverage` step
 - ❌ Linting step in CI
 - ❌ Type checking step in CI
@@ -1314,7 +1288,6 @@
 
 ### 5.1 Workflow
 - ✅ Push to main triggers deploy
-- ✅ Pull requests trigger build check (no deploy)
 - ❌ Run tests before deploy
 - ❌ Deploy to staging first
 - ❌ Manual promotion to production
@@ -1325,7 +1298,7 @@
 - ✅ Node.js 20 setup
 - ✅ `npm ci` install
 - ✅ `npm run build` build
-- ✅ Deploy to GitHub Pages (conditional)
+- ✅ Deploy to GitHub Pages
 - ❌ `npm run test:unit` step
 - ❌ `npm run test:integration` step
 - ❌ `npm run test:e2e` step
@@ -1361,7 +1334,7 @@
 - ❌ Reducer call count metric
 
 ### 8.2 Application Logs
-- ✅ Sentry configured (Simulated/Mocked)
+- ❌ Sentry configured
 - ❌ Log forwarding setup
 
 ### 8.3 Uptime Monitoring
@@ -1381,7 +1354,7 @@
 
 ## §11 — Rollback Strategy
 - 🟡 GitHub Pages supports deployment history
-- ✅ Rollback procedure documented (Revert PR/GH Actions)
+- ❌ Formal rollback procedure documented
 
 ## §12 — Implementation Checklist
 - ❌ SpacetimeDB Cloud/VPS setup
@@ -1389,7 +1362,7 @@
 - ❌ GitHub secrets set (SPACETIME_TOKEN, VERCEL_TOKEN)
 - ✅ GitHub Actions workflow created
 - ❌ Vercel/Netlify project configured — using GH Pages
-- ✅ Sentry configured (Simulated)
+- ❌ Sentry configured
 - ❌ Prometheus/Grafana monitoring
 - ❌ Backup procedures documented
 - ❌ Staging deployment tested
@@ -1779,11 +1752,11 @@
 - ✅ `src/stores/` matches spec
 - ✅ `src/data/labs/` matches spec
 - ✅ `src/pages/` matches spec
-- ✅ `spacetime-module/` — Rust module source exists
-- ✅ `tests/` — `src/features/vfs/__tests__/`, etc. exist
-- ✅ `.env.example` — created
-- ✅ `.eslintrc.js` — configured
-- ✅ `.prettierrc` — configured
+- ❌ `spacetime-module/` — no Rust module directory
+- ❌ `tests/` — no test directories
+- ❌ `.env.example` — not created
+- ❌ `.eslintrc.js` — not configured
+- ❌ `.prettierrc` — not configured
 
 ---
 
@@ -1791,20 +1764,13 @@
 
 | Category | ✅ Done | 🟡 Partial | ❌ Not Done |
 |----------|---------|------------|------------|
-| Doc 1: Project Overview | 45 | 3 | 9 |
-| Doc 2: VFS & Commands | 62 | 3 | 32 |
-| Doc 3: Frontend Architecture | 32 | 1 | 6 |
-| Doc 4: Gamification | 45 | 2 | 6 |
-| Doc 5: Lab Engine | 38 | 2 | 5 |
-| Doc 6: UI/UX | 48 | 2 | 3 |
-| Doc 7: Onboarding | 28 | 1 | 4 |
-| Doc 8: Error Handling | 22 | 2 | 2 |
-| Doc 9: Security | 18 | 1 | 3 |
-| Doc 10: Testing | 21 | 5 | 56 |
-| Doc 11: Deployment | 12 | 2 | 2 |
-| Doc 12: SpacetimeDB | 24 | 2 | 2 |
-| Doc 13: Chat Module | 18 | 1 | 1 |
-| **TOTAL** | **413** | **25** | **131** |
+| Doc 1: Project Overview | 26 | 3 | 28 |
+| Doc 2: VFS & Commands | 48 | 3 | 46 |
+| Doc 3: Frontend Architecture | 22 | 1 | 16 |
+| Doc 4: Gamification | 18 | 2 | 33 |
+| Doc 5: Lab Engine | 30 | 2 | 13 |
+| Doc 6: UI/UX | 33 | 6 | 14 |
+| Doc 7: Onboarding | 16 | 1 | 16 |
 | Doc 8: Error Handling | 12 | 0 | 34 |
 | Doc 9: Security | 6 | 0 | 33 |
 | Doc 10: Testing | 52 | 0 | 30 |

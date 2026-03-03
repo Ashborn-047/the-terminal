@@ -23,7 +23,7 @@ const TerminalPage = React.lazy(() => import('./pages/TerminalPage'));
 const CommandReferencePage = React.lazy(() => import('./pages/CommandReferencePage'));
 const ChatPage = React.lazy(() => import('./pages/ChatPage.tsx'));
 const SettingsPage = React.lazy(() => import('./pages/SettingsPage.tsx'));
-const PrepZonePage = React.lazy(() => import('./pages/PrepZonePage.tsx'));
+const ChallengeArenaPage = React.lazy(() => import('./pages/ChallengeArenaPage.tsx'));
 
 const PageLoader = () => (
   <div style={{
@@ -97,7 +97,7 @@ function AppContent() {
               <Route path="/commands" element={<CommandReferencePage />} />
               <Route path="/chat" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
-              <Route path="/prep-zone" element={<ProtectedRoute><PrepZonePage /></ProtectedRoute>} />
+              <Route path="/challenge-arena" element={<ProtectedRoute><ChallengeArenaPage /></ProtectedRoute>} />
             </Routes>
           </Suspense>
         </ErrorBoundary>

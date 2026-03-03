@@ -101,11 +101,11 @@ export const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }
             progress: { current: Math.min(2, useGamificationStore.getState().labsCompleted), total: 2 }
         },
         {
-            path: '/prep-zone',
-            label: 'RHCSA Prep',
+            path: '/challenge-arena',
+            label: 'Challenge Arena',
             icon: <Shield size={20} />,
             locked: useGamificationStore.getState().level < 5,
-            requirement: "Reach Level 5 for certification prep",
+            requirement: "Reach Level 5 for Arena access",
             progress: { current: Math.min(5, useGamificationStore.getState().level), total: 5 }
         },
         {
