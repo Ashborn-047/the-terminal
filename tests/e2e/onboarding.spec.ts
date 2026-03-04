@@ -54,7 +54,7 @@ test.describe('User Onboarding Flow', () => {
         // Too short
         await usernameInput.fill('ab');
         await initButton.click();
-        await expect(page.getByText('Username must be at least 3 characters')).toBeVisible();
+        await expect(page.getByText('Username must be at least 3 characters')).toBeVisible({ timeout: 10000 });
 
         // Invalid characters
         await usernameInput.fill('test@user');

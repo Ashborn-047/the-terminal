@@ -3,8 +3,11 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { TerminalComponent } from '../components/terminal/Terminal';
 import { useLabStore } from '../stores/labStore';
 import { useGamificationStore } from '../stores/gamificationStore';
+import { useUIStore } from '../stores/uiStore';
+import { useVFSStore } from '../stores/vfsStore';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { GuidedLabInstructions, DIYLabInstructions } from '../components/lab/LabComponents';
+import { VFS } from '../features/vfs/vfs';
 import { CelebrationModal } from '../components/onboarding/CelebrationModal';
 import { SuccessAnimation } from '../components/ui/SuccessAnimation';
 import { ArrowLeft, RotateCcw } from 'lucide-react';
@@ -18,6 +21,14 @@ const LabView: React.FC = () => {
     const navigate = useNavigate();
     const { labs, progress, startLab, resetLab, exitLab, completeLab, recordHintUsage } = useLabStore();
     const { processLabCompletion } = useGamificationStore();
+    const { username } = useUIStore();
+    const { snapshot } = useVFSStore();
+
+    // Create a live VFS instance from the persisted snapshot for DIY verification
+    const vfsForVerification = React.useMemo(() => {
+        if (!snapshot) return null;
+        return new VFS(snapshot);
+    }, [snapshot]);
 
     const [showCelebration, setShowCelebration] = React.useState(false);
     const [xpAwarded, setXpAwarded] = React.useState(0);
@@ -85,6 +96,10 @@ const LabView: React.FC = () => {
 
         // Re-fetch latest progress state for processing rewards
         const finalProgress = useLabStore.getState().progress[lab.id];
+
+        // Process rewards and achievements
+        processLabCompletion(lab, finalProgress);
+
         const newLabsCompleted = prevLabsCompleted + 1;
         console.log('LAB_DEBUG: handleComplete', { prevLabsCompleted, newLabsCompleted, labId: lab.id });
 
@@ -178,8 +193,8 @@ const LabView: React.FC = () => {
                         ) : (
                             <DIYLabInstructions
                                 lab={lab}
-                                vfs={null as any}
-                                userId="guest"
+                                vfs={vfsForVerification as any}
+                                userId={username || 'guest'}
                                 onComplete={handleComplete}
                                 onHintUsed={handleHintUsed}
                             />

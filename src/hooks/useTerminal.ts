@@ -28,6 +28,21 @@ export function useTerminal() {
         SHELL: '/bin/bash',
     });
     const [processes, setProcesses] = useState<{ pid: number; name: string; user: string; startTime: number }[]>([]);
+
+    // Sync terminal identity when Zustand hydrates the persisted username
+    useEffect(() => {
+        if (uiUsername && uiUsername !== userId) {
+            const newHome = '/home/' + uiUsername;
+            setUserId(uiUsername);
+            setCwd(newHome);
+            setEnv(prev => ({
+                ...prev,
+                USER: uiUsername,
+                PWD: newHome,
+                HOME: newHome,
+            }));
+        }
+    }, [uiUsername]);
     const [pendingPrompt, setPendingPrompt] = useState<{ message: string; resolve: (val: string) => void } | null>(null);
 
     // Initialize VFS from snapshot or default
@@ -154,8 +169,8 @@ export function useTerminal() {
                         currentStepIndex: nextIndex
                     });
 
-                    // Prepend "Nice! " to the output for E2E test expectations
-                    result.output = `Nice! ${result.output}`.trim();
+                    // Rewards, streaks, and setting status to 'completed' are handled
+                    // by the LabView component's useEffect when it detects currentStepIndex >= total steps.
                 }
             }
         }
