@@ -51,7 +51,9 @@ jobs:
           override: true
 
       - name: Install SpacetimeDB CLI
-        run: curl -sSf https://install.spacetimedb.com | sh
+        run: |
+          curl -sSf https://install.spacetimedb.com | sh -s -- --yes
+          echo "${HOME}/.local/bin" >> $GITHUB_PATH
       
       - name: Check Rust Module
         working-directory: ./spacetime-module
@@ -77,7 +79,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Install SpacetimeDB CLI
-        run: curl -sSf https://install.spacetimedb.com | sh
+        run: |
+          curl -sSf https://install.spacetimedb.com | sh -s -- --yes
+          echo "${HOME}/.local/bin" >> $GITHUB_PATH
       - name: Publish SpacetimeDB Backend
         env:
           SPACETIME_TOKEN: ${{ secrets.SPACETIME_TOKEN }}
