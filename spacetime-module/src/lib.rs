@@ -1,6 +1,7 @@
 use spacetimedb::{Identity, ReducerContext, Table, Timestamp, reducer, table};
 
 #[table(public, accessor = user)]
+#[derive(Clone)]
 pub struct User {
     #[primary_key]
     pub identity: Identity,
@@ -26,6 +27,7 @@ pub struct ActivityEntry {
 }
 
 #[table(public, accessor = user_progress)]
+#[derive(Clone)]
 pub struct UserProgress {
     #[primary_key]
     pub identity: Identity,
@@ -37,6 +39,7 @@ pub struct UserProgress {
 }
 
 #[table(public, accessor = channel)]
+#[derive(Clone)]
 pub struct Channel {
     #[primary_key]
     pub name: String,
@@ -47,6 +50,7 @@ pub struct Channel {
 }
 
 #[table(public, accessor = lab_state)]
+#[derive(Clone)]
 pub struct LabState {
     #[primary_key]
     pub id: u64,
@@ -60,6 +64,7 @@ pub struct LabState {
 }
 
 #[table(public, accessor = leaderboard_entry)]
+#[derive(Clone)]
 pub struct LeaderboardEntry {
     #[primary_key]
     pub identity: Identity,
@@ -70,6 +75,7 @@ pub struct LeaderboardEntry {
 }
 
 #[table(public, accessor = message)]
+#[derive(Clone)]
 pub struct Message {
     #[primary_key]
     pub id: u64,
@@ -84,6 +90,7 @@ pub struct Message {
 }
 
 #[table(public, accessor = online_presence)]
+#[derive(Clone)]
 pub struct OnlinePresence {
     #[primary_key]
     pub identity: Identity,
@@ -92,6 +99,7 @@ pub struct OnlinePresence {
 }
 
 #[table(public, accessor = typing_indicator)]
+#[derive(Clone)]
 pub struct TypingIndicator {
     #[primary_key]
     pub identity: Identity,
@@ -100,6 +108,7 @@ pub struct TypingIndicator {
 }
 
 #[table(public, accessor = rate_limit)]
+#[derive(Clone)]
 pub struct RateLimit {
     #[primary_key]
     pub identity: Identity,
@@ -108,6 +117,7 @@ pub struct RateLimit {
 }
 
 #[table(public, accessor = quest)]
+#[derive(Clone)]
 pub struct Quest {
     #[primary_key]
     pub id: u64,
@@ -117,6 +127,7 @@ pub struct Quest {
 }
 
 #[table(public, accessor = user_quest)]
+#[derive(Clone)]
 pub struct UserQuest {
     #[primary_key]
     pub identity: Identity,
