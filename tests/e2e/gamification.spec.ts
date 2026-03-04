@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Gamification and Social Flow', () => {
     test.beforeEach(async ({ page }) => {
-        await page.goto('/');
+        await page.goto('');
         await page.evaluate(() => {
             localStorage.setItem('ui-storage', JSON.stringify({
                 state: {
@@ -26,7 +26,7 @@ test.describe('Gamification and Social Flow', () => {
 
     test('should trigger level-up modal on XP threshold', async ({ page }) => {
         // Navigate to a lab to earn the last 10 XP needed for Level 2
-        await page.goto('/lab/lab-2-1');
+        await page.goto('lab/lab-2-1');
 
         const terminalInput = page.locator('input[type="text"]').last();
         await terminalInput.fill('pwd'); // Just to triggers steps
@@ -44,7 +44,7 @@ test.describe('Gamification and Social Flow', () => {
     });
 
     test('should show achievement unlock notifications', async ({ page }) => {
-        await page.goto('/terminal');
+        await page.goto('terminal');
 
         const terminalInput = page.locator('input[type="text"]').last();
 
@@ -66,7 +66,7 @@ test.describe('Gamification and Social Flow', () => {
         });
         await page.reload();
 
-        await page.goto('/chat');
+        await page.goto('chat');
         await expect(page.getByPlaceholder('Type a message...')).toBeVisible();
 
         const chatInput = page.getByPlaceholder('Type a message...');

@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 test.describe('Curriculum and Lab Flow', () => {
     test.beforeEach(async ({ page }) => {
         // Skip onboarding for these tests by setting the flag in localStorage
-        await page.goto('/');
+        await page.goto('');
         await page.evaluate(() => {
             localStorage.setItem('ui-storage', JSON.stringify({
                 state: {
@@ -18,7 +18,7 @@ test.describe('Curriculum and Lab Flow', () => {
 
     test('should navigate through curriculum and complete a guided lab', async ({ page }) => {
         // 1. Start from Labs Page
-        await page.goto('/labs');
+        await page.goto('labs');
         await expect(page.getByRole('heading', { name: 'The Curriculum' })).toBeVisible();
 
         // 2. Click on the first lab card
@@ -51,7 +51,7 @@ test.describe('Curriculum and Lab Flow', () => {
 
     test('should complete a DIY lab with verification conditions', async ({ page }) => {
         // Directly go to a DIY lab (Module 1, Lab 2)
-        await page.goto('/lab/lab-1-2');
+        await page.goto('lab/lab-1-2');
         await expect(page.getByText('Navigation Challenge')).toBeVisible();
 
         // Perform the required actions in terminal

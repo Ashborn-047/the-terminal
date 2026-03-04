@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 test.describe('User Onboarding Flow', () => {
     test('should complete the full onboarding journey', async ({ page }) => {
         // 1. Visit the landing page
-        await page.goto('/');
+        await page.goto('');
 
         // 2. Verify Welcome Modal is visible
         await expect(page.getByText('Welcome, Learner')).toBeVisible();
@@ -46,7 +46,7 @@ test.describe('User Onboarding Flow', () => {
     });
 
     test('should show validation errors for invalid usernames', async ({ page }) => {
-        await page.goto('/');
+        await page.goto('');
 
         const usernameInput = page.getByPlaceholder('enter_username');
         const initButton = page.getByRole('button', { name: 'Initialize Session →' });
