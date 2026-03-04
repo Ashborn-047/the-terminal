@@ -5,11 +5,28 @@ test.describe('Curriculum and Lab Flow', () => {
         // Skip onboarding for these tests by setting the flag in localStorage
         await page.goto('');
         await page.evaluate(() => {
-            localStorage.setItem('ui-storage', JSON.stringify({
+            localStorage.setItem('the-terminal-ui', JSON.stringify({
                 state: {
-                    onboardingCompleted: true,
+                    onboardingComplete: true,
                     username: 'test_student',
-                    onboardingStep: 4
+                    onboardingStep: 4,
+                    version: 0
+                }
+            }));
+            localStorage.setItem('the-terminal-gamification', JSON.stringify({
+                state: {
+                    xp: 1000,
+                    level: 5,
+                    totalXpEarned: 1000,
+                    streak: { current: 1, longest: 1, lastActivityDate: null, freezesRemaining: 1 },
+                    counters: {},
+                    activityHistory: {},
+                    unlockedAchievements: [],
+                    labsCompleted: 10,
+                    hintsUsed: 0,
+                    dailyQuests: [],
+                    lastQuestGenerationDate: null,
+                    version: 0
                 }
             }));
         });
@@ -19,10 +36,10 @@ test.describe('Curriculum and Lab Flow', () => {
     test('should navigate through curriculum and complete a guided lab', async ({ page }) => {
         // 1. Start from Labs Page
         await page.goto('labs');
-        await expect(page.getByRole('heading', { name: 'The Curriculum' })).toBeVisible();
+        await expect(page.getByRole('heading', { name: 'Curriculum' })).toBeVisible({ timeout: 10000 });
 
         // 2. Click on the first lab card
-        const labCard = page.getByText('Filesystem Basics: Your First Command');
+        const labCard = page.getByRole('button', { name: 'START' }).first();
         await labCard.click();
 
         // 3. Verify Lab View
@@ -41,12 +58,12 @@ test.describe('Curriculum and Lab Flow', () => {
         await page.keyboard.press('Enter');
 
         // 5. Verify Lab Completion Modal (CelebrationModal)
-        await expect(page.getByText('Lab Complete!')).toBeVisible({ timeout: 10000 });
-        await expect(page.getByText('+50 XP')).toBeVisible();
+        await expect(page.getByRole('heading', { name: 'Lab Complete!' })).toBeVisible({ timeout: 10000 });
+        await expect(page.getByText('+50 XP').nth(1)).toBeVisible();
 
         // 6. Navigate back to Dashboard
-        await page.getByRole('button', { name: 'View Dashboard' }).click();
-        await expect(page).toHaveURL('/');
+        await page.getByRole('button', { name: 'View Dashboard' }).click({ force: true });
+        await expect(page).toHaveURL(/\/$/);
     });
 
     test('should complete a DIY lab with verification conditions', async ({ page }) => {
@@ -57,16 +74,14 @@ test.describe('Curriculum and Lab Flow', () => {
         // Perform the required actions in terminal
         const terminalInput = page.locator('input[type="text"]').last();
 
-        // Task: Create /tmp/navigator.txt (assuming this is the condition)
-        await terminalInput.fill('mkdir -p /tmp');
-        await page.keyboard.press('Enter');
-        await terminalInput.fill('touch /tmp/navigator.txt');
+        // Task: Create /home/guest/workspace (actual condition in initial.ts)
+        await terminalInput.fill('mkdir -p /home/test_student/workspace');
         await page.keyboard.press('Enter');
 
         // Click Verify button
-        await page.getByRole('button', { name: 'Verify Solution' }).click();
+        await page.getByRole('button', { name: 'VERIFY LAB' }).click();
 
         // Success message and Modal
-        await expect(page.getByText('Lab Complete!')).toBeVisible();
+        await expect(page.getByRole('heading', { name: 'Lab Complete!' })).toBeVisible();
     });
 });

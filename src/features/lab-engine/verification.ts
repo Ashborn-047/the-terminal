@@ -42,7 +42,8 @@ export class VerificationEngine {
     }
 
     private static checkCondition(condition: VerificationCondition, vfs: VFS, userId: string): boolean {
-        const result = vfs.resolve(condition.path, userId);
+        const normalizedPath = condition.path.replace('/home/guest', '/home/' + userId);
+        const result = vfs.resolve(normalizedPath, userId);
         const exists = typeof result !== 'string';
         const inode = exists ? result as any : null;
 
