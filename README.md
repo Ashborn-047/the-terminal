@@ -87,6 +87,27 @@ npm run test:e2e
 
 ---
 
+## ⚙️ Configuration
+
+The application uses environment variables for SpacetimeDB connectivity. Create a `.env` file in the root directory:
+
+```env
+# Toggle SpacetimeDB Mock Mode (default: true)
+VITE_MOCK_SPACETIME=false
+
+# SpacetimeDB Connection Details
+VITE_SPACETIME_URI=https://maincloud.spacetimedb.com
+VITE_SPACETIME_DB_NAME=terminal-backend
+```
+
+### 🎭 Mock Mode
+To ensure the app is usable even without a live backend connection, a **Mock Mode** is built-in. When `VITE_MOCK_SPACETIME=true`:
+- The app uses hardcoded user data and progress snapshots.
+- Reducer calls are logged to the console instead of being sent to the server.
+- This is the recommended mode for local UI development and E2E testing.
+
+---
+
 ## ⚖️ License
 Distributed under the MIT License. See `LICENSE` for more information.
 

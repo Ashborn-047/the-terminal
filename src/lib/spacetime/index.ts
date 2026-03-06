@@ -23,8 +23,8 @@ class SpacetimeService {
     }
 
     public connect() {
-        const uri = "https://maincloud.spacetimedb.com";
-        const databaseName = "the-terminal-linux-v1";
+        const uri = import.meta.env.VITE_SPACETIME_URI || "https://maincloud.spacetimedb.com";
+        const databaseName = import.meta.env.VITE_SPACETIME_DB_NAME || "terminal-backend";
 
         this.conn = DbConnection.builder()
             .withUri(uri)
