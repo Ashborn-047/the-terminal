@@ -44,7 +44,7 @@ CommandRegistry.register('ls', async (args, context) => {
     let exitCode = 0;
 
     const listDir = (dirPath: string, isRecursiveCall: boolean = false) => {
-        const result = context.vfs.resolve(dirPath, context.userId);
+        const result = context.vfs.resolveRelative(dirPath, context.cwd, context.userId);
         if (typeof result === 'string') {
             errors.push(`ls: cannot access '${dirPath}': ${result}`);
             exitCode = 1;
@@ -141,7 +141,7 @@ CommandRegistry.register('cd', async (args, context) => {
         path = '/home/' + context.userId + path.slice(1);
     }
 
-    const result = context.vfs.resolve(path, context.userId);
+    const result = context.vfs.resolveRelative(path, context.cwd, context.userId);
     if (typeof result === 'string') {
         return { output: '', error: `cd: ${result}`, exitCode: 1 };
     }
@@ -151,9 +151,8 @@ CommandRegistry.register('cd', async (args, context) => {
         return { output: '', error: `cd: Not a directory: ${path}`, exitCode: 1 };
     }
 
-    // Return the resolved absolute path so useTerminal can update CWD
-    const resolvedPath = context.vfs.getPath(inode.id);
-    return { output: resolvedPath, exitCode: 0 };
+    // Return the absolute path so useTerminal can update context
+    return { output: context.vfs.getPath(inode.id), exitCode: 0 };
 });
 
 // ======================================================================
@@ -193,6 +192,14 @@ CommandRegistry.register('mkdir', async (args, context) => {
                     if (typeof result === 'string') {
                         return { output: '', error: `mkdir: ${result}`, exitCode: 1 };
                     }
+                    // Fix ownership for recursive mkdir as guest
+                    if (context.userId !== 'root') {
+                        const inode = context.vfs.resolve(checkPath, 'root');
+                        if (typeof inode !== 'string') {
+                            inode.ownerId = context.userId;
+                            inode.groupId = context.userId;
+                        }
+                    }
                 }
                 currentPath = checkPath;
             }
@@ -206,6 +213,8 @@ CommandRegistry.register('mkdir', async (args, context) => {
             if (typeof result === 'string') {
                 return { output: '', error: `mkdir: ${result}`, exitCode: 1 };
             }
+            // Ensure guest can write to their own created folders (though VFS handles this via ownerId)
+            console.log(`[mkdir] Created ${name} in ${parentPath} owned by ${context.userId}`);
         }
     }
 

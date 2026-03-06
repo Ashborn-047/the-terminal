@@ -6,7 +6,7 @@ import React, { useState, useEffect, useCallback } from 'react';
  */
 export interface Toast {
     id: string;
-    type: 'achievement' | 'xp' | 'level-up' | 'info' | 'error';
+    type: 'achievement' | 'xp' | 'level-up' | 'streak' | 'info' | 'error';
     title: string;
     message?: string;
     icon?: string;
@@ -89,6 +89,8 @@ function getToastStyle(type: Toast['type']): string {
             return 'bg-brutal-dark border-brutal-green text-brutal-green';
         case 'level-up':
             return 'bg-brutal-yellow border-brutal-black text-brutal-black';
+        case 'streak':
+            return 'bg-brutal-dark border-brutal-yellow text-brutal-yellow';
         case 'error':
             return 'bg-brutal-dark border-brutal-red text-brutal-red';
         default:

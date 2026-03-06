@@ -2,26 +2,72 @@ import { VFS } from '../vfs/vfs';
 import { Lab, VerificationCondition } from './types';
 
 export class VerificationEngine {
+    /**
+     * Check if a single command matches an expected command string.
+     * Supports regexMatch mode for flexible matching.
+     */
+    private static matchesCommand(input: string, expected: string, regexMatch?: boolean): boolean {
+        const normalizedInput = input.trim().replace(/\s+/g, ' ');
+        const normalizedExpected = expected.trim().replace(/\s+/g, ' ');
+
+        if (regexMatch) {
+            try {
+                const regex = new RegExp(`^${normalizedExpected}$`, 'i');
+                return regex.test(normalizedInput);
+            } catch (e) {
+                console.error('Invalid regex in lab step:', e);
+                return normalizedInput === normalizedExpected;
+            }
+        }
+        return normalizedInput === normalizedExpected;
+    }
+
+    /**
+     * Verify a guided step against a single command input.
+     * Checks expectedCommand first, then alternativeCommands.
+     * Returns true if the command matches any accepted variant.
+     */
     public static verifyGuidedStep(lab: Lab, stepIndex: number, command: string): boolean {
         if (!lab.steps || stepIndex >= lab.steps.length) return false;
         const step = lab.steps[stepIndex];
 
-        const normalizedInput = command.trim().replace(/\s+/g, ' ');
-        const expected = step.expectedCommand?.trim().replace(/\s+/g, ' ');
+        // If this step has a requiredSequence, use verifyGuidedSequenceStep instead
+        if (step.requiredSequence && step.requiredSequence.length > 0) return false;
 
+        const expected = step.expectedCommand;
         if (!expected) return false;
 
-        if (step.regexMatch) {
-            try {
-                const regex = new RegExp(`^${expected}$`, 'i');
-                return regex.test(normalizedInput);
-            } catch (e) {
-                console.error('Invalid regex in lab step:', e);
-                return normalizedInput === expected;
-            }
+        // Check primary expected command
+        if (this.matchesCommand(command, expected, step.regexMatch)) return true;
+
+        // Check alternative commands
+        if (step.alternativeCommands) {
+            return step.alternativeCommands.some(alt =>
+                this.matchesCommand(command, alt, step.regexMatch)
+            );
         }
 
-        return normalizedInput === expected;
+        return false;
+    }
+
+    /**
+     * Verify a sequence step: the user must enter each command in requiredSequence in order.
+     * Returns the new sequenceIndex (incremented if matched), or -1 if the command is wrong.
+     */
+    public static verifyGuidedSequenceStep(
+        lab: Lab, stepIndex: number, command: string, currentSeqIndex: number
+    ): number {
+        if (!lab.steps || stepIndex >= lab.steps.length) return -1;
+        const step = lab.steps[stepIndex];
+        if (!step.requiredSequence || step.requiredSequence.length === 0) return -1;
+
+        const expected = step.requiredSequence[currentSeqIndex];
+        if (!expected) return -1;
+
+        if (this.matchesCommand(command, expected, step.regexMatch)) {
+            return currentSeqIndex + 1;
+        }
+        return -1;
     }
 
     public static verifyDIYLab(lab: Lab, vfs: VFS, userId: string): { success: boolean; failedMessages: string[] } {

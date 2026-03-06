@@ -194,6 +194,7 @@ export class VFS {
         if (_depth > MAX_SYMLINK_DEPTH) return 'Too many levels of symbolic links';
         if (path === '/') return this.inodes[this.rootId];
 
+        console.log(`[VFS] Resolving: ${path} (from ${startNodeId === this.rootId ? '/' : 'some-id'}, uid: ${userId})`);
         const parts = path.split('/').filter(p => p.length > 0);
         let currentId = path.startsWith('/') ? this.rootId : startNodeId;
 
@@ -598,5 +599,24 @@ export class VFS {
     public isFile(path: string, userId: string = 'root'): boolean {
         const res = this.resolve(path, userId);
         return typeof res !== 'string' && res.type === 'file';
+    }
+
+    public resolveRelative(path: string, cwd: string, userId: string = 'root'): Inode | string {
+        const fullPath = path.startsWith('/') ? path : (cwd === '/' ? '/' + path : cwd + '/' + path);
+        return this.resolve(fullPath, userId);
+    }
+
+    public ensureUserHome(username: string): void {
+        const homePath = '/home/' + username;
+        if (!this.exists(homePath)) {
+            // Create as root to ensure we have permission in /home
+            this.mkdir('/home', username, 'root');
+            // Update ownership
+            const result = this.resolve(homePath, 'root');
+            if (typeof result !== 'string') {
+                result.ownerId = username;
+                result.groupId = username;
+            }
+        }
     }
 }

@@ -17,7 +17,9 @@ export function useTerminal() {
     const { username: uiUsername } = useUIStore();
     const { snapshot, setSnapshot } = useVFSStore();
     const [history, setHistory] = useState<TerminalEntry[]>([]);
+    const historyRef = useRef<TerminalEntry[]>([]); // Ref for stable access in callbacks
     const [cwd, setCwd] = useState<string>('/home/' + uiUsername);
+    const cwdRef = useRef<string>('/home/' + uiUsername); // Ref to avoid closure issues in executeCommand
     const [userId, setUserId] = useState<string>(uiUsername);
     const [env, setEnv] = useState<Record<string, string>>({
         USER: uiUsername,
@@ -34,6 +36,7 @@ export function useTerminal() {
         if (uiUsername && uiUsername !== userId) {
             const newHome = '/home/' + uiUsername;
             setUserId(uiUsername);
+            cwdRef.current = newHome;
             setCwd(newHome);
             setEnv(prev => ({
                 ...prev,
@@ -43,10 +46,18 @@ export function useTerminal() {
             }));
         }
     }, [uiUsername]);
+
     const [pendingPrompt, setPendingPrompt] = useState<{ message: string; resolve: (val: string) => void } | null>(null);
 
     // Initialize VFS from snapshot or default
     const vfsRef = useRef<VFS>(new VFS(snapshot || undefined));
+
+    // Ensure home directory exists whenever username is set — per doc 2 §3.3
+    // We do this here (idempotently) to ensure it exists before any command executes
+    if (uiUsername) {
+        vfsRef.current.ensureUserHome(uiUsername);
+    }
+
     const executorRef = useRef<CommandExecutor>(new CommandExecutor(vfsRef.current));
 
     useEffect(() => {
@@ -115,25 +126,27 @@ export function useTerminal() {
     const executeCommand = useCallback(async (input: string) => {
         const trimmedInput = input.trim();
         if (!trimmedInput) return;
+        console.log(`[Terminal] Executing: ${trimmedInput} in ${cwd} as ${userId}`);
+
+        const currentCwd = cwdRef.current;
+        const currentUserId = userId; // still stable enough
+        const outputs: string[] = [];
+        let result: CommandResult = { output: '', exitCode: 0 };
 
         const segments = CommandParser.parseCompound(trimmedInput);
         const context: CommandContext = {
-            cwd,
-            userId,
+            cwd: currentCwd,
+            userId: currentUserId,
             vfs: vfsRef.current,
-            env: { ...env, PWD: cwd, USER: userId },
-            history: history.map(h => h.command),
+            env,
+            history: historyRef.current.map(h => h.command),
             processes,
-            updateEnv: (newEnv: Record<string, string>) => setEnv(prev => ({ ...prev, ...newEnv })),
-            updateProcesses: (newProcs: any[]) => setProcesses(newProcs),
-            prompt: (message: string) => new Promise<string>((resolve) => {
-                setPendingPrompt({ message, resolve });
-            }),
+            updateEnv: (e) => setEnv(prev => ({ ...prev, ...e })),
+            updateProcesses: (p) => setProcesses(p),
+            prompt: (msg) => new Promise(resolve => setPendingPrompt({ message: msg, resolve })),
         };
 
         // Execute compound commands (;, &&, ||)
-        let result: CommandResult = { output: '', exitCode: 0 };
-        const outputs: string[] = [];
 
         for (const segment of segments) {
             const pipeline = segment.pipeline;
@@ -142,6 +155,7 @@ export function useTerminal() {
             result = await executorRef.current.execute(pipeline, context);
             if (result.output) outputs.push(result.output);
             if (result.error) outputs.push(result.error);
+            console.log(`[Terminal] Result: exitCode=${result.exitCode}, outputLen=${result.output.length}, error=${result.error}`);
 
             // Handle && (continue only on success) and || (continue only on failure)
             if (segment.operator === '&&' && result.exitCode !== 0) break;
@@ -161,16 +175,35 @@ export function useTerminal() {
             const labProgress = progress[currentLabId];
 
             if (lab.type === 'guided' && lab.steps && labProgress) {
-                const isCorrect = VerificationEngine.verifyGuidedStep(lab, labProgress.currentStepIndex, trimmedInput);
-                if (isCorrect) {
-                    const nextIndex = labProgress.currentStepIndex + 1;
+                const step = lab.steps[labProgress.currentStepIndex];
 
-                    updateProgress(currentLabId, {
-                        currentStepIndex: nextIndex
-                    });
-
-                    // Rewards, streaks, and setting status to 'completed' are handled
-                    // by the LabView component's useEffect when it detects currentStepIndex >= total steps.
+                if (step?.requiredSequence && step.requiredSequence.length > 0) {
+                    // Multi-command sequence step
+                    const seqIdx = labProgress.sequenceIndex || 0;
+                    const newSeqIdx = VerificationEngine.verifyGuidedSequenceStep(
+                        lab, labProgress.currentStepIndex, trimmedInput, seqIdx
+                    );
+                    if (newSeqIdx > 0) {
+                        if (newSeqIdx >= step.requiredSequence.length) {
+                            // Sequence complete — advance to next step
+                            updateProgress(currentLabId, {
+                                currentStepIndex: labProgress.currentStepIndex + 1,
+                                sequenceIndex: 0
+                            });
+                        } else {
+                            // Partial progress in sequence
+                            updateProgress(currentLabId, { sequenceIndex: newSeqIdx });
+                        }
+                    }
+                } else {
+                    // Single command or alternative commands step
+                    const isCorrect = VerificationEngine.verifyGuidedStep(lab, labProgress.currentStepIndex, trimmedInput);
+                    if (isCorrect) {
+                        updateProgress(currentLabId, {
+                            currentStepIndex: labProgress.currentStepIndex + 1,
+                            sequenceIndex: 0
+                        });
+                    }
                 }
             }
         }
@@ -204,6 +237,16 @@ export function useTerminal() {
                 const hour = new Date().getHours();
                 if (hour >= 0 && hour < 5) incrementCounter('night-owl');
                 if (hour >= 5 && hour < 8) incrementCounter('early-bird');
+
+                // Module Completion Logic — per gamification_framework.md §2.4
+                const currentLab = labs[currentLabId];
+                if (typeof currentLab.module === 'number') {
+                    const moduleLabs = Object.values(labs).filter(l => l.module === currentLab.module);
+                    const completedInModule = moduleLabs.filter(l => progress[l.id]?.status === 'completed');
+                    if (completedInModule.length === moduleLabs.length) {
+                        incrementCounter('modules-completed');
+                    }
+                }
             }
         }
 
@@ -212,28 +255,37 @@ export function useTerminal() {
 
         // Handle special case: cd updates CWD
         if (firstPipeline && firstPipeline.actions.length === 1 && firstPipeline.actions[0].name === 'cd' && result.exitCode === 0) {
-            setCwd(result.output || '/');
+            const nextCwd = result.output || '/';
+            cwdRef.current = nextCwd; // Update ref immediately for next potential commands
+            setCwd(nextCwd);
         }
 
         // Add to history
+        const isCd = firstPipeline?.actions[0].name === 'cd' && result.exitCode === 0;
+
         const entry: TerminalEntry = {
             id: uuidv4(),
             command: trimmedInput,
-            output: result.output,
+            output: isCd ? '' : result.output,
             error: result.error,
-            cwd, // record the CWD where it was executed
+            cwd: currentCwd, // record the CWD where it was executed
             timestamp: Date.now(),
         };
 
         if (trimmedInput === 'clear') {
             setHistory([]);
+            historyRef.current = [];
         } else {
-            setHistory(prev => [...prev, entry]);
+            setHistory(prev => {
+                const next = [...prev, entry];
+                historyRef.current = next;
+                return next;
+            });
         }
 
         syncVFS();
         return result;
-    }, [cwd, userId, syncVFS]);
+    }, [syncVFS]); // removed cwd, userId to prevent recreation
 
     return {
         history,

@@ -15,6 +15,8 @@ export interface LabStep {
     id: string;
     instruction: string;
     expectedCommand?: string;
+    alternativeCommands?: string[]; // Any of these also pass the step
+    requiredSequence?: string[];    // All must be entered in order to pass
     hint?: string;
     regexMatch?: boolean; // If true, expectedCommand is treated as a regex
 }
@@ -44,6 +46,7 @@ export interface LabProgress {
     labId: string;
     status: 'locked' | 'available' | 'in-progress' | 'completed';
     currentStepIndex: number;
+    sequenceIndex?: number; // Tracks progress within a requiredSequence step
     completedAt?: number;
     verified: boolean;
     hintsUsed?: number[]; // indices of steps where hints were used

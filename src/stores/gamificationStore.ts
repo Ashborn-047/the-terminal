@@ -60,7 +60,7 @@ export interface Achievement {
     id: string;
     name: string;
     description: string;
-    category: 'milestone' | 'skill-mastery' | 'exploration' | 'streak' | 'easter-egg';
+    category: 'milestone' | 'skill-mastery' | 'exploration' | 'social' | 'streak' | 'easter-egg';
     icon: string;
     hidden: boolean;
     xpReward: number;
@@ -99,6 +99,9 @@ export const ACHIEVEMENTS: Achievement[] = [
     { id: 'streak-90', name: 'Marathon Runner', description: 'Maintain a 90-day streak', category: 'streak', icon: '🏅', hidden: false, xpReward: 500, criteria: { type: 'counter', target: 'streak', threshold: 90 } },
     { id: 'sandwich', name: 'Sudo Make Me a Sandwich', description: 'Try to make a sandwich', category: 'easter-egg', icon: '🥪', hidden: true, xpReward: 10, criteria: { type: 'event', target: 'sandwich-attempt', threshold: 1 } },
     { id: 'rm-rf-root', name: 'You Monster', description: 'Try to rm -rf /', category: 'easter-egg', icon: '💣', hidden: true, xpReward: 10, criteria: { type: 'event', target: 'rm-rf-root', threshold: 1 } },
+    { id: 'social-butterfly', name: 'Social Butterfly', description: 'Send 50 chat messages', category: 'social', icon: '🦋', hidden: false, xpReward: 75, criteria: { type: 'counter', target: 'messages-sent', threshold: 50 } },
+    { id: 'mentor', name: 'Mentor', description: 'Have your messages upvoted 10 times', category: 'social', icon: '🧑‍🏫', hidden: false, xpReward: 100, criteria: { type: 'counter', target: 'upvotes-received', threshold: 10 } },
+    { id: 'completionist', name: 'Completionist', description: 'Complete all labs in a module', category: 'milestone', icon: '🏁', hidden: false, xpReward: 250, criteria: { type: 'counter', target: 'modules-completed', threshold: 1 } },
 ];
 
 export type QuestType = 'earn_xp' | 'execute_commands' | 'complete_labs';
@@ -137,6 +140,7 @@ interface GamificationState {
     processLabCompletion: (lab: Lab, progress: LabProgress) => void;
     getStreakMultiplier: () => number;
     updateStreak: () => void;
+    purchaseStreakFreeze: () => boolean;
     incrementCounter: (target: string, amount?: number) => void;
     checkAchievements: () => string[];
     getTitle: () => string;
@@ -302,6 +306,7 @@ export const useGamificationStore = create<GamificationState>()(
                 const yesterdayStr = yesterday.toISOString().split('T')[0];
 
                 let newCurrent = 1;
+                let freezeConsumed = false;
                 if (streak.lastActivityDate === yesterdayStr) {
                     newCurrent = streak.current + 1;
                 } else if (streak.lastActivityDate && streak.lastActivityDate !== yesterdayStr) {
@@ -309,6 +314,7 @@ export const useGamificationStore = create<GamificationState>()(
                     const dayDiff = Math.floor((Date.now() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
                     if (dayDiff === 2 && streak.freezesRemaining > 0) {
                         newCurrent = streak.current + 1;
+                        freezeConsumed = true;
                         set((s) => ({
                             streak: { ...s.streak, freezesRemaining: s.streak.freezesRemaining - 1 },
                         }));
@@ -320,14 +326,53 @@ export const useGamificationStore = create<GamificationState>()(
                         current: newCurrent,
                         longest: Math.max(newCurrent, streak.longest),
                         lastActivityDate: today,
-                        freezesRemaining: streak.freezesRemaining,
+                        freezesRemaining: freezeConsumed ? streak.freezesRemaining - 1 : streak.freezesRemaining,
                     },
                 });
 
+                // Freeze consumed notification
+                if (freezeConsumed) {
+                    toastEmitter.emit({
+                        type: 'info',
+                        title: '❄️ Streak Freeze Used!',
+                        message: 'Your streak was saved. Purchase another freeze from your profile.',
+                        icon: '❄️',
+                        duration: 5000,
+                    });
+                }
+
+                // Streak milestone bonuses + notifications
                 const streakBonuses: Record<number, number> = { 7: 100, 30: 500, 90: 1000 };
                 if (streakBonuses[newCurrent]) {
                     get().awardXP(streakBonuses[newCurrent]);
+                    toastEmitter.emit({
+                        type: 'streak',
+                        title: `🔥 ${newCurrent}-Day Streak!`,
+                        message: `+${streakBonuses[newCurrent]} XP milestone bonus!`,
+                        icon: '🔥',
+                        duration: 5000,
+                    });
                 }
+            },
+
+            purchaseStreakFreeze: () => {
+                const state = get();
+                const FREEZE_COST = 200;
+                if (state.xp < FREEZE_COST) {
+                    toastEmitter.emit({ type: 'error', title: 'Not enough XP', message: `You need ${FREEZE_COST} XP to buy a streak freeze.`, icon: '❌', duration: 4000 });
+                    return false;
+                }
+                if (state.streak.freezesRemaining >= 1) {
+                    toastEmitter.emit({ type: 'info', title: 'Already Active', message: 'You already have a streak freeze active.', icon: '❄️', duration: 4000 });
+                    return false;
+                }
+                set((s) => ({
+                    xp: s.xp - FREEZE_COST,
+                    totalXpEarned: s.totalXpEarned, // Don't subtract from totalXpEarned (it's a purchase)
+                    streak: { ...s.streak, freezesRemaining: 1 },
+                }));
+                toastEmitter.emit({ type: 'xp', title: `-${FREEZE_COST} XP`, message: 'Streak Freeze activated! ❄️', icon: '❄️', duration: 4000 });
+                return true;
             },
 
             incrementCounter: (target, amount = 1) => {

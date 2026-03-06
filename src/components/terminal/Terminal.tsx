@@ -77,10 +77,13 @@ export const TerminalComponent: React.FC = () => {
                 setTimeout(() => setFlashClass(''), 800);
             }
         } else if (e.key === 'ArrowUp') {
+            console.log(`[Terminal] ArrowUp: historyLen=${history.length}, currentIndex=${historyIndex}`);
             if (history.length > 0) {
                 const newIndex = Math.min(historyIndex + 1, history.length - 1);
                 setHistoryIndex(newIndex);
-                setInput(history[history.length - 1 - newIndex].command);
+                const cmd = history[history.length - 1 - newIndex].command;
+                console.log(`[Terminal] ArrowUp: setting input to "${cmd}" (index ${newIndex})`);
+                setInput(cmd);
             }
             e.preventDefault();
         } else if (e.key === 'ArrowDown') {
@@ -110,7 +113,12 @@ export const TerminalComponent: React.FC = () => {
                             <span className="text-brutal-white">{entry.command}</span>
                         </div>
                         {entry.output && (
-                            <pre className="whitespace-pre-wrap mt-1 opacity-90">{parseAnsi(entry.output)}</pre>
+                            <pre
+                                data-testid="terminal-output"
+                                className="whitespace-pre-wrap mt-1 opacity-90"
+                            >
+                                {parseAnsi(entry.output)}
+                            </pre>
                         )}
                         {entry.error && (
                             <div className="text-brutal-red mt-1 font-bold">Error: {entry.error}</div>
@@ -126,6 +134,7 @@ export const TerminalComponent: React.FC = () => {
                 </span>
                 <input
                     ref={inputRef}
+                    data-testid="terminal-input"
                     type="text"
                     aria-label="Terminal Input"
                     className="flex-1 bg-transparent border-none outline-none text-brutal-white caret-transparent"

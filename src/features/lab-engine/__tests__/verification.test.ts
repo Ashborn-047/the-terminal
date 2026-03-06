@@ -49,6 +49,75 @@ describe('VerificationEngine', () => {
         it('should return false if step index is out of bounds', () => {
             expect(VerificationEngine.verifyGuidedStep(mockLab, 5, 'pwd')).toBe(false);
         });
+
+        it('should accept alternative commands', () => {
+            const labWithAlts: Lab = {
+                ...mockLab,
+                steps: [
+                    { instruction: 'List files', expectedCommand: 'ls -la', alternativeCommands: ['ls -al', 'ls -la --color'], successMessage: 'Done' },
+                ],
+            };
+            expect(VerificationEngine.verifyGuidedStep(labWithAlts, 0, 'ls -la')).toBe(true);
+            expect(VerificationEngine.verifyGuidedStep(labWithAlts, 0, 'ls -al')).toBe(true);
+            expect(VerificationEngine.verifyGuidedStep(labWithAlts, 0, 'ls -la --color')).toBe(true);
+            expect(VerificationEngine.verifyGuidedStep(labWithAlts, 0, 'ls -l')).toBe(false);
+        });
+
+        it('should return false for a sequence step when using verifyGuidedStep', () => {
+            const seqLab: Lab = {
+                ...mockLab,
+                steps: [
+                    { instruction: 'Do sequence', requiredSequence: ['mkdir test', 'cd test'], successMessage: 'Done' },
+                ],
+            };
+            expect(VerificationEngine.verifyGuidedStep(seqLab, 0, 'mkdir test')).toBe(false);
+        });
+    });
+
+    describe('verifyGuidedSequenceStep', () => {
+        const seqLab: Lab = {
+            id: 'test-seq',
+            title: 'Sequence Test',
+            description: '',
+            module: 1,
+            type: 'guided',
+            xpReward: 10,
+            difficulty: 'beginner',
+            estimatedTime: 5,
+            prerequisites: [],
+            objectives: [],
+            steps: [
+                { instruction: 'Create and enter dir', requiredSequence: ['mkdir mydir', 'cd mydir', 'pwd'], successMessage: 'Done' },
+            ],
+            tags: [],
+            author: 'Test',
+        };
+
+        it('should advance sequence index on correct command', () => {
+            expect(VerificationEngine.verifyGuidedSequenceStep(seqLab, 0, 'mkdir mydir', 0)).toBe(1);
+        });
+
+        it('should return -1 on wrong command', () => {
+            expect(VerificationEngine.verifyGuidedSequenceStep(seqLab, 0, 'ls', 0)).toBe(-1);
+        });
+
+        it('should advance through the full sequence', () => {
+            expect(VerificationEngine.verifyGuidedSequenceStep(seqLab, 0, 'mkdir mydir', 0)).toBe(1);
+            expect(VerificationEngine.verifyGuidedSequenceStep(seqLab, 0, 'cd mydir', 1)).toBe(2);
+            expect(VerificationEngine.verifyGuidedSequenceStep(seqLab, 0, 'pwd', 2)).toBe(3);
+        });
+
+        it('should return -1 for out-of-bounds step index', () => {
+            expect(VerificationEngine.verifyGuidedSequenceStep(seqLab, 5, 'mkdir mydir', 0)).toBe(-1);
+        });
+
+        it('should return -1 on a non-sequence step', () => {
+            const normalLab: Lab = {
+                ...seqLab,
+                steps: [{ instruction: 'Run pwd', expectedCommand: 'pwd', successMessage: 'Done' }],
+            };
+            expect(VerificationEngine.verifyGuidedSequenceStep(normalLab, 0, 'pwd', 0)).toBe(-1);
+        });
     });
 
     describe('verifyDIYLab', () => {
