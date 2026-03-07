@@ -108,6 +108,27 @@ To ensure the app is usable even without a live backend connection, a **Mock Mod
 
 ---
 
+## 📈 Current Status
+
+- **Lab Progress**: 8 / 35 Labs Completed ✅
+- **User Stats**: Level 6 (User Manager), ~415 XP
+- **Backend Status**: 🟢 System Online (Connected to `terminal-backend` on SpacetimeDB Cloud)
+- **CI/CD**: Fully automated deployment to GitHub Pages via GitHub Actions.
+
+---
+
+## 🗺️ Roadmap & Upcoming Features
+
+### ⚖️ Gamification Refinement
+- **Hint Penalties**: 50% XP reduction for using hints during a lab.
+- **Solution Reveal**: 75% XP reduction for revealing the full solution.
+
+### 🎨 UI/UX Overhaul
+- **Page-Level Navigation**: Transitioning from tab-based views to distinct route-based pages.
+- **Improved Scrolling**: Fixing overflow-hidden issues for a better experience.
+
+---
+
 ## ⚖️ License
 Distributed under the MIT License. See `LICENSE` for more information.
 
