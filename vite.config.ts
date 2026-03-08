@@ -1,9 +1,13 @@
+/// <reference types="vitest" />
 import { defineConfig } from 'vite'
 import path from 'path'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 
 export default defineConfig({
+  test: {
+    exclude: ['**/node_modules/**', '**/dist/**', '**/tests/e2e/**'],
+  },
   base: '/the-terminal/',
   plugins: [
     // The React and Tailwind plugins are both required for Make, even if

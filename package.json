@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "vitest run",
+    "test": "vitest run --exclude \"tests/**\"",
     "test:unit": "vitest run src/features --exclude src/features/lab-engine/__tests__/integration/",
     "test:integration": "vitest run src/features/lab-engine/__tests__/integration/",
     "test:e2e": "playwright test",

@@ -24,7 +24,7 @@ const HomePage: React.FC = () => {
     const availableLabs = labList.filter(l => !progress[l.id] || progress[l.id]?.status === 'available');
 
     return (
-        <div className="h-full overflow-y-auto p-6">
+        <div className="h-full w-full overflow-y-auto p-4 md:p-6 lg:p-8">
             {/* Hero Banner */}
             <div className="border-3 border-brutal-green bg-brutal-black p-8 mb-6 shadow-brutal relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-48 h-48 bg-brutal-green/5 rotate-45 translate-x-16 -translate-y-16" />

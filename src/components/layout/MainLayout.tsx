@@ -190,7 +190,7 @@ export const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }
                 </header>
 
                 {/* Dynamic View Context (Workspace) */}
-                <div className="flex-1 overflow-hidden relative flex min-h-0 bg-brutal-black border-2 border-brutal-white/20">
+                <div className="flex-1 overflow-hidden relative min-h-0 bg-brutal-black border-2 border-brutal-white/20">
                     {children}
                 </div>
             </main>

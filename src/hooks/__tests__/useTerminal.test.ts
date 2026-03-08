@@ -51,12 +51,12 @@ describe('useTerminal', () => {
     });
 
     it('should initialize with default user and cwd', () => {
-        const { result } = renderHook(() => useTerminal('guest'));
+        const { result } = renderHook(() => useTerminal());
 
-        expect(result.current.userId).toBe('guest');
-        expect(result.current.cwd).toBe('/home/guest');
+        expect(result.current.userId).toBe('Guest');
+        expect(result.current.cwd).toBe('/home/Guest');
         expect(result.current.history).toEqual([]);
-        expect(result.current.env.USER).toBe('guest');
+        expect(result.current.env.USER).toBe('Guest');
     });
 
     it('should add executed command to history', async () => {

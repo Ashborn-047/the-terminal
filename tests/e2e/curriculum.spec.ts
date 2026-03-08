@@ -37,10 +37,10 @@ test.describe('Curriculum and Lab Flow', () => {
     test('should navigate through curriculum and complete a guided lab', async ({ page }) => {
         // 1. Start from Labs Page
         await page.goto('labs');
-        await expect(page.getByRole('heading', { name: 'Curriculum' })).toBeVisible({ timeout: 10000 });
+        await expect(page.getByRole('heading', { name: /FOUNDATIONS|Curriculum/i })).toBeVisible({ timeout: 10000 });
 
         // 2. Click on the first lab card
-        const labCard = page.getByRole('button', { name: 'START' }).first();
+        const labCard = page.getByRole('button', { name: 'Start Lab' }).first();
         await labCard.click();
 
         // 3. Verify Lab View

@@ -55,7 +55,7 @@ test.describe('Full Regression Flow', () => {
         await page.getByRole('button', { name: 'Next →' }).click();
 
         // Step 3d: Start Learning
-        await expect(page.getByRole('heading', { name: 'The Curriculum' })).toBeVisible();
+        await expect(page.getByRole('heading', { name: /The Curriculum|FOUNDATIONS/i })).toBeVisible();
         await page.getByRole('button', { name: 'Start Learning!' }).click();
 
         // ──────────────────────────────────────────────
@@ -72,7 +72,7 @@ test.describe('Full Regression Flow', () => {
         // Step 5a: pwd
         await terminalInput.fill('pwd');
         await page.keyboard.press('Enter');
-        await expect(page.getByText('Step 2/2')).toBeVisible({ timeout: 5000 });
+        await expect(page.getByText(/Step.*2.*\/.*2/).first()).toBeVisible({ timeout: 5000 });
 
         // Step 5b: ls
         await terminalInput.fill('ls');
@@ -171,7 +171,7 @@ test.describe('Full Regression Flow', () => {
 
         // Labs
         await page.goto('labs');
-        await expect(page.getByRole('heading', { name: 'Curriculum' })).toBeVisible({ timeout: 10000 });
+        await expect(page.getByRole('heading', { name: /FOUNDATIONS|Curriculum/i })).toBeVisible({ timeout: 10000 });
 
         // Terminal
         await page.goto('terminal');

@@ -325,3 +325,23 @@
 .typing-dot:nth-child(3) {
   animation-delay: 0.4s;
 }
+
+/* === Custom Brutalist Scrollbar === */
+::-webkit-scrollbar {
+  width: 14px;
+  height: 14px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--brutal-black);
+  border-left: 2px solid var(--border);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--brutal-white);
+  border: 2px solid var(--brutal-black);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--brutal-green);
+}

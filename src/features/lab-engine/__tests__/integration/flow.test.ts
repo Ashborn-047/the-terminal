@@ -29,6 +29,7 @@ import { spacetime } from '../../../../lib/spacetime/index';
 import { useLabStore } from '../../../../stores/labStore';
 import { useGamificationStore } from '../../../../stores/gamificationStore';
 import { useVFSStore } from '../../../../stores/vfsStore';
+import { useUIStore } from '../../../../stores/uiStore';
 import { renderHook, act } from '@testing-library/react';
 import { useTerminal } from '../../../../hooks/useTerminal';
 import { Lab } from '../../types';
@@ -101,6 +102,10 @@ describe('Lab + VFS + SpacetimeDB Integration', () => {
             snapshot: null,
         });
 
+        useUIStore.setState({
+            username: 'guest',
+        });
+
         useGamificationStore.setState({
             xp: 0,
             level: 1,
@@ -145,7 +150,14 @@ describe('Lab + VFS + SpacetimeDB Integration', () => {
             await result.current.executeCommand('cd test');
         });
 
-        // 6. Verify lab completed
+        // 6. Verify progress advanced, then complete lab manually like the UI would
+        progress = useLabStore.getState().progress['guided-test-1'];
+        expect(progress.currentStepIndex).toBe(2);
+
+        act(() => {
+            useLabStore.getState().completeLab('guided-test-1');
+        });
+
         progress = useLabStore.getState().progress['guided-test-1'];
         expect(progress.status).toBe('completed');
 

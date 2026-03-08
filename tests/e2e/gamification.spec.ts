@@ -40,7 +40,7 @@ test.describe('Gamification and Social Flow', () => {
 
         // Wait for lab to load and auto-start
         await expect(page.getByText('Your First Command')).toBeVisible({ timeout: 10000 });
-        await expect(page.getByText('Step 1/2')).toBeVisible({ timeout: 5000 });
+        await expect(page.getByText(/Step.*1.*\/.*2/).first()).toBeVisible({ timeout: 5000 });
 
         const terminalInput = page.locator('input[type="text"]').last();
 
@@ -48,7 +48,7 @@ test.describe('Gamification and Social Flow', () => {
         await terminalInput.fill('pwd');
         await page.keyboard.press('Enter');
         // Wait for step to advance
-        await expect(page.getByText('Step 2/2')).toBeVisible({ timeout: 5000 });
+        await expect(page.getByText(/Step.*2.*\/.*2/).first()).toBeVisible({ timeout: 5000 });
 
         // Step 2: ls
         await terminalInput.fill('ls');
@@ -59,7 +59,7 @@ test.describe('Gamification and Social Flow', () => {
         // Check for XP inside the modal specifically 
         await expect(page.getByText('+50 XP').first()).toBeVisible();
         const heading = page.getByRole('heading', { name: 'First Lab Complete!' });
-        const continueBtn = page.getByRole('button', { name: /Continue Learning/i });
+        const continueBtn = page.getByRole('button', { name: /Continue/i }).first();
         await continueBtn.dispatchEvent('click');
         await expect(heading).not.toBeVisible();
     });

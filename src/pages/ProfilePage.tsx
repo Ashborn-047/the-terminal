@@ -1,5 +1,6 @@
 import React from 'react';
 import { useGamificationStore, getLevelTitle, ACHIEVEMENTS } from '../stores/gamificationStore';
+import { useUIStore } from '../stores/uiStore';
 import { SkillTree } from '../components/gamification/SkillTree';
 import { Leaderboard } from '../components/gamification/Leaderboard';
 import { StreakHeatmap } from '../components/gamification/StreakHeatmap';
@@ -9,6 +10,7 @@ import { StreakHeatmap } from '../components/gamification/StreakHeatmap';
  * Shows user stats, achievement gallery, and progress overview.
  */
 const ProfilePage: React.FC = () => {
+    const { username } = useUIStore();
     const {
         level, totalXpEarned, streak, labsCompleted,
         unlockedAchievements, counters, getXPProgress
@@ -18,7 +20,7 @@ const ProfilePage: React.FC = () => {
     return (
         <div className="h-full overflow-y-auto p-4 space-y-8 pb-20">
             <h1 className="font-heading text-4xl uppercase text-brutal-white italic tracking-wider">
-                Agent Profile
+                Agent Profile: {username}
             </h1>
 
             {/* Stats Grid */}

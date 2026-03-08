@@ -44,7 +44,7 @@ const LabsPage: React.FC = () => {
     };
 
     return (
-        <div className="flex h-full w-full overflow-hidden absolute inset-0">
+        <div className="flex h-full w-full overflow-hidden absolute inset-0 bg-brutal-black">
             {/* Context Panel (Secondary Sidebar) - 250px exactly as per Stitch Mockup */}
             <div className="w-[250px] shrink-0 border-r-3 border-brutal-white/20 bg-brutal-black h-full relative z-10 hidden md:block">
                 <ModuleNavBar className="w-full h-full border-r-0 border-brutal-white/20 bg-transparent" />
