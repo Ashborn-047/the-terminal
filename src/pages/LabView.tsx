@@ -137,7 +137,7 @@ const LabView: React.FC = () => {
     };
 
     return (
-        <div className="flex flex-col h-full w-full absolute inset-0 bg-brutal-black">
+        <div className="flex flex-col h-full w-full bg-brutal-black">
             {/* Lab Header Strip */}
             <div className="flex items-center justify-between p-3 border-b-2 border-brutal-white/20 shrink-0 bg-brutal-dark">
                 <div className="flex items-center gap-3">

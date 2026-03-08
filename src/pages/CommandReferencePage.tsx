@@ -118,17 +118,21 @@ export default function CommandReferencePage() {
 
             {/* Main Content */}
             <div style={{ display: 'grid', gridTemplateColumns: selectedDoc ? '1fr 1.5fr' : '1fr', gap: '1.5rem' }}>
-                {/* Command List */}
+                {/* Command List - Scrollable */}
                 <div style={{
                     display: 'grid',
                     gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
                     gap: '0.5rem',
                     alignContent: 'start',
-                }}>
+                    maxHeight: 'calc(100vh - 250px)',
+                    overflowY: 'auto',
+                    paddingRight: '0.5rem'
+                }} className="scrollbar-brutal">
                     {filteredCommands.map(cmd => (
                         <button
                             key={cmd}
                             onClick={() => setSelectedCmd(selectedCmd === cmd ? null : cmd)}
+                            className="transition-all duration-100"
                             style={{
                                 padding: '0.5rem 0.75rem',
                                 background: selectedCmd === cmd ? '#00FF9D' : '#1E1E1E',
@@ -139,17 +143,6 @@ export default function CommandReferencePage() {
                                 fontWeight: 700,
                                 textAlign: 'left',
                                 cursor: 'pointer',
-                                transition: 'all 0.1s',
-                            }}
-                            onMouseEnter={e => {
-                                if (selectedCmd !== cmd) {
-                                    (e.target as HTMLElement).style.borderColor = '#00FF9D';
-                                }
-                            }}
-                            onMouseLeave={e => {
-                                if (selectedCmd !== cmd) {
-                                    (e.target as HTMLElement).style.borderColor = '#333';
-                                }
                             }}
                         >
                             {cmd}
@@ -160,13 +153,15 @@ export default function CommandReferencePage() {
                     )}
                 </div>
 
-                {/* Detail Panel */}
+                {/* Detail Panel - Scrollable */}
                 {selectedDoc && (
                     <div style={{
                         background: '#1E1E1E',
                         border: '3px solid #FFFFFF',
                         padding: '1.5rem',
-                    }}>
+                        maxHeight: 'calc(100vh - 250px)',
+                        overflowY: 'auto'
+                    }} className="scrollbar-brutal">
                         <h2 style={{
                             fontFamily: 'JetBrains Mono, monospace',
                             fontSize: '1.5rem',

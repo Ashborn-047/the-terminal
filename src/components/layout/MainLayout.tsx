@@ -89,7 +89,7 @@ export const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }
         },
         {
             path: '/profile',
-            label: 'Achievements',
+            label: 'Profile & Medals',
             icon: <Award size={20} />,
             locked: !features.achievements,
             requirement: "Complete 2 labs to view medals",
@@ -148,19 +148,22 @@ export const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }
                             </div>
                         </div>
                     )}
-                    <button onClick={() => navigate('/profile')} className="relative group p-1 border-2 border-brutal-white hover:border-brutal-yellow rounded-full overflow-hidden transition-colors">
+                    <button
+                        onClick={() => navigate('/profile')}
+                        className={`relative group p-1 border-2 transition-colors ${location.pathname === '/profile' ? 'border-brutal-yellow' : 'border-brutal-white hover:border-brutal-yellow'}`}
+                    >
                         <div className="bg-brutal-red w-8 h-8 flex items-center justify-center text-sm">
                             👤
                         </div>
                         <div className="absolute left-full ml-4 top-1/2 -translate-y-1/2 w-max bg-brutal-black border-2 border-brutal-white p-2 z-50 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
-                            <span className="font-heading uppercase text-sm text-brutal-white">Profile</span>
+                            <span className="font-heading uppercase text-sm text-brutal-white">My Profile</span>
                         </div>
                     </button>
                 </div>
             </aside>
 
             {/* Main Content Area */}
-            <main className="flex-1 flex flex-col h-full min-w-0">
+            <main className="flex-1 flex flex-col min-h-0 overflow-hidden">
                 {/* Integrated Compact Header */}
                 <header className="flex justify-between items-center mb-2 px-4 py-2 bg-brutal-black border-2 border-brutal-white/20 shrink-0 h-14">
                     <div className="flex items-center gap-4 h-full">
@@ -190,7 +193,7 @@ export const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }
                 </header>
 
                 {/* Dynamic View Context (Workspace) */}
-                <div className="flex-1 overflow-hidden relative min-h-0 bg-brutal-black border-2 border-brutal-white/20">
+                <div className="flex-1 relative min-h-0 bg-brutal-black border-2 border-brutal-white/20 overflow-auto scrollbar-brutal">
                     {children}
                 </div>
             </main>

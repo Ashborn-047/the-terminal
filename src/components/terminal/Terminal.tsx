@@ -36,11 +36,14 @@ export const TerminalComponent: React.FC = () => {
     const [flashClass, setFlashClass] = useState('');
     const [isExecuting, setIsExecuting] = useState(false);
     const bottomRef = useRef<HTMLDivElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
-    // Auto-scroll to bottom
+    // Auto-scroll to bottom using scrollTop to avoid document-level shifts
     useEffect(() => {
-        bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+        if (containerRef.current) {
+            containerRef.current.scrollTop = containerRef.current.scrollHeight;
+        }
     }, [history]);
 
     // Focus input on click anywhere in terminal
@@ -101,6 +104,7 @@ export const TerminalComponent: React.FC = () => {
 
     return (
         <div
+            ref={containerRef}
             className={`flex flex-col w-full h-full bg-brutal-black font-mono text-brutal-green p-4 overflow-y-auto cursor-text border-3 border-brutal-white shadow-brutal-lg ${flashClass}`}
             onClick={handleTerminalClick}
         >

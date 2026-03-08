@@ -30,7 +30,7 @@ export const ConnectionBanner: React.FC = () => {
     if (isConnected && !isConnecting) return null;
 
     return (
-        <div className={`fixed top-0 left-0 right-0 z-[100] border-b-4 border-brutal-black p-2 flex items-center justify-center gap-4 transition-all duration-500 ${isConnecting ? 'bg-brutal-yellow' : 'bg-brutal-red'
+        <div className={`relative w-full z-[100] border-b-4 border-brutal-black p-2 flex items-center justify-center gap-4 transition-all duration-500 ${isConnecting ? 'bg-brutal-yellow' : 'bg-brutal-red'
             } animate-in slide-in-from-top`}>
             {isConnecting ? (
                 <>

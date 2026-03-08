@@ -82,12 +82,12 @@ function AppContent() {
   };
 
   return (
-    <>
-      {onboardingStep === 0 && (
-        <WelcomeModal onComplete={handleOnboardingComplete} />
-      )}
+    <div className="h-full w-full bg-brutal-dark overflow-hidden flex flex-col">
       <ConnectionBanner />
       <MainLayout>
+        {onboardingStep === 0 && (
+          <WelcomeModal onComplete={handleOnboardingComplete} />
+        )}
         <ErrorBoundary section="Main Content">
           <Suspense fallback={<PageLoader />}>
             <Routes>
@@ -107,7 +107,7 @@ function AppContent() {
         <OnboardingWalkthrough />
         <LevelUpModal />
       </MainLayout>
-    </>
+    </div>
   );
 }
 
