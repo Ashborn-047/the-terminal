@@ -16,12 +16,14 @@ export const INITIAL_LABS: Record<string, Lab> = {
                 instruction: 'Identify your current location by typing `pwd`',
                 expectedCommand: 'pwd',
                 hint: 'Type `pwd` and press ENTER.',
+                solution: 'pwd'
             },
             {
                 id: 'step-2',
                 instruction: 'List the contents of your current directory using `ls`',
                 expectedCommand: 'ls',
                 hint: 'Type `ls` to see what\'s inside.',
+                solution: 'ls'
             }
         ],
         completionMessage: 'Excellent! You\'ve taken your first steps into a larger world.',
@@ -44,6 +46,7 @@ export const INITIAL_LABS: Record<string, Lab> = {
             ]
         },
         hints: ['Use `mkdir workspace` to create the folder.'],
+        solution: 'mkdir workspace',
         completionMessage: 'You are now a master of your own domain!',
     },
 
@@ -62,6 +65,7 @@ export const INITIAL_LABS: Record<string, Lab> = {
                 instruction: 'Create a new empty file called `notes.txt` using `touch`',
                 expectedCommand: 'touch notes.txt',
                 hint: 'Type `touch notes.txt`',
+                solution: 'touch notes.txt'
             },
             {
                 id: 'step-2',
@@ -74,12 +78,14 @@ export const INITIAL_LABS: Record<string, Lab> = {
                 instruction: 'Write some text to your file using `echo "Hello World" > notes.txt`',
                 expectedCommand: 'echo "Hello World" > notes.txt',
                 hint: 'The `>` operator redirects output to a file.',
+                solution: 'echo "Hello World" > notes.txt'
             },
             {
                 id: 'step-4',
                 instruction: 'Read the file contents with `cat notes.txt`',
                 expectedCommand: 'cat notes.txt',
                 hint: 'Use `cat filename` to display file contents.',
+                solution: 'cat notes.txt'
             },
         ],
         completionMessage: 'You\'ve learned to create, write, and read files!',

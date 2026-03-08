@@ -17,6 +17,7 @@ interface LabState {
     updateProgress: (labId: string, updates: Partial<LabProgress>) => void;
     completeLab: (labId: string) => void;
     recordHintUsage: (labId: string, stepIndex: number) => void;
+    revealSolution: (labId: string) => void;
     resetLab: (labId: string) => void;
     exitLab: () => void;
     getCurrentLab: () => Lab | null;
@@ -106,6 +107,21 @@ export const useLabStore = create<LabState>()(
                         [labId]: {
                             ...p,
                             hintsUsed: [...(p.hintsUsed || []), stepIndex]
+                        }
+                    }
+                }));
+            },
+
+            revealSolution: (labId) => {
+                const p = get().progress[labId];
+                if (!p) return;
+
+                set((state) => ({
+                    progress: {
+                        ...state.progress,
+                        [labId]: {
+                            ...p,
+                            solutionRevealed: true
                         }
                     }
                 }));

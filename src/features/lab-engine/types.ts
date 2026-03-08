@@ -18,6 +18,7 @@ export interface LabStep {
     alternativeCommands?: string[]; // Any of these also pass the step
     requiredSequence?: string[];    // All must be entered in order to pass
     hint?: string;
+    solution?: string; // Revealed command(s) for the step
     regexMatch?: boolean; // If true, expectedCommand is treated as a regex
 }
 
@@ -35,6 +36,7 @@ export interface Lab {
         conditions: VerificationCondition[];
     }; // for diy
     hints?: string[];
+    solution?: string; // For DIY labs, the overall solution
     completionMessage: string;
     parTime?: number; // in seconds
     parXpBonus?: number;
@@ -49,7 +51,8 @@ export interface LabProgress {
     sequenceIndex?: number; // Tracks progress within a requiredSequence step
     completedAt?: number;
     verified: boolean;
-    hintsUsed?: number[]; // indices of steps where hints were used
+    hintsUsed?: number[]; // indices of steps where hints were used (Guided) or hint indices (DIY)
+    solutionRevealed?: boolean; // True if the user revealed the solution
     startTime?: number;   // UNIX timestamp when lab started/resumed
     totalTimeSpent?: number; // Cumulative seconds spent
 }

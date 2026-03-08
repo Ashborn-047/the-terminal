@@ -16,3 +16,12 @@ Thumbs.db
 
 # Compliance Audit (Local Only)
 /docs/compliance_audit.md
+
+# Stitch AI UI Generation
+.stitch/
+stitch-output/
+_stitch_designs/
+
+# MCP Configuration
+mcp_config.json
+*mcp*

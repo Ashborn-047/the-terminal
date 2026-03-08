@@ -226,12 +226,21 @@ export const useGamificationStore = create<GamificationState>()(
             processLabCompletion: async (lab, progress) => {
                 if (!lab || !progress) return;
 
-                let finalXp = lab.xpReward;
-                const hintsCount = progress.hintsUsed?.length || 0;
-                const hintPenalty = hintsCount * 10;
-                const isFirstLab = get().labsCompleted === 0;
+                let baseReward = lab.xpReward;
+                let multiplier = 1.0;
+                let penaltyReason = '';
 
-                if (isFirstLab) finalXp += FIRST_LAB_BONUS;
+                if (progress.solutionRevealed) {
+                    multiplier = 0.25;
+                    penaltyReason = 'Solution revealed';
+                } else if ((progress.hintsUsed?.length || 0) > 0) {
+                    multiplier = 0.5;
+                    penaltyReason = `${progress.hintsUsed!.length} hints used`;
+                }
+
+                const finalXp = Math.floor(baseReward * multiplier);
+                const isFirstLab = get().labsCompleted === 0;
+                const firstLabBonus = isFirstLab ? FIRST_LAB_BONUS : 0;
 
                 let speedBonus = 0;
                 const timeSpent = progress.totalTimeSpent || 0;
@@ -241,11 +250,17 @@ export const useGamificationStore = create<GamificationState>()(
                     toastEmitter.emit({ type: 'xp', title: `+${speedBonus} XP (Speed Bonus!)`, icon: '⚡' });
                 }
 
-                if (hintsCount > 0) {
-                    toastEmitter.emit({ type: 'xp', title: `-${hintPenalty} XP (${hintsCount} hints used)`, icon: '💡' });
+                const hintsCount = progress.hintsUsed?.length || 0;
+
+                if (multiplier < 1.0) {
+                    toastEmitter.emit({
+                        type: 'xp',
+                        title: `XP Reduced: ${penaltyReason}`,
+                        icon: '⚖️'
+                    });
                 }
 
-                const finalAmount = Math.max(0, finalXp - hintPenalty + speedBonus);
+                const finalAmount = Math.max(0, finalXp + firstLabBonus + speedBonus);
 
                 // Perform optimistic local update first so UI reflects progress immediately
                 set((state) => {

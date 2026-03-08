@@ -94,6 +94,7 @@ function AppContent() {
               <Route path="/" element={<HomePage />} />
               <Route path="/terminal" element={<ProtectedRoute><TerminalPage /></ProtectedRoute>} />
               <Route path="/labs" element={<ProtectedRoute><LabsPage /></ProtectedRoute>} />
+              <Route path="/labs/:moduleId" element={<ProtectedRoute><LabsPage /></ProtectedRoute>} />
               <Route path="/lab/:labId" element={<ProtectedRoute><LabView /></ProtectedRoute>} />
               <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
               <Route path="/commands" element={<CommandReferencePage />} />

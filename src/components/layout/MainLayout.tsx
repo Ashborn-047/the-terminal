@@ -18,47 +18,42 @@ interface SidebarItemProps {
     onClick?: () => void;
 }
 
-const SidebarItem: React.FC<SidebarItemProps> = ({ icon, label, path, active, locked, requirement, progress, onClick }) => (
-    <div className="relative group">
+// Minimal Activity Bar Item (Icon only)
+const ActivityBarItem: React.FC<SidebarItemProps> = ({ icon, label, path, active, locked, requirement, onClick }) => (
+    <div className="relative group w-full flex justify-center py-4">
         <button
             onClick={locked ? undefined : onClick}
-            className={`flex items-center gap-3 w-full p-3 mb-1 font-heading uppercase text-sm border-2 transition-all ${locked
-                ? 'bg-brutal-dark text-brutal-gray/50 border-brutal-gray/30 cursor-not-allowed'
+            className={`relative p-2 transition-all ${locked
+                ? 'text-brutal-gray/30 cursor-not-allowed'
                 : active
-                    ? 'bg-brutal-green text-brutal-black border-brutal-black shadow-brutal translate-x-[-2px] translate-y-[-2px]'
-                    : 'bg-brutal-white text-brutal-black border-brutal-black hover:bg-brutal-yellow hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]'
+                    ? 'text-brutal-yellow'
+                    : 'text-brutal-white hover:text-brutal-green'
                 }`}
         >
-            <div className={`${locked ? 'opacity-30' : 'opacity-100'}`}>{icon}</div>
-            <span className="flex-1 text-left">{label}</span>
-            {locked && <span className="text-[10px] animate-pulse">🔒</span>}
-            {active && !locked && <ChevronRight size={16} />}
+            <div className={`${locked ? 'opacity-30' : 'opacity-100'}`}>
+                {icon}
+            </div>
+
+            {/* Active Indicator Line */}
+            {active && (
+                <div className="absolute left-[-16px] top-0 bottom-0 w-1 bg-brutal-yellow" />
+            )}
+
+            {/* Lock Overlay */}
+            {locked && (
+                <div className="absolute top-0 right-0 text-[10px] transform translate-x-1/2 -translate-y-1/2">
+                    🔒
+                </div>
+            )}
         </button>
 
-        {locked && (
-            <div className="px-3 pb-2 flex flex-col gap-1">
-                <div className="flex justify-between items-center text-[9px] font-mono uppercase text-brutal-gray">
-                    <span>{requirement}</span>
-                    {progress && <span>{progress.current}/{progress.total}</span>}
-                </div>
-                {progress && (
-                    <div className="h-1 w-full bg-brutal-black border border-brutal-gray/30">
-                        <div
-                            className="h-full bg-brutal-blue transition-all duration-500"
-                            style={{ width: `${(progress.current / progress.total) * 100}%` }}
-                        />
-                    </div>
-                )}
-            </div>
-        )}
-
-        {/* Tooltip on Hover for locked items */}
-        {locked && (
-            <div className="absolute left-full ml-4 top-0 w-48 bg-brutal-black border-2 border-brutal-white p-2 z-50 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity shadow-brutal">
-                <p className="text-[10px] font-mono text-brutal-green uppercase mb-1">Access Restricted</p>
-                <p className="text-xs text-brutal-white">{requirement}</p>
-            </div>
-        )}
+        {/* Hover Tooltip - always show label, plus requirement if locked */}
+        <div className="absolute left-full ml-4 top-1/2 -translate-y-1/2 w-max bg-brutal-black border-2 border-brutal-white p-2 z-50 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity shadow-[4px_4px_0px_0px_rgba(255,255,255,1)]">
+            <p className="font-heading uppercase text-sm text-brutal-white">{label}</p>
+            {locked && (
+                <p className="text-[10px] font-mono text-brutal-yellow mt-1">{requirement}</p>
+            )}
+        </div>
     </div>
 );
 
@@ -119,79 +114,83 @@ export const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }
     ];
 
     return (
-        <div className="flex h-screen w-full bg-brutal-dark text-brutal-white overflow-hidden p-4 gap-4">
+        <div className="flex h-screen w-full bg-brutal-dark text-brutal-white overflow-hidden p-2 gap-2">
             <DebugOverlay />
-            {/* Sidebar */}
-            <aside className={`${sidebarOpen ? 'w-64' : 'w-0 overflow-hidden'} flex flex-col h-full transition-all`}>
-                <div className="flex items-center gap-3 mb-8 p-2 border-3 border-brutal-white bg-brutal-black shadow-brutal -rotate-1 hover:rotate-0 transition-transform cursor-pointer">
-                    <div className="bg-brutal-green p-2 border-2 border-brutal-black">
-                        <Terminal size={24} className="text-brutal-black" />
-                    </div>
-                    <div>
-                        <h1 className="font-heading text-xl uppercase leading-none">The</h1>
-                        <h1 className="font-heading text-xl uppercase leading-none">Terminal</h1>
+
+            {/* Activity Bar (Slim Global Nav) */}
+            <aside className="w-16 flex flex-col items-center bg-brutal-black border-2 border-brutal-white/20 h-full py-4 z-20">
+                <div className="mb-6 cursor-pointer" onClick={() => navigate('/')}>
+                    <div className="bg-brutal-green p-2 border-2 border-brutal-black rotate-3 hover:rotate-0 transition-transform">
+                        <Terminal size={20} className="text-brutal-black" />
                     </div>
                 </div>
 
-                <nav className="flex-1">
+                <nav className="flex-1 w-full flex flex-col items-center gap-2">
                     {navItems.map((item) => (
-                        <SidebarItem
+                        <ActivityBarItem
                             key={item.path}
                             {...item}
-                            active={location.pathname === item.path}
+                            active={location.pathname === item.path || location.pathname.startsWith(item.path + '/')}
                             onClick={() => navigate(item.path)}
                         />
                     ))}
                 </nav>
 
-                {/* Streak display */}
-                {streak.current > 0 && (
-                    <div className="mb-4 p-3 border-2 border-brutal-yellow bg-brutal-black">
-                        <div className="flex items-center gap-2">
-                            <Flame size={20} className="text-brutal-yellow" />
-                            <span className="font-heading uppercase text-sm text-brutal-yellow">
-                                {streak.current} Day Streak
-                            </span>
+                {/* Bottom Activity Bar Icons */}
+                <div className="w-full flex flex-col items-center gap-4 mt-auto">
+                    {streak.current > 0 && (
+                        <div className="relative group cursor-help">
+                            <Flame size={24} className="text-brutal-yellow" />
+                            <div className="absolute left-full ml-4 top-1/2 -translate-y-1/2 w-max bg-brutal-black border-2 border-brutal-yellow p-2 z-50 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
+                                <span className="font-heading uppercase text-sm text-brutal-yellow">
+                                    {streak.current} Day Streak
+                                </span>
+                            </div>
                         </div>
-                        {streak.longest > streak.current && (
-                            <span className="text-xs text-brutal-gray mt-1 block">Best: {streak.longest}</span>
-                        )}
-                    </div>
-                )}
+                    )}
+                    <button onClick={() => navigate('/profile')} className="relative group p-1 border-2 border-brutal-white hover:border-brutal-yellow rounded-full overflow-hidden transition-colors">
+                        <div className="bg-brutal-red w-8 h-8 flex items-center justify-center text-sm">
+                            👤
+                        </div>
+                        <div className="absolute left-full ml-4 top-1/2 -translate-y-1/2 w-max bg-brutal-black border-2 border-brutal-white p-2 z-50 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
+                            <span className="font-heading uppercase text-sm text-brutal-white">Profile</span>
+                        </div>
+                    </button>
+                </div>
             </aside>
 
-            {/* Main Content */}
-            <main className="flex-1 flex flex-col h-full overflow-hidden">
-                <div className="flex justify-start mb-2">
-                    <ConnectionStatus />
-                </div>
-                <header className="flex justify-between items-center mb-4 p-4 bg-brutal-white border-3 border-brutal-black text-brutal-black shadow-brutal">
-                    <div className="flex items-center gap-4">
-                        <div className="flex flex-col items-center p-2 border-2 border-brutal-black bg-brutal-yellow font-heading uppercase text-xs min-w-[60px] rotate-2 hover:rotate-0 transition-transform">
-                            <span>LVL {level}</span>
-                        </div>
-                        <div className="flex flex-col gap-1">
-                            <span className="font-heading uppercase text-[10px] text-brutal-gray leading-none">{title}</span>
-                            <div className="flex items-center gap-2">
-                                <div className="h-5 w-40 border-2 border-brutal-black bg-brutal-black p-0 overflow-hidden">
-                                    <div
-                                        className="h-full bg-brutal-green brutal-stripes border-r border-brutal-white transition-all duration-500"
-                                        style={{ width: `${percent}%` }}
-                                    />
-                                </div>
-                                <span className="font-heading uppercase text-xs">{current}/{needed} XP</span>
+            {/* Main Content Area */}
+            <main className="flex-1 flex flex-col h-full min-w-0">
+                {/* Integrated Compact Header */}
+                <header className="flex justify-between items-center mb-2 px-4 py-2 bg-brutal-black border-2 border-brutal-white/20 shrink-0 h-14">
+                    <div className="flex items-center gap-4 h-full">
+                        <div className="flex items-center gap-2">
+                            <span className="font-heading uppercase text-sm text-brutal-yellow tracking-wider">HERO@THE-TERMINAL</span>
+                            <div className="px-2 py-0.5 bg-brutal-yellow text-brutal-black font-heading text-xs uppercase font-bold">
+                                LVL {level}
                             </div>
                         </div>
                     </div>
-                    <div className="flex items-center gap-4">
-                        <div className="font-heading uppercase text-sm">{username}@the-terminal</div>
-                        <div className="w-10 h-10 border-2 border-brutal-black rounded-full bg-brutal-red flex items-center justify-center text-xl shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-                            👤
+
+                    <div className="flex items-center gap-6 h-full">
+                        <ConnectionStatus />
+
+                        {/* Compact XP Bar */}
+                        <div className="flex items-center gap-3">
+                            <span className="font-heading uppercase text-[10px] text-brutal-gray hidden md:inline-block">{title}</span>
+                            <div className="h-3 w-32 border border-brutal-white/30 bg-brutal-dark overflow-hidden relative">
+                                <div
+                                    className="h-full bg-brutal-green transition-all duration-500 absolute left-0 top-0 bottom-0"
+                                    style={{ width: `${percent}%` }}
+                                />
+                            </div>
+                            <span className="font-mono text-xs text-brutal-white">{current}/{needed} XP</span>
                         </div>
                     </div>
                 </header>
 
-                <div className="flex-1 overflow-hidden grid-background border-3 border-brutal-white shadow-[inset_0_0_100px_rgba(0,0,0,0.4)]">
+                {/* Dynamic View Context (Workspace) */}
+                <div className="flex-1 overflow-hidden relative flex min-h-0 bg-brutal-black border-2 border-brutal-white/20">
                     {children}
                 </div>
             </main>

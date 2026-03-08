@@ -19,7 +19,7 @@ import { ArrowLeft, RotateCcw } from 'lucide-react';
 const LabView: React.FC = () => {
     const { labId } = useParams<{ labId: string }>();
     const navigate = useNavigate();
-    const { labs, progress, startLab, resetLab, exitLab, completeLab, recordHintUsage } = useLabStore();
+    const { labs, progress, startLab, resetLab, exitLab, completeLab, recordHintUsage, revealSolution } = useLabStore();
     const { processLabCompletion } = useGamificationStore();
     const { username } = useUIStore();
     const { snapshot } = useVFSStore();
@@ -119,6 +119,10 @@ const LabView: React.FC = () => {
         }
     };
 
+    const handleRevealSolution = () => {
+        if (labId) revealSolution(labId);
+    };
+
     const handleHintUsed = (stepIndex: number) => {
         if (labId) recordHintUsage(labId, stepIndex);
     };
@@ -133,62 +137,76 @@ const LabView: React.FC = () => {
     };
 
     return (
-        <div className="h-full flex flex-col">
-            {/* Lab Header Bar */}
-            <div className="flex items-center justify-between border-b-3 border-brutal-green bg-brutal-black p-3 shrink-0">
+        <div className="flex flex-col h-full w-full absolute inset-0 bg-brutal-black">
+            {/* Lab Header Strip */}
+            <div className="flex items-center justify-between p-3 border-b-2 border-brutal-white/20 shrink-0 bg-brutal-dark">
                 <div className="flex items-center gap-3">
                     <button
                         onClick={handleExit}
-                        className="w-10 h-10 flex items-center justify-center border-2 border-brutal-white text-brutal-white hover:bg-brutal-white hover:text-brutal-black transition-colors"
-                        title="Exit Lab"
+                        className="text-brutal-gray hover:text-brutal-white transition-colors"
+                        title="Back to Curriculum"
                     >
-                        <ArrowLeft size={20} />
+                        <ArrowLeft size={18} />
                     </button>
-                    <div>
-                        <h2 className="font-heading uppercase text-sm text-brutal-white">{lab.title}</h2>
-                        <span className="text-[10px] text-brutal-gray">+{lab.xpReward} XP • Module {lab.module}</span>
+                    <div className="flex items-center gap-2">
+                        <span className="font-heading uppercase text-brutal-yellow font-bold text-sm tracking-wider">
+                            {lab.title}
+                        </span>
+                        <span className="font-mono text-[10px] text-brutal-green border border-brutal-green/50 px-1.5 py-0.5 uppercase tracking-widest hidden sm:inline-block">
+                            {lab.type}
+                        </span>
                     </div>
                 </div>
-                <div className="flex items-center gap-2">
-                    <div className="flex flex-col items-end mr-2 px-2 border-r border-brutal-gray/30">
-                        <span className="text-[9px] uppercase text-brutal-gray font-mono">Time</span>
-                        <span className="text-xs font-mono text-brutal-white">
+
+                <div className="flex items-center gap-3">
+                    {/* Time Tracker */}
+                    <div className="flex items-center gap-2 mr-4 text-brutal-gray font-mono text-[10px] hidden sm:flex">
+                        <span className="uppercase">Time</span>
+                        <span className="text-brutal-white text-xs">
                             {Math.floor(seconds / 60)}:{(seconds % 60).toString().padStart(2, '0')}
                         </span>
                     </div>
-                    <span className={`px-2 py-0.5 border text-[10px] font-heading uppercase ${lab.type === 'guided'
-                        ? 'border-brutal-green text-brutal-green'
-                        : 'border-brutal-yellow text-brutal-yellow'
-                        }`}>
-                        {lab.type}
-                    </span>
+
+                    {/* Progress Indicator */}
+                    {lab.type === 'guided' && labProgress && lab.steps && (
+                        <div className="flex items-center gap-2 font-mono text-[10px] uppercase text-brutal-white">
+                            <span>Step</span>
+                            <span className="text-brutal-yellow">
+                                {Math.min(labProgress.currentStepIndex + 1, lab.steps.length)}
+                            </span>
+                            <span className="text-brutal-gray">/ {lab.steps.length}</span>
+                        </div>
+                    )}
+
                     <button
                         onClick={handleReset}
-                        className="w-8 h-8 flex items-center justify-center border-2 border-brutal-yellow text-brutal-yellow hover:bg-brutal-yellow hover:text-brutal-black transition-colors"
-                        title="Reset Lab"
+                        className="p-1 border border-brutal-yellow/50 text-brutal-yellow hover:bg-brutal-yellow hover:text-brutal-black transition-colors rounded-sm"
+                        title="Reset Lab Environment"
                     >
                         <RotateCcw size={14} />
                     </button>
                 </div>
             </div>
 
-            {/* Terminal + Instructions Split */}
-            <div className="flex-1 grid grid-cols-1 lg:grid-cols-5 gap-0 min-h-0">
-                {/* Terminal — 60% */}
-                <div className="lg:col-span-3 h-full min-h-0">
+            {/* Terminal + Instructions Split - Exact layout matching Stitch mock */}
+            <div className="flex-1 flex flex-col lg:flex-row min-h-0 bg-brutal-black">
+                {/* Terminal — Left Side (or Top on small screens) */}
+                <div className="flex-[3] min-h-0 border-b-2 lg:border-b-0 lg:border-r-3 border-brutal-white/20">
                     <ErrorBoundary section="Terminal">
                         <TerminalComponent />
                     </ErrorBoundary>
                 </div>
 
-                {/* Lab Instructions — 40% */}
-                <div className="lg:col-span-2 h-full overflow-y-auto border-l-3 border-brutal-green bg-brutal-black p-4">
+                {/* Lab Instructions — Right Side (or Bottom) */}
+                <div className="flex-[2] min-h-0 overflow-y-auto bg-brutal-dark">
                     <ErrorBoundary section="Lab Instructions">
                         {lab.type === 'guided' && labProgress ? (
                             <GuidedLabInstructions
                                 lab={lab}
                                 currentStepIndex={labProgress.currentStepIndex}
                                 onHintUsed={handleHintUsed}
+                                onRevealSolution={handleRevealSolution}
+                                solutionRevealed={labProgress.solutionRevealed}
                             />
                         ) : (
                             <DIYLabInstructions
@@ -197,6 +215,8 @@ const LabView: React.FC = () => {
                                 userId={username || 'guest'}
                                 onComplete={handleComplete}
                                 onHintUsed={handleHintUsed}
+                                onRevealSolution={handleRevealSolution}
+                                solutionRevealed={labProgress?.solutionRevealed}
                             />
                         )}
                     </ErrorBoundary>
