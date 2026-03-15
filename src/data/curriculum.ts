@@ -123,5 +123,73 @@ export const curriculum: Lab[] = [
                 expectedCmd: 'ls'
             }
         ]
+    },
+    {
+        id: 'lab-rogue-process',
+        title: 'Hunt the Rogue Process',
+        type: 'diy',
+        duration: '15 mins',
+        difficulty: 'advanced',
+        icon: '🔥',
+        objectives: [
+            'Identify a resource-intensive process',
+            'Terminate the rogue process',
+            'Remove the rogue executable'
+        ],
+        scenario: 'A rogue process named "cryptominer" is consuming excessive CPU on the server. Identify its PID, terminate it forcefully, and delete the executable file located somewhere in your home directory.',
+        goals: [
+            {
+                id: 'kill-process',
+                text: 'Terminate the "cryptominer" process',
+                verify: (context: any) => {
+                    // Check if cryptominer process is gone from context
+                    return !context.processes?.some((p: any) => p.name === 'cryptominer');
+                }
+            },
+            {
+                id: 'delete-executable',
+                text: 'Delete the "cryptominer" executable file',
+                verify: (vfs: any) => {
+                    // Assuming VFS has a way to find, for now just checking it doesn't exist in ~
+                    const result = vfs.resolve('/home/guest/cryptominer', 'guest');
+                    return typeof result === 'string'; // Returns string if not found
+                }
+            }
+        ]
+    },
+    {
+        id: 'lab-corrupted-config',
+        title: 'Restore Corrupted Configuration',
+        type: 'diy',
+        duration: '15 mins',
+        difficulty: 'advanced',
+        icon: '🛠️',
+        objectives: [
+            'Identify corrupted configuration',
+            'Restore configuration from backup',
+            'Fix file permissions'
+        ],
+        scenario: 'The web server configuration file at /etc/nginx/nginx.conf has been corrupted. A backup exists at /var/backups/nginx.conf.bak. Copy the backup over the corrupted file, and ensure it is owned by root and has 644 permissions.',
+        goals: [
+            {
+                id: 'copy-backup',
+                text: 'Restore the backup file to /etc/nginx/nginx.conf',
+                verify: (vfs: any) => {
+                    const content = vfs.readFile('/etc/nginx/nginx.conf', 'root');
+                    return typeof content === 'string' && content.includes('backup_data'); // Mock check
+                }
+            },
+            {
+                id: 'fix-perms',
+                text: 'Set correct permissions (644)',
+                verify: (vfs: any) => {
+                    const inode = vfs.resolve('/etc/nginx/nginx.conf', 'root');
+                    if (typeof inode === 'string') return false;
+                    return inode.permissions.owner.read && inode.permissions.owner.write && !inode.permissions.owner.execute &&
+                           inode.permissions.group.read && !inode.permissions.group.write && !inode.permissions.group.execute &&
+                           inode.permissions.others.read && !inode.permissions.others.write && !inode.permissions.others.execute;
+                }
+            }
+        ]
     }
 ];

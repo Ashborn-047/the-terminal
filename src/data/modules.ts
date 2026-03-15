@@ -77,4 +77,11 @@ export const MODULES: Module[] = [
         icon: "🛠️",
         color: "bg-brutal-yellow",
     },
+    {
+        id: 11,
+        title: "Advanced Scenarios (DIY)",
+        description: "Real-world troubleshooting: rogue processes, corrupted configs, and log analysis.",
+        icon: "🔥",
+        color: "bg-brutal-red",
+    },
 ];

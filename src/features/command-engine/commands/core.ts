@@ -967,44 +967,65 @@ CommandRegistry.register('free', async (args) => {
 });
 
 // ======================================================================
-//  ps — simulated process list
+//  ps — dynamic process list
 // ======================================================================
 CommandRegistry.register('ps', async (args, context) => {
-    const header = '  PID TTY          TIME CMD';
-    const lines = context.processes.map(p => {
+    const showAll = args.includes('-a') || args.includes('aux') || args.includes('-e');
+    const header = showAll ? 'USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND' : '  PID TTY          TIME CMD';
+
+    let processes = [...context.processes];
+
+    const lines = processes.map(p => {
         const elapsed = Math.floor((Date.now() - p.startTime) / 1000);
         const mins = Math.floor(elapsed / 60);
         const secs = elapsed % 60;
         const timeStr = `00:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+
+        if (showAll) {
+            const cpu = p.name === 'cryptominer' ? '99.9' : '0.0';
+            return `${p.user.padEnd(8)} ${p.pid.toString().padStart(5)}  ${cpu}  0.1  2356   1400 pts/0    ${p.status || 'S'}    12:00   ${timeStr} ${p.name}`;
+        }
         return `${p.pid.toString().padStart(5)} pts/0    ${timeStr} ${p.name}`;
     });
     return { output: `${header}\n${lines.join('\n')}`, exitCode: 0 };
 });
 
 // ======================================================================
-//  top — simulated system monitor (snapshot)
+//  top — dynamic system monitor (snapshot)
 // ======================================================================
 CommandRegistry.register('top', async (args, context) => {
     const uptime = '22:50:00 up 1 day,  3:27,  1 user,  load average: 0.15, 0.12, 0.10';
     const tasks = `Tasks:   ${context.processes.length} total,   1 running,   ${context.processes.length - 1} sleeping`;
-    const cpu = '%Cpu(s):  2.3 us,  1.0 sy,  0.0 ni, 96.5 id,  0.2 wa';
+
+    // Check if rogue process exists
+    const hasRogue = context.processes.some(p => p.name === 'cryptominer');
+    const cpuLine = hasRogue
+        ? '%Cpu(s): 99.9 us,  0.1 sy,  0.0 ni,  0.0 id,  0.0 wa'
+        : '%Cpu(s):  2.3 us,  1.0 sy,  0.0 ni, 96.5 id,  0.2 wa';
+
     const mem = 'MiB Mem :   7966 total,   3726 free,   2291 used,   1949 buff/cache';
 
     const header = '  PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND';
     const rows = context.processes.map(p => {
         const elapsed = Math.floor((Date.now() - p.startTime) / 1000);
         const timeStr = `${Math.floor(elapsed / 60)}:${(elapsed % 60).toString().padStart(2, '0')}.00`;
-        return `${p.pid.toString().padStart(5)} ${p.user.padEnd(8)} 20   0    2356   1400    800 S   0.0   0.0   ${timeStr.padStart(7)} ${p.name}`;
+        const cpuUsage = p.name === 'cryptominer' ? '99.9' : '0.0';
+        return `${p.pid.toString().padStart(5)} ${p.user.padEnd(8)} 20   0    2356   1400    800 ${p.status || 'S'}  ${cpuUsage.padStart(4)}   0.0   ${timeStr.padStart(7)} ${p.name}`;
     });
 
     const output = [
         `top - ${uptime}`,
         tasks,
-        cpu,
+        cpuLine,
         mem,
         '',
         header,
-        ...rows
+        ...rows.sort((a,b) => {
+            // Sort by CPU desc roughly
+            if (a.includes('cryptominer')) return -1;
+            if (b.includes('cryptominer')) return 1;
+            return 0;
+        })
     ];
     return { output: output.join('\n'), exitCode: 0 };
 });

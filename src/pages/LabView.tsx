@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { TerminalComponent } from '../components/terminal/Terminal';
 import { useLabStore } from '../stores/labStore';
+import { getVFSSnapshot } from '../lib/vfsSnapshots';
 import { useGamificationStore } from '../stores/gamificationStore';
 import { useUIStore } from '../stores/uiStore';
 import { useVFSStore } from '../stores/vfsStore';
@@ -39,12 +40,18 @@ const LabView: React.FC = () => {
     const lab = labId ? labs[labId] : null;
     const labProgress = labId ? progress[labId] : null;
 
+    const { setSnapshot } = useVFSStore();
+
     // Auto-start lab if not already in progress
     useEffect(() => {
-        if (labId && lab && (!labProgress || labProgress.status === 'available')) {
+        if (labId && lab && (!labProgress || labProgress.status === 'available' || labProgress.status === 'locked')) {
+            if (lab.initialVFS) {
+                // Pre-seed VFS snapshot for the lab
+                setSnapshot(getVFSSnapshot(lab.initialVFS));
+            }
             startLab(labId);
         }
-    }, [labId, lab, labProgress, startLab]);
+    }, [labId, lab, labProgress, startLab, setSnapshot]);
 
     // Check for guided lab completion
     useEffect(() => {

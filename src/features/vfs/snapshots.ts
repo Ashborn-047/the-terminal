@@ -66,6 +66,33 @@ export const snapshots: Record<string, VFSSnapshot> = {
             'usr_local': createDirectory('usr_local', 'local', 'root'),
         }
     },
+
+    'advanced-scenarios': {
+        rootId: 'root',
+        inodes: {
+            'root': createDirectory('root', '/', 'root', ['bin', 'etc', 'home', 'tmp', 'var', 'usr']),
+            'bin': createDirectory('bin', 'bin', 'root'),
+            'etc': createDirectory('etc', 'etc', 'root', ['hostname', 'passwd', 'group', 'nginx']),
+            'hostname': createFile('hostname', 'hostname', 'the-terminal', 'root'),
+            'passwd': createFile('passwd', 'passwd', 'root:x:0:0:root:/root:/bin/bash\nguest:x:1000:1000:Guest:/home/guest:/bin/bash', 'root'),
+            'group': createFile('group', 'group', 'root:x:0:\nusers:x:100:\nguest:x:1000:', 'root'),
+            'home': createDirectory('home', 'home', 'root', ['guest']),
+            'guest': createDirectory('guest', 'guest', 'guest', ['cryptominer']),
+            'cryptominer': createFile('cryptominer', 'cryptominer', '\\x7fELF...malicious_payload', 'guest'),
+            'tmp': createDirectory('tmp', 'tmp', 'root'),
+            'var': createDirectory('var', 'var', 'root', ['log', 'backups']),
+            'log': createDirectory('log', 'log', 'root', ['syslog']),
+            'syslog': createFile('syslog', 'syslog', 'Feb 28 10:00:01 systemd[1]: Started.\n', 'root'),
+            'backups': createDirectory('backups', 'backups', 'root', ['nginx.conf.bak']),
+            'nginx.conf.bak': createFile('nginx.conf.bak', 'nginx.conf.bak', 'backup_data', 'root'),
+            'usr': createDirectory('usr', 'usr', 'root', ['bin', 'local']),
+            'usr_bin': createDirectory('usr_bin', 'bin', 'root'),
+            'usr_local': createDirectory('usr_local', 'local', 'root'),
+            'nginx': createDirectory('nginx', 'nginx', 'root', ['nginx.conf']),
+            'nginx.conf': createFile('nginx.conf', 'nginx.conf', 'corrupted_data_!@#$', 'root'),
+        }
+    },
+
     'hpc-base': {
         rootId: 'root',
         inodes: {

@@ -34,6 +34,7 @@ export const INITIAL_LABS: Record<string, Lab> = {
         title: 'Navigation Challenge',
         description: 'Practice moving between directories. Create a new directory and enter it.',
         type: 'diy',
+        initialVFS: 'advanced-scenarios',
         xpReward: 100,
         prerequisites: ['lab-1-1'],
         verification: {
@@ -126,6 +127,7 @@ export const INITIAL_LABS: Record<string, Lab> = {
         title: 'File Management Challenge',
         description: 'Put your file management skills to the test. Create a project structure from scratch.',
         type: 'diy',
+        initialVFS: 'advanced-scenarios',
         xpReward: 150,
         prerequisites: ['lab-2-2'],
         verification: {
@@ -317,6 +319,7 @@ export const INITIAL_LABS: Record<string, Lab> = {
         title: 'User Management Challenge',
         description: 'Create a new user account and set up their home directory. You\'ll need sudo for this!',
         type: 'diy',
+        initialVFS: 'advanced-scenarios',
         xpReward: 150,
         prerequisites: ['lab-6-1'],
         verification: {
@@ -625,6 +628,7 @@ export const INITIAL_LABS: Record<string, Lab> = {
         title: 'Service Investigation Challenge',
         description: 'Investigate running services and system resource usage.',
         type: 'diy',
+        initialVFS: 'advanced-scenarios',
         xpReward: 125,
         prerequisites: ['lab-10-1'],
         verification: {
@@ -686,6 +690,7 @@ export const INITIAL_LABS: Record<string, Lab> = {
         title: 'Data Processing Challenge',
         description: 'Build a data processing pipeline from scratch — extract, transform, and load data.',
         type: 'diy',
+        initialVFS: 'advanced-scenarios',
         xpReward: 175,
         prerequisites: ['lab-12-1'],
         verification: {
@@ -773,6 +778,7 @@ export const INITIAL_LABS: Record<string, Lab> = {
         title: 'Log Analysis Challenge',
         description: 'Analyze log files to find and report issues.',
         type: 'diy',
+        initialVFS: 'advanced-scenarios',
         xpReward: 150,
         prerequisites: ['lab-14-1'],
         verification: {
@@ -898,6 +904,7 @@ export const INITIAL_LABS: Record<string, Lab> = {
         title: 'Troubleshooting Challenge',
         description: 'Put your diagnostic skills to the test — create a system health report.',
         type: 'diy',
+        initialVFS: 'advanced-scenarios',
         xpReward: 175,
         prerequisites: ['lab-17-1'],
         verification: {
@@ -929,6 +936,7 @@ export const INITIAL_LABS: Record<string, Lab> = {
         title: 'RHCSA Practice Exam',
         description: 'Put all your skills to the test! Complete a series of tasks similar to the RHCSA certification exam.',
         type: 'diy',
+        initialVFS: 'advanced-scenarios',
         xpReward: 300,
         prerequisites: ['lab-17-2'],
         verification: {
@@ -1047,5 +1055,75 @@ export const INITIAL_LABS: Record<string, Lab> = {
         hints: ['Create the script and chmod +x it.'],
         completionMessage: 'Scripting Branch Mastered!',
         tags: ['challenge', 'scripting']
-    }
+    },
+
+    // ─── Advanced Scenarios (DIY) ──────────────────────────────
+    'lab-11-diy-1': {
+        id: 'lab-11-diy-1',
+        module: 11,
+        title: 'Hunt the Rogue Process',
+        description: 'A rogue process named "cryptominer" is consuming excessive CPU. Identify its PID, terminate it forcefully, and delete the executable file located somewhere in your home directory.',
+        type: 'diy',
+        initialVFS: 'advanced-scenarios',
+        xpReward: 200,
+        prerequisites: ['lab-11-2'],
+        verification: {
+            conditions: [
+                {
+                    type: 'file_not_exists',
+                    path: '/home/guest/cryptominer',
+                    message: 'Delete the "cryptominer" executable file from your home directory.',
+                }
+            ]
+        },
+        hints: [
+            'Use `ps -a` or `top` to find the rogue process.',
+            'Use `kill -9 <PID>` to terminate it.',
+            'Use `rm /home/guest/cryptominer` to remove the executable.',
+        ],
+        completionMessage: 'You successfully stopped the rogue process and removed the executable!',
+    },
+    'lab-11-diy-2': {
+        id: 'lab-11-diy-2',
+        module: 11,
+        title: 'Restore Corrupted Configuration',
+        description: 'The web server configuration file at /etc/nginx/nginx.conf has been corrupted. A backup exists at /var/backups/nginx.conf.bak. Copy the backup over the corrupted file, and ensure it is owned by root and has 644 permissions.',
+        type: 'diy',
+        initialVFS: 'advanced-scenarios',
+        xpReward: 250,
+        prerequisites: ['lab-11-diy-1'],
+        verification: {
+            conditions: [
+                {
+                    type: 'file_exists',
+                    path: '/etc/nginx/nginx.conf',
+                    message: 'Restore the backup file to /etc/nginx/nginx.conf',
+                },
+                {
+                    type: 'file_contains',
+                    path: '/etc/nginx/nginx.conf',
+                    content: 'backup_data',
+                    message: 'The file should contain the backup data.',
+                },
+                {
+                    type: 'permission_equals',
+                    path: '/etc/nginx/nginx.conf',
+                    mode: '644',
+                    message: 'Set correct permissions (644)',
+                },
+                {
+                    type: 'owner_equals',
+                    path: '/etc/nginx/nginx.conf',
+                    owner: 'root',
+                    message: 'The file must be owned by root',
+                }
+            ]
+        },
+        hints: [
+            'Use `cp /var/backups/nginx.conf.bak /etc/nginx/nginx.conf`.',
+            'Use `chmod 644 /etc/nginx/nginx.conf`.',
+            'Use `chown root /etc/nginx/nginx.conf`.',
+        ],
+        completionMessage: 'Configuration successfully restored!',
+    },
 };

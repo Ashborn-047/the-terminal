@@ -67,3 +67,25 @@ export function getVFSSnapshot(name?: string): VFSSnapshot {
 export function registerSnapshot(name: string, factory: () => VFSSnapshot) {
     SNAPSHOT_REGISTRY[name] = factory;
 }
+
+/** Create an Advanced Scenarios VFS for DIY labs */
+function createAdvancedScenariosSnapshot(): VFSSnapshot {
+    const vfs = new VFS();
+    vfs.mkdir('/home/guest', 'root');
+    vfs.chown('/home/guest', 'guest', 'root');
+    vfs.touch('/home/guest/cryptominer', 'guest');
+    vfs.writeFile('/home/guest/cryptominer', '\\x7fELF...malicious_payload');
+    vfs.chmod('/home/guest/cryptominer', '755');
+
+    vfs.mkdir('/etc/nginx', 'root');
+    vfs.touch('/etc/nginx/nginx.conf', 'root');
+    vfs.writeFile('/etc/nginx/nginx.conf', 'corrupted_data_!@#$');
+
+    vfs.mkdir('/var/backups', 'root');
+    vfs.touch('/var/backups/nginx.conf.bak', 'root');
+    vfs.writeFile('/var/backups/nginx.conf.bak', 'backup_data');
+
+    return vfs.getSnapshot();
+}
+
+SNAPSHOT_REGISTRY['advanced-scenarios'] = createAdvancedScenariosSnapshot;
