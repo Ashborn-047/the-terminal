@@ -2,6 +2,7 @@ import { CommandResult } from '../features/command-engine/types';
 
 export interface TerminalEntry {
     id: string;
+    userId: string;
     command: string;
     output: string;
     error?: string;

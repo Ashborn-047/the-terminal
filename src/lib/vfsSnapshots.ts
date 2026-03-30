@@ -47,27 +47,6 @@ function createPermissionsSnapshot(): VFSSnapshot {
     return vfs.getSnapshot();
 }
 
-/** Named snapshot registry */
-const SNAPSHOT_REGISTRY: Record<string, () => VFSSnapshot> = {
-    'default': createDefaultSnapshot,
-    'hpc-base': createHPCSnapshot,
-    'permissions-lab': createPermissionsSnapshot,
-};
-
-/**
- * Get a VFS snapshot by name. Falls back to 'default' if not found.
- * Always returns a fresh snapshot (not a shared reference).
- */
-export function getVFSSnapshot(name?: string): VFSSnapshot {
-    const factory = SNAPSHOT_REGISTRY[name || 'default'] || SNAPSHOT_REGISTRY['default'];
-    return factory();
-}
-
-/** Register a custom snapshot (for testing or dynamic labs) */
-export function registerSnapshot(name: string, factory: () => VFSSnapshot) {
-    SNAPSHOT_REGISTRY[name] = factory;
-}
-
 /** Create an Advanced Scenarios VFS for DIY labs */
 function createAdvancedScenariosSnapshot(): VFSSnapshot {
     const vfs = new VFS();
@@ -88,4 +67,24 @@ function createAdvancedScenariosSnapshot(): VFSSnapshot {
     return vfs.getSnapshot();
 }
 
-SNAPSHOT_REGISTRY['advanced-scenarios'] = createAdvancedScenariosSnapshot;
+/** Named snapshot registry */
+const SNAPSHOT_REGISTRY: Record<string, () => VFSSnapshot> = {
+    'default': createDefaultSnapshot,
+    'hpc-base': createHPCSnapshot,
+    'permissions-lab': createPermissionsSnapshot,
+    'advanced-scenarios': createAdvancedScenariosSnapshot,
+};
+
+/**
+ * Get a VFS snapshot by name. Falls back to 'default' if not found.
+ * Always returns a fresh snapshot (not a shared reference).
+ */
+export function getVFSSnapshot(name?: string): VFSSnapshot {
+    const factory = SNAPSHOT_REGISTRY[name || 'default'] || SNAPSHOT_REGISTRY['default'];
+    return factory();
+}
+
+/** Register a custom snapshot (for testing or dynamic labs) */
+export function registerSnapshot(name: string, factory: () => VFSSnapshot) {
+    SNAPSHOT_REGISTRY[name] = factory;
+}

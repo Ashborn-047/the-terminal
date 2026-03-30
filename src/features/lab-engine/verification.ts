@@ -70,12 +70,12 @@ export class VerificationEngine {
         return -1;
     }
 
-    public static verifyDIYLab(lab: Lab, vfs: VFS, userId: string): { success: boolean; failedMessages: string[] } {
+    public static verifyDIYLab(lab: Lab, vfs: VFS, userId: string, processes: { pid: number; name: string; user: string; startTime: number }[]): { success: boolean; failedMessages: string[] } {
         if (!lab.verification) return { success: true, failedMessages: [] };
 
         const failedMessages: string[] = [];
         for (const condition of lab.verification.conditions) {
-            const passed = this.checkCondition(condition, vfs, userId);
+            const passed = this.checkCondition(condition, vfs, userId, processes);
             if (!passed) {
                 failedMessages.push(condition.message);
             }
@@ -87,7 +87,12 @@ export class VerificationEngine {
         };
     }
 
-    private static checkCondition(condition: VerificationCondition, vfs: VFS, userId: string): boolean {
+    private static checkCondition(
+        condition: VerificationCondition,
+        vfs: VFS,
+        userId: string,
+        processes: { pid: number; name: string; user: string; startTime: number }[]
+    ): boolean {
         const normalizedPath = condition.path.replace('/home/guest', '/home/' + userId);
         const result = vfs.resolve(normalizedPath, userId);
         const exists = typeof result !== 'string';
@@ -129,6 +134,9 @@ export class VerificationEngine {
                 const symlinkInode = symlinkResult as any;
                 return symlinkInode.type === 'symlink' && symlinkInode.target === condition.content;
             }
+            case 'process_not_running':
+                // path in this case is the process name
+                return !processes.some(p => p.name === condition.path);
             default:
                 return false;
         }

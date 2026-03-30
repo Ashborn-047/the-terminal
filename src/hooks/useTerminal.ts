@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { useVFSStore } from '../stores/vfsStore';
 import { useLabStore } from '../stores/labStore';
 import { useUIStore } from '../stores/uiStore';
+import { useTerminalStore } from '../stores/terminalStore';
 import { useGamificationStore } from '../stores/gamificationStore';
 import { VFS } from '../features/vfs/vfs';
 import { CommandParser } from '../features/command-engine/parser';
@@ -29,7 +30,7 @@ export function useTerminal() {
         TERM: 'xterm-256color',
         SHELL: '/bin/bash',
     });
-    const [processes, setProcesses] = useState<{ pid: number; name: string; user: string; startTime: number }[]>([]);
+    const { processes, setProcesses } = useTerminalStore();
 
     // Sync terminal identity when Zustand hydrates the persisted username
     useEffect(() => {
@@ -57,6 +58,33 @@ export function useTerminal() {
     if (uiUsername) {
         vfsRef.current.ensureUserHome(uiUsername);
     }
+
+    // Seed processes from snapshot - per advanced-scenarios requirements
+    useEffect(() => {
+        // Find if the current VFS contains the cryptominer - indicating we should seed it
+        // We look for the file directly in the VFS instead of checking snapshot name
+        // because snapshot name isn't easily accessible here yet (it's inside setSnapshot call)
+        const hasMiner = vfsRef.current.resolve('/home/guest/cryptominer', uiUsername);
+        if (typeof hasMiner !== 'string') {
+            const alreadyRunning = processes.some(p => p.name === 'cryptominer');
+            if (!alreadyRunning) {
+                setProcesses([
+                    {
+                        pid: Math.floor(Math.random() * 9000) + 1000,
+                        name: 'cryptominer',
+                        user: 'guest',
+                        startTime: Date.now() - 60000, // Started 1 min ago
+                        status: 'R'
+                    }
+                ]);
+            }
+        } else {
+            // If miner file is GONE (e.g., reset/new lab), but processes still has it, clear it
+            if (processes.length > 0) {
+                setProcesses([]);
+            }
+        }
+    }, [snapshot, uiUsername]);
 
     const executorRef = useRef<CommandExecutor>(new CommandExecutor(vfsRef.current));
 
@@ -141,9 +169,9 @@ export function useTerminal() {
             env,
             history: historyRef.current.map(h => h.command),
             processes,
-            updateEnv: (e) => setEnv(prev => ({ ...prev, ...e })),
-            updateProcesses: (p) => setProcesses(p),
-            prompt: (msg) => new Promise(resolve => setPendingPrompt({ message: msg, resolve })),
+            updateEnv: (newEnv) => setEnv(newEnv),
+            updateProcesses: (newProcesses) => setProcesses(newProcesses),
+            prompt: async (message: string) => new Promise(resolve => setPendingPrompt({ message, resolve })),
         };
 
         // Execute compound commands (;, &&, ||)
@@ -265,6 +293,7 @@ export function useTerminal() {
 
         const entry: TerminalEntry = {
             id: uuidv4(),
+            userId: userId,
             command: trimmedInput,
             output: isCd ? '' : result.output,
             error: result.error,

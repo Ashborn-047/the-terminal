@@ -1,0 +1,11 @@
+﻿
+Running 2 tests using 2 workers
+
+[1A[2K[1/2] [firefox] ΓÇ║ tests\e2e\curriculum.spec.ts:73:5 ΓÇ║ Curriculum and Lab Flow ΓÇ║ should complete a DIY lab with verification conditions
+[1A[2K[2/2] [firefox] ΓÇ║ tests\e2e\curriculum.spec.ts:37:5 ΓÇ║ Curriculum and Lab Flow ΓÇ║ should navigate through curriculum and complete a guided lab
+[1A[2K  2 passed (30.4s)
+
+To open last HTML report run:
+[36m[39m
+[36m  npx playwright show-report[39m
+[36m[39m

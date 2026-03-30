@@ -44,14 +44,23 @@ const LabView: React.FC = () => {
 
     // Auto-start lab if not already in progress
     useEffect(() => {
-        if (labId && lab && (!labProgress || labProgress.status === 'available' || labProgress.status === 'locked')) {
+        if (!labId || !lab) return;
+
+        // Security check: Redirect if the lab is locked
+        if (labProgress?.status === 'locked' && !lab.prerequisites.every(p => progress[p]?.status === 'completed')) {
+            console.warn(`SECURITY: Attempted access to locked lab ${labId}. Redirecting...`);
+            navigate('/labs');
+            return;
+        }
+
+        if (!labProgress || labProgress.status === 'available') {
             if (lab.initialVFS) {
                 // Pre-seed VFS snapshot for the lab
                 setSnapshot(getVFSSnapshot(lab.initialVFS));
             }
             startLab(labId);
         }
-    }, [labId, lab, labProgress, startLab, setSnapshot]);
+    }, [labId, lab, labProgress, startLab, setSnapshot, navigate, progress]);
 
     // Check for guided lab completion
     useEffect(() => {

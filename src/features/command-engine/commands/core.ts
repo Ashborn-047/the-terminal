@@ -1004,14 +1004,19 @@ CommandRegistry.register('top', async (args, context) => {
         : '%Cpu(s):  2.3 us,  1.0 sy,  0.0 ni, 96.5 id,  0.2 wa';
 
     const mem = 'MiB Mem :   7966 total,   3726 free,   2291 used,   1949 buff/cache';
-
     const header = '  PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND';
-    const rows = context.processes.map(p => {
+
+    // Map to intermediate objects with CPU for sorting
+    const formattedRows = context.processes.map(p => {
         const elapsed = Math.floor((Date.now() - p.startTime) / 1000);
         const timeStr = `${Math.floor(elapsed / 60)}:${(elapsed % 60).toString().padStart(2, '0')}.00`;
-        const cpuUsage = p.name === 'cryptominer' ? '99.9' : '0.0';
-        return `${p.pid.toString().padStart(5)} ${p.user.padEnd(8)} 20   0    2356   1400    800 ${p.status || 'S'}  ${cpuUsage.padStart(4)}   0.0   ${timeStr.padStart(7)} ${p.name}`;
+        const cpuUsage = p.name === 'cryptominer' ? 99.9 : 0.0;
+        const row = `${p.pid.toString().padStart(5)} ${p.user.padEnd(8)} 20   0    2356   1400    800 ${p.status || 'S'}  ${cpuUsage.toFixed(1).padStart(4)}   0.0   ${timeStr.padStart(7)} ${p.name}`;
+        return { row, cpu: cpuUsage };
     });
+
+    // Sort by CPU descending
+    formattedRows.sort((a, b) => b.cpu - a.cpu);
 
     const output = [
         `top - ${uptime}`,
@@ -1020,12 +1025,7 @@ CommandRegistry.register('top', async (args, context) => {
         mem,
         '',
         header,
-        ...rows.sort((a,b) => {
-            // Sort by CPU desc roughly
-            if (a.includes('cryptominer')) return -1;
-            if (b.includes('cryptominer')) return 1;
-            return 0;
-        })
+        ...formattedRows.map(r => r.row)
     ];
     return { output: output.join('\n'), exitCode: 0 };
 });

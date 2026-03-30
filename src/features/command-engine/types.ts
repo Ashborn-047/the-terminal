@@ -6,7 +6,7 @@ export interface CommandContext {
     vfs: VFS;
     env: Record<string, string>;
     history: string[];
-    processes: { pid: number; name: string; user: string; startTime: number }[];
+    processes: { pid: number; name: string; user: string; startTime: number; status?: string }[];
     updateEnv: (env: Record<string, string>) => void;
     updateProcesses: (processes: any[]) => void;
     prompt?: (message: string) => Promise<string>;

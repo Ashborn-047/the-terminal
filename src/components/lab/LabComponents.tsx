@@ -4,6 +4,7 @@ import { useLabStore } from '../../stores/labStore';
 import { useGamificationStore } from '../../stores/gamificationStore';
 import { VerificationEngine } from '../../features/lab-engine/verification';
 import { VFS } from '../../features/vfs/vfs';
+import { useTerminalStore } from '../../stores/terminalStore';
 import { Lock, CheckCircle, Play, HelpCircle, Award, ChevronRight, AlertTriangle } from 'lucide-react';
 
 // ======================================================================
@@ -215,12 +216,13 @@ interface DIYLabProps {
 }
 
 export const DIYLabInstructions: React.FC<DIYLabProps> = ({ lab, vfs, userId, onComplete, onHintUsed }) => {
+    const { processes } = useTerminalStore();
     const [failedMessages, setFailedMessages] = useState<string[]>([]);
     const [verified, setVerified] = useState(false);
     const [hintIndex, setHintIndex] = useState(-1);
 
     const handleVerify = () => {
-        const result = VerificationEngine.verifyDIYLab(lab, vfs, userId);
+        const result = VerificationEngine.verifyDIYLab(lab, vfs, userId, processes);
         if (result.success) {
             setVerified(true);
             setFailedMessages([]);

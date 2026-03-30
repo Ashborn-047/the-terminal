@@ -29,6 +29,33 @@ const parseAnsi = (text: string) => {
     return result;
 };
 
+interface HistoryEntryProps {
+    entry: TerminalEntry;
+}
+
+const HistoryEntry: React.FC<HistoryEntryProps> = React.memo(({ entry }) => {
+    const isCd = entry.command.startsWith('cd ');
+    return (
+        <div key={entry.id} className="mb-2 animate-in fade-in duration-300">
+            <div className="flex gap-2 text-brutal-white font-bold">
+                <span>[{entry.userId}@the-terminal {entry.cwd === '/' ? '/' : entry.cwd.split('/').pop()}]$</span>
+                <span>{entry.command}</span>
+            </div>
+            {!isCd && entry.output && (
+                <pre
+                    data-testid="terminal-output"
+                    className="whitespace-pre-wrap mt-1 opacity-90"
+                >
+                    {parseAnsi(entry.output)}
+                </pre>
+            )}
+            {entry.error && (
+                <div className="text-brutal-red mt-1 font-bold">Error: {entry.error}</div>
+            )}
+        </div>
+    );
+});
+
 export const TerminalComponent: React.FC = () => {
     const { history, cwd, userId, executeCommand, pendingPrompt, resolvePrompt, handleTabComplete } = useTerminal();
     const [input, setInput] = useState('');
@@ -109,25 +136,9 @@ export const TerminalComponent: React.FC = () => {
             onClick={handleTerminalClick}
         >
             {/* History */}
-            <div className="flex flex-col gap-2">
-                {history.map((entry: TerminalEntry) => (
-                    <div key={entry.id} className="flex flex-col">
-                        <div className="flex gap-2">
-                            <span className="text-brutal-white">[{userId}@the-terminal {entry.cwd === '/' ? '/' : entry.cwd.split('/').pop()}]$</span>
-                            <span className="text-brutal-white">{entry.command}</span>
-                        </div>
-                        {entry.output && (
-                            <pre
-                                data-testid="terminal-output"
-                                className="whitespace-pre-wrap mt-1 opacity-90"
-                            >
-                                {parseAnsi(entry.output)}
-                            </pre>
-                        )}
-                        {entry.error && (
-                            <div className="text-brutal-red mt-1 font-bold">Error: {entry.error}</div>
-                        )}
-                    </div>
+            <div className="flex-1 overflow-y-auto no-scrollbar scroll-smooth" data-testid="terminal-history">
+                {history.map((entry) => (
+                    <HistoryEntry key={entry.id} entry={entry} />
                 ))}
             </div>
 

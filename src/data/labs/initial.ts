@@ -34,7 +34,6 @@ export const INITIAL_LABS: Record<string, Lab> = {
         title: 'Navigation Challenge',
         description: 'Practice moving between directories. Create a new directory and enter it.',
         type: 'diy',
-        initialVFS: 'advanced-scenarios',
         xpReward: 100,
         prerequisites: ['lab-1-1'],
         verification: {
@@ -127,7 +126,6 @@ export const INITIAL_LABS: Record<string, Lab> = {
         title: 'File Management Challenge',
         description: 'Put your file management skills to the test. Create a project structure from scratch.',
         type: 'diy',
-        initialVFS: 'advanced-scenarios',
         xpReward: 150,
         prerequisites: ['lab-2-2'],
         verification: {
@@ -1073,6 +1071,11 @@ export const INITIAL_LABS: Record<string, Lab> = {
                     type: 'file_not_exists',
                     path: '/home/guest/cryptominer',
                     message: 'Delete the "cryptominer" executable file from your home directory.',
+                },
+                {
+                    type: 'process_not_running',
+                    path: 'cryptominer',
+                    message: 'Terminate the rogue "cryptominer" process.',
                 }
             ]
         },
