@@ -32,11 +32,11 @@ const parseAnsi = (text: string) => {
 // ⚡ Bolt: Memoized history entry component to prevent expensive re-renders
 // By wrapping this in React.memo, we avoid re-rendering old terminal output
 // (and re-running parseAnsi) on every single keystroke.
-const HistoryEntry = React.memo(({ entry, userId }: { entry: TerminalEntry; userId: string }) => {
+const HistoryEntry = React.memo(({ entry }: { entry: TerminalEntry }) => {
     return (
         <div className="flex flex-col">
             <div className="flex gap-2">
-                <span className="text-brutal-white">[{userId}@the-terminal {entry.cwd === '/' ? '/' : entry.cwd.split('/').pop()}]$</span>
+                <span className="text-brutal-white">[{entry.userId}@the-terminal {entry.cwd === '/' ? '/' : entry.cwd.split('/').pop()}]$</span>
                 <span className="text-brutal-white">{entry.command}</span>
             </div>
             {entry.output && (
@@ -136,7 +136,7 @@ export const TerminalComponent: React.FC = () => {
             {/* History */}
             <div className="flex flex-col gap-2">
                 {history.map((entry: TerminalEntry) => (
-                    <HistoryEntry key={entry.id} entry={entry} userId={userId} />
+                    <HistoryEntry key={entry.id} entry={entry} />
                 ))}
             </div>
 

@@ -265,6 +265,7 @@ export function useTerminal() {
 
         const entry: TerminalEntry = {
             id: uuidv4(),
+            userId: userId,
             command: trimmedInput,
             output: isCd ? '' : result.output,
             error: result.error,
