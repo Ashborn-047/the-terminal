@@ -86,6 +86,12 @@ export function useTerminal() {
         }
     }, [snapshot, uiUsername]);
 
+    useEffect(() => {
+        if (vfsRef.current) {
+            vfsRef.current.setProcessProvider(() => processes);
+        }
+    }, [processes]);
+
     const executorRef = useRef<CommandExecutor>(new CommandExecutor(vfsRef.current));
 
     useEffect(() => {

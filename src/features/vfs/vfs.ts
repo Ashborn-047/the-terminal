@@ -60,6 +60,7 @@ export class VFS {
     private rootId: string;
     private inodes: Record<string, Inode>;
     private umask: string = '0022';
+    private processProvider: () => any[] = () => [];
 
     constructor(snapshot?: VFSSnapshot) {
         if (snapshot) {
@@ -144,6 +145,44 @@ export class VFS {
         };
     }
 
+    public createVirtualFile(
+        parentPath: string,
+        name: string,
+        handler: (userId: string) => string,
+        ownerId: string = 'root'
+    ): Inode | string {
+        const parentResult = this.resolve(parentPath, ownerId);
+        if (typeof parentResult === 'string') return parentResult;
+
+        const parentInode = parentResult as Inode;
+        if (parentInode.type !== 'directory') return 'Not a directory';
+
+        const newId = uuidv4();
+        const newInode: Inode = {
+            id: newId,
+            type: 'file',
+            name,
+            permissions: { ...DEFAULT_FILE_PERMISSIONS }, // Typically 644
+            ownerId,
+            groupId: ownerId,
+            size: 0,
+            createdAt: Date.now(),
+            modifiedAt: Date.now(),
+            isVirtual: true,
+            handler,
+        };
+
+        this.inodes[newId] = newInode;
+        parentInode.children = parentInode.children || [];
+        parentInode.children.push(newId);
+        parentInode.modifiedAt = Date.now();
+        return newInode;
+    }
+
+    public setProcessProvider(provider: () => any[]): void {
+        this.processProvider = provider;
+    }
+
     private initializeDefaultFS() {
         this.mkdir('/', 'bin', 'root');
         this.mkdir('/', 'etc', 'root');
@@ -153,6 +192,7 @@ export class VFS {
         this.mkdir('/', 'var', 'root');
         this.mkdir('/var', 'log', 'root');
         this.mkdir('/', 'proc', 'root');
+        this.mkdir('/', 'dev', 'root');
         this.mkdir('/', 'usr', 'root');
         this.mkdir('/usr', 'bin', 'root');
         this.mkdir('/usr', 'local', 'root');
@@ -171,6 +211,21 @@ export class VFS {
             'Feb 28 10:00:01 the-terminal systemd[1]: Started The Terminal.\nFeb 28 10:00:02 the-terminal kernel: Linux version 6.1.0',
             'root'
         );
+
+        // Virtual Files Initiation
+        const bootTime = Date.now();
+        this.createVirtualFile('/proc', 'version', () => 'Linux version 6.1.0-the-terminal (gcc version 12.2.0) #1 SMP PREEMPT_DYNAMIC Mon Mar 30 15:00:00 UTC 2026\n');
+        this.createVirtualFile('/proc', 'uptime', () => {
+            const uptimeSeconds = (Date.now() - bootTime) / 1000;
+            return `${uptimeSeconds.toFixed(2)} ${uptimeSeconds.toFixed(2)}\n`;
+        });
+        this.createVirtualFile('/proc', 'stat', () => {
+            const procs = this.processProvider();
+            const totalLoad = procs.length * 100; // Simulated
+            return `cpu  ${totalLoad} 0 492 10293 293 0 10 0 0 0\nprocesses ${procs.length + 42}\n`;
+        });
+        this.createVirtualFile('/dev', 'null', () => '');
+        this.createVirtualFile('/dev', 'zero', () => '\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0');
     }
 
     // Accessors
@@ -254,6 +309,11 @@ export class VFS {
             logger.security('PERMISSION_DENIED', { path, userId, action: 'read' });
             return { error: formatError('PERMISSION_DENIED') };
         }
+
+        if (inode.isVirtual && inode.handler) {
+            return inode.handler(userId);
+        }
+
         return inode.content || '';
     }
 

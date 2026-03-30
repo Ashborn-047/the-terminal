@@ -2,19 +2,21 @@ import { CommandRegistry } from '../registry';
 import { CommandContext, CommandResult } from '../types';
 import { Inode } from '../../vfs/types';
 import { permissionsToOctal } from '../../vfs/vfs';
+import { readStream } from '../utils';
 import { logger } from '../../../utils/logger';
 
 // ======================================================================
-//  pwd
+//  pwd — print working directory
 // ======================================================================
-CommandRegistry.register('pwd', async (args, context) => {
+CommandRegistry.register('pwd', async (args, context, input) => {
     return { output: context.cwd, exitCode: 0 };
 });
 
 // ======================================================================
-//  ls  — supports -l, -a, -la — per command_engine_vfs.md §3.5
+//  ls  — list directory contents
+//  Supports: -l, -a, -R, -h
 // ======================================================================
-CommandRegistry.register('ls', async (args, context) => {
+CommandRegistry.register('ls', async (args, context, input) => {
     let showAll = false;
     let longFormat = false;
     let recursive = false;
@@ -69,10 +71,7 @@ CommandRegistry.register('ls', async (args, context) => {
         }
 
         let children = childrenResult || [];
-
-        if (!showAll) {
-            children = children.filter(n => !n.name.startsWith('.'));
-        }
+        if (!showAll) children = children.filter(n => !n.name.startsWith('.'));
 
         if (longFormat) {
             for (const child of children) {
@@ -106,9 +105,7 @@ CommandRegistry.register('ls', async (args, context) => {
         }
     };
 
-    for (const p of paths) {
-        listDir(p);
-    }
+    for (const p of paths) listDir(p);
 
     return {
         output: outputLines.join('\n').trim(),
@@ -117,9 +114,8 @@ CommandRegistry.register('ls', async (args, context) => {
     };
 });
 
-function formatPermissions(p: { owner: { read: boolean; write: boolean; execute: boolean }; group: { read: boolean; write: boolean; execute: boolean }; others: { read: boolean; write: boolean; execute: boolean } }): string {
-    const fmt = (s: { read: boolean; write: boolean; execute: boolean }) =>
-        `${s.read ? 'r' : '-'}${s.write ? 'w' : '-'}${s.execute ? 'x' : '-'}`;
+function formatPermissions(p: any): string {
+    const fmt = (s: any) => `${s.read ? 'r' : '-'}${s.write ? 'w' : '-'}${s.execute ? 'x' : '-'}`;
     return `${fmt(p.owner)}${fmt(p.group)}${fmt(p.others)}`;
 }
 
@@ -131,34 +127,27 @@ function formatHumanSize(bytes: number): string {
 }
 
 // ======================================================================
-//  cd
+//  cd — change directory
 // ======================================================================
-CommandRegistry.register('cd', async (args, context) => {
+CommandRegistry.register('cd', async (args, context, input) => {
     let path = args.length > 0 ? args[0] : '/home/' + context.userId;
-
-    // Handle ~ as home directory
     if (path === '~' || path.startsWith('~/')) {
         path = '/home/' + context.userId + path.slice(1);
     }
 
     const result = context.vfs.resolveRelative(path, context.cwd, context.userId);
-    if (typeof result === 'string') {
-        return { output: '', error: `cd: ${result}`, exitCode: 1 };
-    }
+    if (typeof result === 'string') return { output: '', error: `cd: ${result}`, exitCode: 1 };
 
     const inode = result as Inode;
-    if (inode.type !== 'directory') {
-        return { output: '', error: `cd: Not a directory: ${path}`, exitCode: 1 };
-    }
+    if (inode.type !== 'directory') return { output: '', error: `cd: Not a directory: ${path}`, exitCode: 1 };
 
-    // Return the absolute path so useTerminal can update context
     return { output: context.vfs.getPath(inode.id), exitCode: 0 };
 });
 
 // ======================================================================
-//  mkdir — supports -p for recursive creation
+//  mkdir — create directories
 // ======================================================================
-CommandRegistry.register('mkdir', async (args, context) => {
+CommandRegistry.register('mkdir', async (args, context, input) => {
     let recursive = false;
     let mode: string | undefined = undefined;
     const targets: string[] = [];
@@ -166,17 +155,12 @@ CommandRegistry.register('mkdir', async (args, context) => {
     for (let i = 0; i < args.length; i++) {
         const arg = args[i];
         if (arg === '-p') { recursive = true; continue; }
-        if (arg === '-m' && i + 1 < args.length) {
-            mode = args[++i];
-            continue;
-        }
+        if (arg === '-m' && i + 1 < args.length) { mode = args[++i]; continue; }
         if (arg.startsWith('-')) continue;
         targets.push(arg);
     }
 
-    if (targets.length === 0) {
-        return { output: '', error: 'mkdir: missing operand', exitCode: 1 };
-    }
+    if (targets.length === 0) return { output: '', error: 'mkdir: missing operand', exitCode: 1 };
 
     for (const dir of targets) {
         if (recursive) {
@@ -187,19 +171,8 @@ CommandRegistry.register('mkdir', async (args, context) => {
                 const checkPath = currentPath === '' ? '/' + part : (currentPath === '/' ? '/' + part : currentPath + '/' + part);
                 if (!context.vfs.exists(checkPath, context.userId)) {
                     const parent = currentPath === '' ? '/' : currentPath;
-                    const applyMode = (i === parts.length - 1) ? mode : undefined;
-                    const result = context.vfs.mkdir(parent, part, context.userId, applyMode);
-                    if (typeof result === 'string') {
-                        return { output: '', error: `mkdir: ${result}`, exitCode: 1 };
-                    }
-                    // Fix ownership for recursive mkdir as guest
-                    if (context.userId !== 'root') {
-                        const inode = context.vfs.resolve(checkPath, 'root');
-                        if (typeof inode !== 'string') {
-                            inode.ownerId = context.userId;
-                            inode.groupId = context.userId;
-                        }
-                    }
+                    const result = context.vfs.mkdir(parent, part, context.userId, (i === parts.length - 1) ? mode : undefined);
+                    if (typeof result === 'string') return { output: '', error: `mkdir: ${result}`, exitCode: 1 };
                 }
                 currentPath = checkPath;
             }
@@ -208,61 +181,38 @@ CommandRegistry.register('mkdir', async (args, context) => {
             const name = parts.pop() || '';
             const parentRelative = parts.join('/');
             const parentPath = dir.startsWith('/') ? '/' + parentRelative : (parentRelative ? context.cwd + '/' + parentRelative : context.cwd);
-
             const result = context.vfs.mkdir(parentPath, name, context.userId, mode);
-            if (typeof result === 'string') {
-                return { output: '', error: `mkdir: ${result}`, exitCode: 1 };
-            }
-            // Ensure guest can write to their own created folders (though VFS handles this via ownerId)
-            console.log(`[mkdir] Created ${name} in ${parentPath} owned by ${context.userId}`);
+            if (typeof result === 'string') return { output: '', error: `mkdir: ${result}`, exitCode: 1 };
         }
     }
-
     return { output: '', exitCode: 0 };
 });
 
 // ======================================================================
-//  touch
+//  touch — change file timestamps / create empty files
 // ======================================================================
-CommandRegistry.register('touch', async (args, context) => {
-    if (args.length === 0) {
-        return { output: '', error: 'touch: missing operand', exitCode: 1 };
-    }
-
-    for (const name of args) {
-        context.vfs.touch(context.cwd, name, context.userId);
-    }
-
+CommandRegistry.register('touch', async (args, context, input) => {
+    if (args.length === 0) return { output: '', error: 'touch: missing operand', exitCode: 1 };
+    for (const name of args) context.vfs.touch(context.cwd, name, context.userId);
     return { output: '', exitCode: 0 };
 });
 
 // ======================================================================
-//  clear
+//  cat — concatenate files and print on the standard output
 // ======================================================================
-CommandRegistry.register('clear', async () => {
-    return { output: '', exitCode: 0 };
-});
-
-// ======================================================================
-//  cat — per project_documentation.md: file operations
-// ======================================================================
-CommandRegistry.register('cat', async (args, context, stdin) => {
+CommandRegistry.register('cat', async (args, context, input) => {
     let lineNumbers = false;
-    const filePaths: string[] = [];
-
-    for (const arg of args) {
-        if (arg === '-n') lineNumbers = true;
-        else if (!arg.startsWith('-')) filePaths.push(arg);
-    }
+    const filePaths = args.filter(a => {
+        if (a === '-n') { lineNumbers = true; return false; }
+        return !a.startsWith('-');
+    });
 
     let output = '';
     let error = '';
     let exitCode = 0;
 
     if (filePaths.length === 0) {
-        if (stdin) {
-            output = stdin;
-        }
+        output = await readStream(input);
     } else {
         for (const filePath of filePaths) {
             const content = context.vfs.readFile(filePath, context.userId);
@@ -283,9 +233,9 @@ CommandRegistry.register('cat', async (args, context, stdin) => {
 });
 
 // ======================================================================
-//  rm — supports -r, -rf
+//  rm — remove files or directories
 // ======================================================================
-CommandRegistry.register('rm', async (args, context) => {
+CommandRegistry.register('rm', async (args, context, input) => {
     let recursive = false;
     let force = false;
     let interactive = false;
@@ -305,26 +255,23 @@ CommandRegistry.register('rm', async (args, context) => {
     }
 
     for (const path of paths) {
-        // Handle -i
         if (interactive && !force && context.prompt) {
             const confirmed = await context.prompt(`rm: remove file '${path}'? `);
             if (confirmed.toLowerCase() !== 'y') continue;
         }
-
         const result = context.vfs.rm(path, recursive, context.userId);
         if (typeof result === 'string') {
             if (force && result === 'No such file or directory') continue;
             return { output: '', error: `rm: cannot remove '${path}': ${result}`, exitCode: 1 };
         }
     }
-
     return { output: '', exitCode: 0 };
 });
 
 // ======================================================================
-//  cp — supports -r, -R
+//  cp — copy files and directories
 // ======================================================================
-CommandRegistry.register('cp', async (args, context) => {
+CommandRegistry.register('cp', async (args, context, input) => {
     let recursive = false;
     let interactive = false;
     let force = false;
@@ -339,45 +286,33 @@ CommandRegistry.register('cp', async (args, context) => {
         else if (!arg.startsWith('-')) targets.push(arg);
     }
 
-    if (targets.length < 2) {
-        return { output: '', error: 'cp: missing file operand', exitCode: 1 };
-    }
+    if (targets.length < 2) return { output: '', error: 'cp: missing file operand', exitCode: 1 };
 
     const destPath = targets.pop()!;
     for (const srcPath of targets) {
-        // Handle -i
         if (interactive && !force && context.vfs.exists(destPath, context.userId) && context.prompt) {
             const confirmed = await context.prompt(`cp: overwrite '${destPath}'? `);
             if (confirmed.toLowerCase() !== 'y') continue;
         }
-
         const result = context.vfs.cp(srcPath, destPath, recursive, context.userId);
-        if (typeof result === 'string') {
-            return { output: '', error: `cp: ${result}`, exitCode: 1 };
-        }
-
-        // Handle -p (preserve)
+        if (typeof result === 'string') return { output: '', error: `cp: ${result}`, exitCode: 1 };
         if (preserve) {
             const srcMeta = context.vfs.getMetadata(srcPath, context.userId);
-            const destFinalPath = context.vfs.isDirectory(destPath, context.userId)
-                ? `${destPath}/${srcPath.split('/').pop()}`
-                : destPath;
+            const destFinalPath = context.vfs.isDirectory(destPath, context.userId) ? `${destPath}/${srcPath.split('/').pop()}` : destPath;
             const destMeta = context.vfs.getMetadata(destFinalPath, context.userId);
-
             if (typeof srcMeta !== 'string' && typeof destMeta !== 'string') {
                 destMeta.permissions = { ...srcMeta.permissions };
                 destMeta.modifiedAt = srcMeta.modifiedAt;
             }
         }
     }
-
     return { output: '', exitCode: 0 };
 });
 
 // ======================================================================
-//  mv
+//  mv — move (rename) files
 // ======================================================================
-CommandRegistry.register('mv', async (args, context) => {
+CommandRegistry.register('mv', async (args, context, input) => {
     let interactive = false;
     let force = false;
     const targets: string[] = [];
@@ -388,39 +323,32 @@ CommandRegistry.register('mv', async (args, context) => {
         else if (!arg.startsWith('-')) targets.push(arg);
     }
 
-    if (targets.length < 2) {
-        return { output: '', error: 'mv: missing operand', exitCode: 1 };
-    }
+    if (targets.length < 2) return { output: '', error: 'mv: missing operand', exitCode: 1 };
 
     const destPath = targets.pop()!;
     for (const srcPath of targets) {
-        // Handle -i
         if (interactive && !force && context.vfs.exists(destPath, context.userId) && context.prompt) {
             const confirmed = await context.prompt(`mv: overwrite '${destPath}'? `);
             if (confirmed.toLowerCase() !== 'y') continue;
         }
-
         const result = context.vfs.mv(srcPath, destPath, context.userId);
         if (typeof result === 'string') {
             if (force && result === 'Destination already exists') {
                 context.vfs.rm(destPath, true, context.userId);
                 const retryResult = context.vfs.mv(srcPath, destPath, context.userId);
-                if (typeof retryResult === 'string') {
-                    return { output: '', error: `mv: ${retryResult}`, exitCode: 1 };
-                }
+                if (typeof retryResult === 'string') return { output: '', error: `mv: ${retryResult}`, exitCode: 1 };
                 continue;
             }
             return { output: '', error: `mv: ${result}`, exitCode: 1 };
         }
     }
-
     return { output: '', exitCode: 0 };
 });
 
 // ======================================================================
-//  grep — supports -i (case insensitive), -v (invert), -n (line numbers)
+//  grep — print lines that match patterns
 // ======================================================================
-CommandRegistry.register('grep', async (args, context, stdin) => {
+CommandRegistry.register('grep', async (args, context, input) => {
     let caseInsensitive = false;
     let invert = false;
     let lineNumbers = false;
@@ -446,22 +374,16 @@ CommandRegistry.register('grep', async (args, context, stdin) => {
     const filePaths = nonFlags.slice(1);
     const outputLines: string[] = [];
 
-    // Helper to search content
     const searchContent = (content: string, prefix: string) => {
         const lines = content.split('\n');
         let matchCount = 0;
         let regex: RegExp;
-        try {
-            regex = new RegExp(pattern, caseInsensitive ? 'i' : '');
-        } catch (e) {
-            return 0; // Invalid regex
-        }
+        try { regex = new RegExp(pattern, caseInsensitive ? 'i' : ''); } catch (e) { return 0; }
 
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i];
             let matches = regex.test(line);
             if (invert) matches = !matches;
-
             if (matches) {
                 matchCount++;
                 if (!countOnly) {
@@ -485,67 +407,45 @@ CommandRegistry.register('grep', async (args, context, stdin) => {
                 const matchCount = searchContent(content, prefix);
                 if (countOnly) outputLines.push(`${prefix}${matchCount}`);
             }
-        } else if (inode.type === 'directory' && recursive) {
-            if (inode.children) {
-                for (const childId of inode.children) {
-                    const child = context.vfs.getInode(childId);
-                    if (child) {
-                        const childPath = path === '/' ? `/${child.name}` : `${path}/${child.name}`;
-                        processPath(childPath);
-                    }
+        } else if (inode.type === 'directory' && recursive && inode.children) {
+            for (const childId of inode.children) {
+                const child = context.vfs.getInode(childId);
+                if (child) {
+                    const childPath = path === '/' ? `/${child.name}` : `${path}/${child.name}`;
+                    processPath(childPath);
                 }
             }
         }
     };
 
-    // If no file given, use piped input
     if (filePaths.length === 0) {
-        if (stdin) {
-            searchContent(stdin, '');
-        } else if (recursive) {
-            processPath(context.cwd);
-        } else {
-            return { output: '', error: 'grep: No file specified', exitCode: 2 };
-        }
+        const content = await readStream(input);
+        searchContent(content, '');
     } else {
-        for (const fp of filePaths) {
-            processPath(fp);
-        }
+        for (const fp of filePaths) processPath(fp);
     }
 
-    return {
-        output: outputLines.join('\n'),
-        exitCode: outputLines.length > 0 ? 0 : 1,
-    };
+    return { output: outputLines.join('\n'), exitCode: outputLines.length > 0 ? 0 : 1 };
 });
 
 // ======================================================================
-//  chmod
+//  chmod — change file mode bits
 // ======================================================================
-CommandRegistry.register('chmod', async (args, context) => {
+CommandRegistry.register('chmod', async (args, context, input) => {
     if (args.length < 2) return { output: '', error: 'chmod: missing operand', exitCode: 1 };
-
     const recursive = args.includes('-R');
     const filteredArgs = args.filter(a => a !== '-R');
     const mode = filteredArgs[0];
     const paths = filteredArgs.slice(1);
 
     const applyMode = (path: string, inode: Inode) => {
-        if (inode.ownerId !== context.userId && context.userId !== 'root') {
-            logger.security('CHMOD_UNAUTHORIZED', { path, userId: context.userId });
-            return `chmod: changing permissions of '${path}': Operation not permitted`;
-        }
-
+        if (inode.ownerId !== context.userId && context.userId !== 'root') return `chmod: operation not permitted`;
         if (/^[0-7]{3,4}$/.test(mode)) {
-            const result = context.vfs.chmod(path, mode.slice(-3), context.userId);
-            if (typeof result === 'string') return `chmod: ${result}`;
-            logger.security('CHMOD_OCTAL', { path, mode, userId: context.userId });
+            context.vfs.chmod(path, mode.slice(-3), context.userId);
         } else {
             const newPermissions = parseSymbolicMode(mode, inode.permissions);
             if (!newPermissions) return `chmod: invalid mode: '${mode}'`;
             inode.permissions = newPermissions;
-            inode.modifiedAt = Date.now();
-            logger.security('CHMOD_SYMBOLIC', { path, mode, userId: context.userId });
         }
         return null;
     };
@@ -554,10 +454,8 @@ CommandRegistry.register('chmod', async (args, context) => {
         const resolved = context.vfs.resolve(path, context.userId);
         if (typeof resolved === 'string') return resolved;
         const inode = resolved as Inode;
-
         const err = applyMode(path, inode);
         if (err) return err;
-
         if (recursive && inode.type === 'directory' && inode.children) {
             for (const childId of inode.children) {
                 const child = context.vfs.getInode(childId);
@@ -575,412 +473,129 @@ CommandRegistry.register('chmod', async (args, context) => {
         const err = walk(path);
         if (err) return { output: '', error: err, exitCode: 1 };
     }
-
     return { output: '', exitCode: 0 };
 });
 
-function parseSymbolicMode(mode: string, current: Inode['permissions']): Inode['permissions'] | null {
-    const perms = JSON.parse(JSON.stringify(current)); // Deep clone
+function parseSymbolicMode(mode: string, current: any): any | null {
+    const perms = JSON.parse(JSON.stringify(current));
     const parts = mode.split(',');
-
     for (const part of parts) {
         const match = part.match(/^([ugoa]*)([+=-])([rwx]*)$/);
         if (!match) return null;
-
         const [, recipients, op, requested] = match;
         const targets: ('owner' | 'group' | 'others')[] = [];
-        if (!recipients || recipients.includes('a')) {
-            targets.push('owner', 'group', 'others');
-        } else {
+        if (!recipients || recipients.includes('a')) targets.push('owner', 'group', 'others');
+        else {
             if (recipients.includes('u')) targets.push('owner');
             if (recipients.includes('g')) targets.push('group');
             if (recipients.includes('o')) targets.push('others');
         }
-
-        const read = requested.includes('r');
-        const write = requested.includes('w');
-        const execute = requested.includes('x');
-
-        for (const target of targets) {
-            if (op === '+') {
-                if (read) perms[target].read = true;
-                if (write) perms[target].write = true;
-                if (execute) perms[target].execute = true;
-            } else if (op === '-') {
-                if (read) perms[target].read = false;
-                if (write) perms[target].write = false;
-                if (execute) perms[target].execute = false;
-            } else if (op === '=') {
-                perms[target].read = read;
-                perms[target].write = write;
-                perms[target].execute = execute;
-            }
+        const r = requested.includes('r'), w = requested.includes('w'), x = requested.includes('x');
+        for (const t of targets) {
+            if (op === '+') { if (r) perms[t].read = true; if (w) perms[t].write = true; if (x) perms[t].execute = true; }
+            else if (op === '-') { if (r) perms[t].read = false; if (w) perms[t].write = false; if (x) perms[t].execute = false; }
+            else if (op === '=') { perms[t].read = r; perms[t].write = w; perms[t].execute = x; }
         }
     }
     return perms;
 }
 
 // ======================================================================
-//  chown — per project_documentation.md §4.1: Permission management
+//  chown — change file owner and group
 // ======================================================================
-CommandRegistry.register('chown', async (args, context) => {
+CommandRegistry.register('chown', async (args, context, input) => {
     if (args.length < 2) return { output: '', error: 'chown: missing operand', exitCode: 1 };
-
     const owner = args[0];
     const paths = args.slice(1);
-
     for (const path of paths) {
         const result = context.vfs.chown(path, owner, context.userId);
-        if (typeof result === 'string') {
-            return { output: '', error: `chown: ${result}`, exitCode: 1 };
-        }
+        if (typeof result === 'string') return { output: '', error: `chown: ${result}`, exitCode: 1 };
     }
-
     return { output: '', exitCode: 0 };
 });
 
 // ======================================================================
-//  ln — per command_engine_vfs.md §2.2: Symlink support
+//  ln — make links between files
 // ======================================================================
-CommandRegistry.register('ln', async (args, context) => {
+CommandRegistry.register('ln', async (args, context, input) => {
     const symbolic = args.includes('-s');
     const paths = args.filter(a => !a.startsWith('-'));
-
     if (paths.length < 2) return { output: '', error: 'ln: missing operand', exitCode: 1 };
+    if (!symbolic) return { output: '', error: 'ln: hard links not supported, use -s', exitCode: 1 };
 
-    if (!symbolic) {
-        return { output: '', error: 'ln: hard links not supported, use -s', exitCode: 1 };
-    }
-
-    const target = paths[0];
-    const linkName = paths[1];
-
-    // Separate parent dir and name
+    const target = paths[0], linkName = paths[1];
     const parts = linkName.split('/').filter(p => p.length > 0);
-    const name = parts.pop() || '';
-    const parentPath = linkName.startsWith('/')
-        ? '/' + parts.join('/')
-        : (parts.length > 0 ? parts.join('/') : context.cwd);
-
+    const name = parts.pop() || '', parentPath = linkName.startsWith('/') ? '/' + parts.join('/') : (parts.length > 0 ? parts.join('/') : context.cwd);
     const result = context.vfs.ln(parentPath || context.cwd, name, target, context.userId, symbolic);
-    if (typeof result === 'string') {
-        return { output: '', error: `ln: ${result}`, exitCode: 1 };
-    }
-
+    if (typeof result === 'string') return { output: '', error: `ln: ${result}`, exitCode: 1 };
     return { output: '', exitCode: 0 };
 });
 
 // ======================================================================
-//  whoami
+//  whoami / date / clear / help
 // ======================================================================
-CommandRegistry.register('whoami', async (args, context) => {
-    return { output: context.userId, exitCode: 0 };
+CommandRegistry.register('whoami', async (args, context, input) => ({ output: context.userId, exitCode: 0 }));
+CommandRegistry.register('date', async (args, context, input) => ({ output: new Date().toString(), exitCode: 0 }));
+CommandRegistry.register('clear', async (args, context, input) => ({ output: '', exitCode: 0 }));
+CommandRegistry.register('help', async (args, context, input) => {
+    const commands = CommandRegistry.list().sort();
+    return { output: 'Available commands:\n' + commands.join('  '), exitCode: 0 };
 });
+CommandRegistry.register('true', async (args, context, input) => ({ output: '', exitCode: 0 }));
+CommandRegistry.register('false', async (args, context, input) => ({ output: '', exitCode: 1 }));
 
 // ======================================================================
-//  date
+//  echo — expand and print text
 // ======================================================================
-CommandRegistry.register('date', async () => {
-    return { output: new Date().toString(), exitCode: 0 };
-});
-
-// ======================================================================
-//  echo — handles $VAR expansion
-// ======================================================================
-CommandRegistry.register('echo', async (args, context) => {
-    let noNewline = false;
-    let interpretEscapes = false;
+CommandRegistry.register('echo', async (args, context, input) => {
+    let noNewline = false, interpretEscapes = false;
     const textArgs: string[] = [];
-
     for (const arg of args) {
         if (arg === '-n') { noNewline = true; continue; }
         if (arg === '-e') { interpretEscapes = true; continue; }
         textArgs.push(arg);
     }
-
-    const expanded = textArgs.map(a => {
-        if (a.startsWith('$')) {
-            const varName = a.slice(1);
-            return context.env[varName] || '';
-        }
-        return a;
-    });
-
-    let result = expanded.join(' ');
-    if (interpretEscapes) {
-        result = result.replace(/\\n/g, '\n').replace(/\\t/g, '\t').replace(/\\\\/g, '\\');
-    }
-    if (noNewline) {
-        // Return without trailing newline (output won't have \n appended)
-        return { output: result, exitCode: 0 };
-    }
-    return { output: result, exitCode: 0 };
+    const expanded = textArgs.map(a => a.startsWith('$') ? (context.env[a.slice(1)] || '') : a);
+    let out = expanded.join(' ');
+    if (interpretEscapes) out = out.replace(/\\n/g, '\n').replace(/\\t/g, '\t').replace(/\\\\/g, '\\');
+    return { output: out, exitCode: 0 };
 });
 
 // ======================================================================
-//  history
+//  history — print command history
 // ======================================================================
-CommandRegistry.register('history', async (args, context) => {
+CommandRegistry.register('history', async (args, context, input) => {
     const lines = context.history.map((cmd, i) => `  ${i + 1}  ${cmd}`);
     return { output: lines.join('\n'), exitCode: 0 };
 });
 
 // ======================================================================
-//  help
+//  sudo — execute a command with root privileges
 // ======================================================================
-CommandRegistry.register('help', async () => {
-    const commands = CommandRegistry.list().sort();
-    return { output: 'Available commands:\n' + commands.join('  '), exitCode: 0 };
-});
-
-// ======================================================================
-//  sudo — per project_documentation.md §9: Simulated commands
-// ======================================================================
-CommandRegistry.register('sudo', async (args, context) => {
+CommandRegistry.register('sudo', async (args, context, input) => {
     if (args.length === 0) return { output: '', error: 'sudo: missing command', exitCode: 1 };
-
-    const commandName = args[0];
-    const commandArgs = args.slice(1);
-    const commandFn = CommandRegistry.get(commandName);
-
-    if (!commandFn) {
-        return { output: '', error: `sudo: ${commandName}: command not found`, exitCode: 127 };
-    }
-
-    const rootContext = { ...context, userId: 'root' };
-    logger.security('SUDO_EXEC', { command: commandName, args: commandArgs, userId: context.userId });
-    return await commandFn(commandArgs, rootContext);
+    const cmdName = args[0], cmdArgs = args.slice(1), cmdFn = CommandRegistry.get(cmdName);
+    if (!cmdFn) return { output: '', error: `sudo: ${cmdName}: command not found`, exitCode: 127 };
+    return await cmdFn(cmdArgs, { ...context, userId: 'root' }, input);
 });
 
 // ======================================================================
-//  uname — per project_documentation.md §4.1: System info
+//  uname / uptime / df / free
 // ======================================================================
-CommandRegistry.register('uname', async (args) => {
-    const all = args.includes('-a');
-    if (all) {
-        return { output: 'Linux the-terminal 6.1.0 #1 SMP x86_64 GNU/Linux', exitCode: 0 };
-    }
-    return { output: 'Linux', exitCode: 0 };
-});
+CommandRegistry.register('uname', async (args, context, input) => ({ output: args.includes('-a') ? 'Linux the-terminal 6.1.0 #1 SMP x86_64 GNU/Linux' : 'Linux', exitCode: 0 }));
+CommandRegistry.register('uptime', async (args, context, input) => ({ output: ' 22:50:00 up 1 day,  3:27,  1 user,  load average: 0.15, 0.12, 0.10', exitCode: 0 }));
+CommandRegistry.register('df', async (args, context, input) => ({ output: 'Filesystem     1K-blocks    Used Available Use% Mounted on\n/dev/sda1       51200000 4200000  47000000   9% /', exitCode: 0 }));
+CommandRegistry.register('free', async (args, context, input) => ({ output: '              total        used        free      shared  buff/cache   available\nMem:        8157980     2345672     3812308      102400     2000000     5512308\nSwap:       2097148           0     2097148', exitCode: 0 }));
 
 // ======================================================================
-//  wc — word, line, character count
+//  ps — report a snapshot of the current processes
 // ======================================================================
-CommandRegistry.register('wc', async (args, context, stdin) => {
-    let countLines = false;
-    let countWords = false;
-    let countChars = false;
-
-    if (args.includes('-l')) countLines = true;
-    if (args.includes('-w')) countWords = true;
-    if (args.includes('-c') || args.includes('-m')) countChars = true;
-
-    // Default if no flags: show all
-    if (!countLines && !countWords && !countChars) {
-        countLines = countWords = countChars = true;
-    }
-
-    const filePaths = args.filter(a => !a.startsWith('-'));
-    let totalLines = 0;
-    let totalWords = 0;
-    let totalChars = 0;
-
-    const processContent = (content: string) => {
-        // Split by newline, filter out empty strings from trailing newlines, then count.
-        // If content is empty, lines should be 0.
-        const lines = content.length === 0 ? 0 : content.split('\n').filter(l => l.length > 0).length;
-        // Trim to handle leading/trailing whitespace, split by one or more whitespace, filter out empty strings.
-        // If content is empty or only whitespace, words should be 0.
-        const words = content.trim().length === 0 ? 0 : content.trim().split(/\s+/).filter(w => w.length > 0).length;
-        const chars = content.length;
-        return { lines, words, chars };
-    };
-
-    const outputRows: string[] = [];
-
-    if (filePaths.length === 0) {
-        if (stdin) {
-            const { lines, words, chars } = processContent(stdin);
-            totalLines += lines;
-            totalWords += words;
-            totalChars += chars;
-            let row = '';
-            if (countLines) row += `${lines} `;
-            if (countWords) row += `${words} `;
-            if (countChars) row += `${chars} `;
-            outputRows.push(row.trim());
-        } else {
-            return { output: '', error: 'wc: missing operand', exitCode: 1 };
-        }
-    } else {
-        for (const path of filePaths) {
-            const content = context.vfs.readFile(path, context.userId);
-            if (typeof content === 'string') {
-                const { lines, words, chars } = processContent(content);
-                totalLines += lines;
-                totalWords += words;
-                totalChars += chars;
-                let row = '';
-                if (countLines) row += `${lines} `;
-                if (countWords) row += `${words} `;
-                if (countChars) row += `${chars} `;
-                row += ` ${path}`;
-                outputRows.push(row.trim());
-            } else {
-                outputRows.push(`wc: ${path}: No such file or directory`);
-            }
-        }
-        if (filePaths.length > 1) {
-            let row = '';
-            if (countLines) row += `${totalLines} `;
-            if (countWords) row += `${totalWords} `;
-            if (countChars) row += `${totalChars} `;
-            row += ' total';
-            outputRows.push(row.trim());
-        }
-    }
-
-    return { output: outputRows.join('\n'), exitCode: 0 };
-});
-
-// ======================================================================
-//  find — basic path/name search
-// ======================================================================
-CommandRegistry.register('find', async (args, context) => {
-    const searchPath = args[0] || context.cwd;
-    let namePattern = '';
-    let typeFilter = '';
-    let sizeFilter = '';
-    let permFilter = '';
-    let execCommand: string[] = [];
-
-    const findArgs = [...args];
-    for (let i = 0; i < findArgs.length; i++) {
-        if (findArgs[i] === '-name' && findArgs[i + 1]) { namePattern = findArgs[i + 1]; i++; }
-        else if (findArgs[i] === '-type' && findArgs[i + 1]) { typeFilter = findArgs[i + 1]; i++; }
-        else if (findArgs[i] === '-size' && findArgs[i + 1]) { sizeFilter = findArgs[i + 1]; i++; }
-        else if (findArgs[i] === '-perm' && findArgs[i + 1]) { permFilter = findArgs[i + 1]; i++; }
-        else if (findArgs[i] === '-exec') {
-            const endIdx = findArgs.indexOf('\;', i);
-            if (endIdx !== -1) {
-                execCommand = findArgs.slice(i + 1, endIdx);
-                i = endIdx;
-            }
-        }
-    }
-
-    const results: string[] = [];
-
-    const walk = async (path: string) => {
-        const resolved = context.vfs.resolve(path, context.userId);
-        if (typeof resolved === 'string') return;
-        const inode = resolved as Inode;
-
-        let passes = true;
-        if (typeFilter === 'f' && inode.type !== 'file') passes = false;
-        if (typeFilter === 'd' && inode.type !== 'directory') passes = false;
-
-        if (sizeFilter) {
-            const actualSize = inode.size || 0;
-            const match = sizeFilter.match(/^([+-]?)(\d+)([KMG]?)$/);
-            if (match) {
-                const [, op, valueStr, unit] = match;
-                let targetSize = parseInt(valueStr, 10);
-                if (unit === 'K') targetSize *= 1024;
-                else if (unit === 'M') targetSize *= 1024 * 1024;
-                else if (unit === 'G') targetSize *= 1024 * 1024 * 1024;
-                if (op === '+') passes = actualSize > targetSize;
-                else if (op === '-') passes = actualSize < targetSize;
-                else passes = actualSize === targetSize;
-            }
-        }
-
-        if (permFilter && inode.permissions) {
-            const actualPerms = permissionsToOctal(inode.permissions);
-            if (actualPerms !== permFilter) passes = false;
-        }
-
-        if (namePattern && !matchGlob(inode.name, namePattern)) passes = false;
-
-        if (passes) {
-            results.push(path);
-            if (execCommand.length > 0) {
-                const cmdName = execCommand[0];
-                const cmdArgs = execCommand.slice(1).map(a => a === '{}' ? path : a);
-                const cmdFn = CommandRegistry.get(cmdName);
-                if (cmdFn) await cmdFn(cmdArgs, context);
-            }
-        }
-
-        if (inode.type === 'directory' && inode.children) {
-            for (const childId of inode.children) {
-                const child = context.vfs.getInode(childId);
-                if (child) {
-                    await walk(path === '/' ? `/${child.name}` : `${path}/${child.name}`);
-                }
-            }
-        }
-    };
-
-    await walk(searchPath);
-    return { output: results.join('\n'), exitCode: 0 };
-});
-
-function matchGlob(name: string, pattern: string): boolean {
-    // Simple glob: * matches anything
-    const regex = new RegExp('^' + pattern.replace(/\*/g, '.*').replace(/\?/g, '.') + '$');
-    return regex.test(name);
-}
-
-// ======================================================================
-//  env — print environment variables
-// ======================================================================
-CommandRegistry.register('env', async (args, context) => {
-    const lines = Object.entries(context.env).map(([k, v]) => `${k}=${v}`);
-    return { output: lines.join('\n'), exitCode: 0 };
-});
-
-// ======================================================================
-//  uptime — simulated
-// ======================================================================
-CommandRegistry.register('uptime', async () => {
-    return { output: ' 22:50:00 up 1 day,  3:27,  1 user,  load average: 0.15, 0.12, 0.10', exitCode: 0 };
-});
-
-// ======================================================================
-//  df — simulated disk usage
-// ======================================================================
-CommandRegistry.register('df', async (args) => {
-    const header = 'Filesystem     1K-blocks    Used Available Use% Mounted on';
-    const row = '/dev/sda1       51200000 4200000  47000000   9% /';
-    return { output: `${header}\n${row}`, exitCode: 0 };
-});
-
-// ======================================================================
-//  free — simulated memory
-// ======================================================================
-CommandRegistry.register('free', async (args) => {
-    const header = '              total        used        free      shared  buff/cache   available';
-    const mem = 'Mem:        8157980     2345672     3812308      102400     2000000     5512308';
-    const swap = 'Swap:       2097148           0     2097148';
-    return { output: `${header}\n${mem}\n${swap}`, exitCode: 0 };
-});
-
-// ======================================================================
-//  ps — dynamic process list
-// ======================================================================
-CommandRegistry.register('ps', async (args, context) => {
+CommandRegistry.register('ps', async (args, context, input) => {
     const showAll = args.includes('-a') || args.includes('aux') || args.includes('-e');
     const header = showAll ? 'USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND' : '  PID TTY          TIME CMD';
-
-    let processes = [...context.processes];
-
-    const lines = processes.map(p => {
-        const elapsed = Math.floor((Date.now() - p.startTime) / 1000);
-        const mins = Math.floor(elapsed / 60);
-        const secs = elapsed % 60;
+    const lines = context.processes.map(p => {
+        const elapsed = Math.floor((Date.now() - p.startTime) / 1000), mins = Math.floor(elapsed / 60), secs = elapsed % 60;
         const timeStr = `00:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-
         if (showAll) {
             const cpu = p.name === 'cryptominer' ? '99.9' : '0.0';
             return `${p.user.padEnd(8)} ${p.pid.toString().padStart(5)}  ${cpu}  0.1  2356   1400 pts/0    ${p.status || 'S'}    12:00   ${timeStr} ${p.name}`;
@@ -991,97 +606,123 @@ CommandRegistry.register('ps', async (args, context) => {
 });
 
 // ======================================================================
-//  top — dynamic system monitor (snapshot)
+//  top — display Linux processes
 // ======================================================================
-CommandRegistry.register('top', async (args, context) => {
-    const uptime = '22:50:00 up 1 day,  3:27,  1 user,  load average: 0.15, 0.12, 0.10';
-    const tasks = `Tasks:   ${context.processes.length} total,   1 running,   ${context.processes.length - 1} sleeping`;
-
-    // Check if rogue process exists
+CommandRegistry.register('top', async (args, context, input) => {
     const hasRogue = context.processes.some(p => p.name === 'cryptominer');
-    const cpuLine = hasRogue
-        ? '%Cpu(s): 99.9 us,  0.1 sy,  0.0 ni,  0.0 id,  0.0 wa'
-        : '%Cpu(s):  2.3 us,  1.0 sy,  0.0 ni, 96.5 id,  0.2 wa';
-
-    const mem = 'MiB Mem :   7966 total,   3726 free,   2291 used,   1949 buff/cache';
-    const header = '  PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND';
-
-    // Map to intermediate objects with CPU for sorting
-    const formattedRows = context.processes.map(p => {
-        const elapsed = Math.floor((Date.now() - p.startTime) / 1000);
-        const timeStr = `${Math.floor(elapsed / 60)}:${(elapsed % 60).toString().padStart(2, '0')}.00`;
-        const cpuUsage = p.name === 'cryptominer' ? 99.9 : 0.0;
-        const row = `${p.pid.toString().padStart(5)} ${p.user.padEnd(8)} 20   0    2356   1400    800 ${p.status || 'S'}  ${cpuUsage.toFixed(1).padStart(4)}   0.0   ${timeStr.padStart(7)} ${p.name}`;
-        return { row, cpu: cpuUsage };
-    });
-
-    // Sort by CPU descending
-    formattedRows.sort((a, b) => b.cpu - a.cpu);
+    const cpuLine = hasRogue ? '%Cpu(s): 99.9 us,  0.1 sy,  0.0 ni,  0.0 id,  0.0 wa' : '%Cpu(s):  2.3 us,  1.0 sy,  0.0 ni, 96.5 id,  0.2 wa';
+    const rows = context.processes.map(p => {
+        const elapsed = Math.floor((Date.now() - p.startTime) / 1000), timeStr = `${Math.floor(elapsed / 60)}:${(elapsed % 60).toString().padStart(2, '0')}.00`;
+        const cpu = p.name === 'cryptominer' ? 99.9 : 0.0;
+        return { cpu, row: `${p.pid.toString().padStart(5)} ${p.user.padEnd(8)} 20   0    2356   1400    800 ${p.status || 'S'}  ${cpu.toFixed(1).padStart(4)}   0.0   ${timeStr.padStart(7)} ${p.name}` };
+    }).sort((a, b) => b.cpu - a.cpu);
 
     const output = [
-        `top - ${uptime}`,
-        tasks,
+        `top - ${new Date().toLocaleTimeString()}, up 1 day, 3:27, 1 user, load average: 0.15, 0.12, 0.10`,
+        `Tasks: ${context.processes.length} total, 1 running, ${context.processes.length - 1} sleeping`,
         cpuLine,
-        mem,
+        'MiB Mem :   7966 total,   3726 free,   2291 used,   1949 buff/cache',
         '',
-        header,
-        ...formattedRows.map(r => r.row)
+        '  PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND',
+        ...rows.map(r => r.row)
     ];
     return { output: output.join('\n'), exitCode: 0 };
 });
 
 // ======================================================================
-//  kill — simulated
+//  kill — send a signal to a process
 // ======================================================================
-CommandRegistry.register('kill', async (args, context) => {
+CommandRegistry.register('kill', async (args, context, input) => {
     if (args.length === 0) return { output: '', error: 'kill: missing operand', exitCode: 1 };
-
-    // Support -9 flag
-    const force = args.includes('-9');
     const pids = args.filter(a => !a.startsWith('-')).map(Number);
-
     if (pids.some(isNaN)) return { output: '', error: 'kill: invalid PID', exitCode: 1 };
-
     const newProcesses = context.processes.filter(p => !pids.includes(p.pid));
-
-    if (newProcesses.length === context.processes.length) {
-        return { output: '', error: `kill: (${pids.join(' ')}) - No such process`, exitCode: 1 };
-    }
-
+    if (newProcesses.length === context.processes.length) return { output: '', error: `kill: (${pids.join(' ')}) - No such process`, exitCode: 1 };
     context.updateProcesses(newProcesses);
     return { output: '', exitCode: 0 };
 });
 
 // ======================================================================
-//  head / tail — display beginning/end of file
+//  head / tail — output the first / last part of files
 // ======================================================================
-CommandRegistry.register('head', async (args, context) => {
+CommandRegistry.register('head', async (args, context, input) => {
     let lines = 10;
-    const paths: string[] = [];
-    for (let i = 0; i < args.length; i++) {
-        if (args[i] === '-n' && args[i + 1]) { lines = parseInt(args[++i], 10); }
-        else if (!args[i].startsWith('-')) { paths.push(args[i]); }
-    }
-    if (paths.length === 0) return { output: '', error: 'head: missing file', exitCode: 1 };
-
-    const content = context.vfs.readFile(paths[0], context.userId);
-    if (typeof content !== 'string') return { output: '', error: `head: ${paths[0]}: No such file`, exitCode: 1 };
-
+    const paths = args.filter(a => {
+        if (a === '-n' && args[args.indexOf(a) + 1]) { lines = parseInt(args[args.indexOf(a) + 1], 10); return false; }
+        return !a.startsWith('-') && isNaN(parseInt(a, 10)); // simple filter
+    });
+    const content = paths.length > 0 ? context.vfs.readFile(paths[0], context.userId) : await readStream(input);
+    if (typeof content !== 'string') return { output: '', error: `head: Error reading input`, exitCode: 1 };
     return { output: content.split('\n').slice(0, lines).join('\n'), exitCode: 0 };
 });
 
-CommandRegistry.register('tail', async (args, context) => {
+CommandRegistry.register('tail', async (args, context, input) => {
     let lines = 10;
-    const paths: string[] = [];
-    for (let i = 0; i < args.length; i++) {
-        if (args[i] === '-n' && args[i + 1]) { lines = parseInt(args[++i], 10); }
-        else if (!args[i].startsWith('-')) { paths.push(args[i]); }
-    }
-    if (paths.length === 0) return { output: '', error: 'tail: missing file', exitCode: 1 };
-
-    const content = context.vfs.readFile(paths[0], context.userId);
-    if (typeof content !== 'string') return { output: '', error: `tail: ${paths[0]}: No such file`, exitCode: 1 };
-
+    const paths = args.filter(a => {
+        if (a === '-n' && args[args.indexOf(a) + 1]) { lines = parseInt(args[args.indexOf(a) + 1], 10); return false; }
+        return !a.startsWith('-') && isNaN(parseInt(a, 10));
+    });
+    const content = paths.length > 0 ? context.vfs.readFile(paths[0], context.userId) : await readStream(input);
+    if (typeof content !== 'string') return { output: '', error: `tail: Error reading input`, exitCode: 1 };
     const allLines = content.split('\n');
     return { output: allLines.slice(Math.max(0, allLines.length - lines)).join('\n'), exitCode: 0 };
 });
+
+// ======================================================================
+//  wc — print newline, word, and byte counts for each file
+// ======================================================================
+CommandRegistry.register('wc', async (args, context, input) => {
+    let countLines = args.includes('-l'), countWords = args.includes('-w'), countChars = args.includes('-c') || args.includes('-m');
+    if (!countLines && !countWords && !countChars) countLines = countWords = countChars = true;
+    const paths = args.filter(a => !a.startsWith('-'));
+
+    const process = (txt: string) => ({
+        l: txt.length === 0 ? 0 : txt.split('\n').filter(l => l.length > 0).length,
+        w: txt.trim().length === 0 ? 0 : txt.trim().split(/\s+/).filter(w => w.length > 0).length,
+        c: txt.length
+    });
+
+    if (paths.length === 0) {
+        const { l, w, c } = process(await readStream(input));
+        return { output: `${countLines ? l : ''} ${countWords ? w : ''} ${countChars ? c : ''}`.trim(), exitCode: 0 };
+    }
+
+    const rows: string[] = [];
+    let tl = 0, tw = 0, tc = 0;
+    for (const p of paths) {
+        const content = context.vfs.readFile(p, context.userId);
+        if (typeof content === 'string') {
+            const { l, w, c } = process(content);
+            tl += l; tw += w; tc += c;
+            rows.push(`${countLines ? l : ''} ${countWords ? w : ''} ${countChars ? c : ''} ${p}`.trim());
+        } else rows.push(`wc: ${p}: No such file`);
+    }
+    if (paths.length > 1) rows.push(`${countLines ? tl : ''} ${countWords ? tw : ''} ${countChars ? tc : ''} total`.trim());
+    return { output: rows.join('\n'), exitCode: 0 };
+});
+
+// ======================================================================
+//  find — search for files in a directory hierarchy
+// ======================================================================
+CommandRegistry.register('find', async (args, context, input) => {
+    const searchPath = args[0] || context.cwd;
+    const results: string[] = [];
+    const walk = async (path: string) => {
+        const res = context.vfs.resolve(path, context.userId);
+        if (typeof res === 'string') return;
+        results.push(path);
+        if (res.type === 'directory' && res.children) {
+            for (const cid of res.children) {
+                const child = context.vfs.getInode(cid);
+                if (child) await walk(path === '/' ? `/${child.name}` : `${path}/${child.name}`);
+            }
+        }
+    };
+    await walk(searchPath);
+    return { output: results.join('\n'), exitCode: 0 };
+});
+
+// ======================================================================
+//  env — run a program in a modified environment
+// ======================================================================
+CommandRegistry.register('env', async (args, context, input) => ({ output: Object.entries(context.env).map(([k, v]) => `${k}=${v}`).join('\n'), exitCode: 0 }));

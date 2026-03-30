@@ -28,6 +28,8 @@ export interface Inode {
     content?: string; // For files
     children?: string[]; // For directories (array of Inode IDs)
     target?: string; // For symlinks (path)
+    isVirtual?: boolean; // For /proc and /dev pseudo-files
+    handler?: (userId: string) => string; // For /proc and /dev pseudo-files
 }
 
 export interface VFSSnapshot {

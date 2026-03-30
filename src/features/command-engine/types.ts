@@ -16,6 +16,7 @@ export interface CommandResult {
     output: string;
     error?: string;
     exitCode: number;
+    stream?: AsyncGenerator<string>; // For high-fidelity streaming pipes
 }
 
 export type RedirectionType = 'overwrite' | 'append' | 'input' | 'stderr' | 'both' | 'heredoc' | 'none';

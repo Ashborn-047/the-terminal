@@ -5,7 +5,7 @@ import { COMMAND_DOCS } from '../../../data/commandDocs';
  * man — per project_documentation.md §4.4:
  * Interactive Command Reference integrated with commandDocs.ts
  */
-CommandRegistry.register('man', async (args) => {
+CommandRegistry.register('man', async (args, context, input) => {
     if (args.length === 0) {
         return {
             output: 'What manual page do you want?\nFor example, try \'man ls\'.',

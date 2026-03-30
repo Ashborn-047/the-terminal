@@ -18,11 +18,14 @@ export class CommandExecutor {
     }
 
     public async execute(pipeline: CommandPipeline, context: CommandContext): Promise<CommandResult> {
-        let lastOutput = '';
+        let lastOutput: string | AsyncGenerator<string> = '';
         let lastResult: CommandResult = { output: '', exitCode: 0 };
 
-        for (const action of pipeline.actions) {
-            const commandFn = CommandRegistry.get(action.name); // Kept CommandRegistry.get as this.registry is not defined
+        for (let i = 0; i < pipeline.actions.length; i++) {
+            const action = pipeline.actions[i];
+            const isLast = i === pipeline.actions.length - 1;
+
+            const commandFn = CommandRegistry.get(action.name);
             if (!commandFn) {
                 return { output: '', error: formatError('COMMAND_NOT_FOUND'), exitCode: 127 };
             }
@@ -58,39 +61,43 @@ export class CommandExecutor {
             const result = await commandFn(expandedArgs, context, input);
             lastResult = result;
 
-            if (result.exitCode !== 0 && action.redirectionType !== 'stderr' && action.redirectionType !== 'both') {
+            if (result.exitCode !== 0 && action.redirectionType !== 'stderr' && action.redirectionType !== 'both' && !isLast) {
                 return result;
             }
 
-            // Handle redirection
+            // If this is the last command, we need a string result for the UI
+            if (isLast) {
+                if (result.stream) {
+                    let finalOutput = '';
+                    for await (const chunk of result.stream) {
+                        finalOutput += chunk;
+                    }
+                    lastResult.output = finalOutput;
+                }
+            } else {
+                // If not last, set the next input
+                lastOutput = result.stream || result.output;
+            }
+
+            // Handle redirection (only if it's the last command or explicitly redirected per action)
             if (action.redirectionType !== 'none' && expandedRedirPath) {
+                const outputToRedirect = lastResult.output; // We collected it above if it was a stream
                 if (action.redirectionType === 'overwrite' || action.redirectionType === 'append') {
                     const fullPath = this.getAbsolutePath(expandedRedirPath, context.cwd);
                     const writeResult = this.handleRedirection(
                         fullPath,
-                        result.output,
+                        outputToRedirect,
                         action.redirectionType,
                         context.userId
                     );
                     if (typeof writeResult === 'object' && 'error' in writeResult) {
-                        return { output: result.output, error: writeResult.error, exitCode: 1 };
+                        return { output: outputToRedirect, error: writeResult.error, exitCode: 1 };
                     }
-                    lastOutput = '';
-                } else if (action.redirectionType === 'stderr' || action.redirectionType === 'both') {
-                    // Route error to file
-                    if (result.error) {
-                        const fullPath = this.getAbsolutePath(expandedRedirPath, context.cwd);
-                        this.vfs.writeFile(fullPath, result.error, context.userId);
-                    }
-                    lastOutput = (action.redirectionType === 'both') ? '' : result.output;
-                } else {
-                    lastOutput = result.output;
                 }
-            } else {
-                lastOutput = result.output;
             }
         }
 
+        // Background check
         if (pipeline.actions.length > 0 && pipeline.actions[pipeline.actions.length - 1].background) {
             const pid = Math.floor(Math.random() * 9000) + 1000;
             const bgAction = pipeline.actions[pipeline.actions.length - 1];
@@ -98,16 +105,10 @@ export class CommandExecutor {
                 ...context.processes,
                 { pid, name: bgAction.name, user: context.userId, startTime: Date.now() }
             ]);
-            return {
-                output: `[1] ${pid}`,
-                exitCode: 0
-            };
+            return { output: `[1] ${pid}\n`, exitCode: 0 };
         }
 
-        return {
-            ...lastResult,
-            output: lastOutput, // This will be empty if redirected, or the final output
-        };
+        return lastResult;
     }
 
     private async resolveSubstitutions(args: string[], context: CommandContext): Promise<string[]> {

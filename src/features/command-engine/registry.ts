@@ -1,6 +1,6 @@
 import { CommandContext, CommandResult } from './types';
 
-export type CommandFunction = (args: string[], context: CommandContext, input?: string) => Promise<CommandResult>;
+export type CommandFunction = (args: string[], context: CommandContext, input: string | AsyncGenerator<string>) => Promise<CommandResult>;
 
 export class CommandRegistry {
     private static commands: Record<string, CommandFunction> = {};
