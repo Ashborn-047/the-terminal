@@ -29,6 +29,9 @@ const parseAnsi = (text: string) => {
     return result;
 };
 
+// ⚡ Bolt: Memoized history entry component to prevent expensive re-renders
+// By wrapping this in React.memo, we avoid re-rendering old terminal output
+// (and re-running parseAnsi) on every single keystroke.
 interface HistoryEntryProps {
     entry: TerminalEntry;
 }
@@ -137,7 +140,7 @@ export const TerminalComponent: React.FC = () => {
         >
             {/* History */}
             <div className="flex-1 overflow-y-auto no-scrollbar scroll-smooth" data-testid="terminal-history">
-                {history.map((entry) => (
+                {history.map((entry: TerminalEntry) => (
                     <HistoryEntry key={entry.id} entry={entry} />
                 ))}
             </div>
