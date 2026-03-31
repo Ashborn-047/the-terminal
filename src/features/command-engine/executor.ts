@@ -3,6 +3,8 @@ import { CommandContext, CommandResult, CommandPipeline, CommandAction, Signal }
 import { CommandRegistry } from './registry';
 import { CommandParser } from './parser';
 import { formatError } from '../../utils/error_codes';
+import { useTerminalStore } from '../../stores/terminalStore';
+
 
 export class CommandExecutor {
     private vfs: VFS;
@@ -60,7 +62,22 @@ export class CommandExecutor {
                 input = heredocLines.join('\n');
             }
 
-            const result = await commandFn(expandedArgs, context, input);
+            // Create a PID for the current execution if not already provided
+            // For now, let's use a temporary high PID for foreground tasks
+            const executionPid = Math.floor(Math.random() * 1000) + 9000;
+            const terminalStore = useTerminalStore.getState();
+
+            const enrichedContext: CommandContext = {
+                ...context,
+                onSignal: (handler) => terminalStore.onSignal(executionPid, handler),
+                removeSignalHandler: (handler) => {
+                    // This is handled by the cleanup in onSignal's return
+                    // but for compatibility we keep it
+                },
+                isInterrupted: () => signal?.aborted || false,
+            };
+
+            const result = await commandFn(expandedArgs, enrichedContext, input);
             lastResult = result;
 
             if (result.exitCode !== 0 && action.redirectionType !== 'stderr' && action.redirectionType !== 'both' && !isLast) {
