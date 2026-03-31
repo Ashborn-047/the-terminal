@@ -19,7 +19,10 @@ interface TerminalState {
     resetProcesses: () => void;
     setForegroundProcess: (pid: number | null) => void;
     sendSignal: (pid: number, sig: Signal) => void;
+    onSignal: (pid: number, handler: (sig: Signal) => void) => () => void;
 }
+
+const signalHandlers = new Map<number, Set<(sig: Signal) => void>>();
 
 export const useTerminalStore = create<TerminalState>((set) => ({
     processes: [],
@@ -30,6 +33,24 @@ export const useTerminalStore = create<TerminalState>((set) => ({
     resetProcesses: () => set({ processes: [] }),
     setForegroundProcess: (pid) => set({ foregroundProcess: pid }),
     sendSignal: (pid, sig) => {
-        // Implement signal emission logic in next commit
+        const handlers = signalHandlers.get(pid);
+        if (handlers) {
+            handlers.forEach((handler) => handler(sig));
+        }
+    },
+    onSignal: (pid, handler) => {
+        if (!signalHandlers.has(pid)) {
+            signalHandlers.set(pid, new Set());
+        }
+        signalHandlers.get(pid)!.add(handler);
+        return () => {
+            const handlers = signalHandlers.get(pid);
+            if (handlers) {
+                handlers.delete(handler);
+                if (handlers.size === 0) {
+                    signalHandlers.delete(pid);
+                }
+            }
+        };
     },
 }));
