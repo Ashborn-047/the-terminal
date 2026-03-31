@@ -215,6 +215,7 @@ CommandRegistry.register('cat', async (args, context, input) => {
         output = await readStream(input);
     } else {
         for (const filePath of filePaths) {
+            if (context.isInterrupted()) break;
             const content = context.vfs.readFile(filePath, context.userId);
             if (typeof content === 'object' && 'error' in content) {
                 error += `cat: ${filePath}: ${content.error}\n`;
