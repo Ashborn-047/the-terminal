@@ -31,6 +31,9 @@ export class CommandExecutor {
 
         try {
             for (let i = 0; i < pipeline.actions.length; i++) {
+            if (signal?.aborted) {
+                return { output: lastResult.output, exitCode: 130 };
+            }
             const action = pipeline.actions[i];
             const isLast = i === pipeline.actions.length - 1;
 
@@ -133,6 +136,9 @@ export class CommandExecutor {
             return { output: `[1] ${pid}\n`, exitCode: 0 };
         }
 
+        if (signal?.aborted) {
+            return { ...lastResult, exitCode: 130 };
+        }
         return lastResult;
         } finally {
             terminalStore.setForegroundProcess(null);
