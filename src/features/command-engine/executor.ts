@@ -18,14 +18,19 @@ export class CommandExecutor {
         if (cwd === '/') return '/' + path;
         return cwd + '/' + path;
     }
-
     public async execute(pipeline: CommandPipeline, context: CommandContext, abortController?: AbortController): Promise<CommandResult> {
         let lastOutput: string | AsyncGenerator<string> = '';
         let lastResult: CommandResult = { output: '', exitCode: 0 };
 
         const signal = abortController?.signal;
 
-        for (let i = 0; i < pipeline.actions.length; i++) {
+        // Track foreground process
+        const initialPid = Math.floor(Math.random() * 1000) + 9000;
+        const terminalStore = useTerminalStore.getState();
+        terminalStore.setForegroundProcess(initialPid);
+
+        try {
+            for (let i = 0; i < pipeline.actions.length; i++) {
             const action = pipeline.actions[i];
             const isLast = i === pipeline.actions.length - 1;
 
@@ -64,7 +69,8 @@ export class CommandExecutor {
 
             // Create a PID for the current execution if not already provided
             // For now, let's use a temporary high PID for foreground tasks
-            const executionPid = Math.floor(Math.random() * 1000) + 9000;
+            // For now, let's use the pipeline-wide PID
+            const executionPid = initialPid;
             const terminalStore = useTerminalStore.getState();
 
             const enrichedContext: CommandContext = {
@@ -128,6 +134,9 @@ export class CommandExecutor {
         }
 
         return lastResult;
+        } finally {
+            terminalStore.setForegroundProcess(null);
+        }
     }
 
     private async resolveSubstitutions(args: string[], context: CommandContext): Promise<string[]> {
