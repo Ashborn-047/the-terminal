@@ -170,6 +170,12 @@ The application combines a virtual filesystem, a custom command engine, a struct
 - Add achievements and badges.
 - Polish UI/UX, animations.
 
+### Phase 7: Signals & Process Management (COMPLETED)
+  - POSIX-like signals (SIGINT, SIGTERM, SIGKILL).
+  - Terminal Ctrl+C interruption support.
+  - Signal-aware command implementations (sleep, cat, grep, kill).
+  - Background process status tracking.
+
 **Timeline:** 4–5 weeks
 
 ### Phase 3: Polish & Scale
