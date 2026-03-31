@@ -1,5 +1,5 @@
 import { CommandRegistry } from '../registry';
-import { CommandContext, CommandResult } from '../types';
+import { CommandContext, CommandResult, Signal } from '../types';
 import { Inode } from '../../vfs/types';
 import { permissionsToOctal } from '../../vfs/vfs';
 import { readStream } from '../utils';
@@ -726,3 +726,30 @@ CommandRegistry.register('find', async (args, context, input) => {
 //  env — run a program in a modified environment
 // ======================================================================
 CommandRegistry.register('env', async (args, context, input) => ({ output: Object.entries(context.env).map(([k, v]) => `${k}=${v}`).join('\n'), exitCode: 0 }));
+
+// ======================================================================
+//  sleep — delay for a specified amount of time
+// ======================================================================
+CommandRegistry.register('sleep', async (args, context, input) => {
+    if (args.length === 0) return { output: '', error: 'sleep: missing operand', exitCode: 1 };
+    const seconds = parseFloat(args[0]);
+    if (isNaN(seconds)) return { output: '', error: `sleep: invalid time interval '${args[0]}'`, exitCode: 1 };
+
+    return new Promise((resolve) => {
+        let timer: any;
+        const cleanup = () => clearTimeout(timer);
+
+        const onSigInt = () => {
+            cleanup();
+            resolve({ output: '', exitCode: 130 });
+        };
+
+        context.onSignal((sig) => {
+            if (sig === Signal.SIGINT) onSigInt();
+        });
+
+        timer = setTimeout(() => {
+            resolve({ output: '', exitCode: 0 });
+        }, seconds * 1000);
+    });
+});
