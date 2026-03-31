@@ -72,6 +72,7 @@ export const TerminalComponent: React.FC = () => {
     const bottomRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
+    const abortControllerRef = useRef<AbortController | null>(null);
 
     // Auto-scroll to bottom using scrollTop to avoid document-level shifts
     useEffect(() => {
@@ -101,8 +102,11 @@ export const TerminalComponent: React.FC = () => {
             setInput('');
             setHistoryIndex(-1);
             setIsExecuting(true);
-            const result = await executeCommand(command);
+            const abortController = new AbortController();
+            abortControllerRef.current = abortController;
+            const result = await executeCommand(command, abortController);
             setIsExecuting(false);
+            abortControllerRef.current = null;
 
             // Micro-interaction: success flash or error shake
             if (result) {
@@ -136,7 +140,9 @@ export const TerminalComponent: React.FC = () => {
         } else if (e.key === 'c' && e.ctrlKey) {
             if (foregroundProcess) {
                 sendSignal(foregroundProcess, Signal.SIGINT);
-                // Visual feedback will be added in next commit
+            }
+            if (abortControllerRef.current) {
+                abortControllerRef.current.abort();
             }
         }
     };

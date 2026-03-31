@@ -157,7 +157,7 @@ export function useTerminal() {
         return currentInput;
     }, [cwd, userId]);
 
-    const executeCommand = useCallback(async (input: string) => {
+    const executeCommand = useCallback(async (input: string, abortController?: AbortController) => {
         const trimmedInput = input.trim();
         if (!trimmedInput) return;
         console.log(`[Terminal] Executing: ${trimmedInput} in ${cwd} as ${userId}`);
@@ -178,6 +178,9 @@ export function useTerminal() {
             updateEnv: (newEnv) => setEnv(newEnv),
             updateProcesses: (newProcesses) => setProcesses(newProcesses),
             prompt: async (message: string) => new Promise(resolve => setPendingPrompt({ message, resolve })),
+            onSignal: () => {},
+            removeSignalHandler: () => {},
+            isInterrupted: () => false,
         };
 
         // Execute compound commands (;, &&, ||)
@@ -186,7 +189,7 @@ export function useTerminal() {
             const pipeline = segment.pipeline;
             if (pipeline.actions.length === 0) continue;
 
-            result = await executorRef.current.execute(pipeline, context);
+            result = await executorRef.current.execute(pipeline, context, abortController);
             if (result.output) outputs.push(result.output);
             if (result.error) outputs.push(result.error);
             console.log(`[Terminal] Result: exitCode=${result.exitCode}, outputLen=${result.output.length}, error=${result.error}`);
@@ -300,7 +303,7 @@ export function useTerminal() {
         const entry: TerminalEntry = {
             id: uuidv4(),
             userId: userId,
-            command: trimmedInput,
+            command: trimmedInput + (result.exitCode === 130 ? '^C' : ''),
             output: isCd ? '' : result.output,
             error: result.error,
             cwd: currentCwd, // record the CWD where it was executed
