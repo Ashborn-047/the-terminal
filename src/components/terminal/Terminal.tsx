@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTerminal } from '../../hooks/useTerminal';
+import { useTerminalStore } from '../../stores/terminalStore';
+import { Signal } from '../../features/command-engine/types';
 import { TerminalEntry } from '../../types/terminal';
 
 const parseAnsi = (text: string) => {
@@ -65,6 +67,8 @@ export const TerminalComponent: React.FC = () => {
     const [historyIndex, setHistoryIndex] = useState(-1);
     const [flashClass, setFlashClass] = useState('');
     const [isExecuting, setIsExecuting] = useState(false);
+    const foregroundProcess = useTerminalStore((state) => state.foregroundProcess);
+    const sendSignal = useTerminalStore((state) => state.sendSignal);
     const bottomRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -129,6 +133,11 @@ export const TerminalComponent: React.FC = () => {
                 setInput('');
             }
             e.preventDefault();
+        } else if (e.key === 'c' && e.ctrlKey) {
+            if (foregroundProcess) {
+                sendSignal(foregroundProcess, Signal.SIGINT);
+                // Visual feedback will be added in next commit
+            }
         }
     };
 
