@@ -382,6 +382,7 @@ CommandRegistry.register('grep', async (args, context, input) => {
         try { regex = new RegExp(pattern, caseInsensitive ? 'i' : ''); } catch (e) { return 0; }
 
         for (let i = 0; i < lines.length; i++) {
+            if (context.isInterrupted()) break;
             const line = lines[i];
             let matches = regex.test(line);
             if (invert) matches = !matches;
@@ -402,6 +403,7 @@ CommandRegistry.register('grep', async (args, context, input) => {
         const inode = resolved as Inode;
 
         if (inode.type === 'file') {
+            if (context.isInterrupted()) return;
             const content = context.vfs.readFile(path, context.userId);
             if (typeof content === 'string') {
                 const prefix = (filePaths.length > 1 || recursive) ? `${path}:` : '';
@@ -410,6 +412,7 @@ CommandRegistry.register('grep', async (args, context, input) => {
             }
         } else if (inode.type === 'directory' && recursive && inode.children) {
             for (const childId of inode.children) {
+                if (context.isInterrupted()) return;
                 const child = context.vfs.getInode(childId);
                 if (child) {
                     const childPath = path === '/' ? `/${child.name}` : `${path}/${child.name}`;
