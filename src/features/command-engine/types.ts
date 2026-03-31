@@ -1,5 +1,14 @@
 import { VFS } from '../vfs/vfs';
 
+export enum Signal {
+    SIGINT = 'SIGINT',
+    SIGTERM = 'SIGTERM',
+    SIGKILL = 'SIGKILL'
+}
+
+export type SignalHandler = (sig: Signal) => void;
+
+
 export interface CommandContext {
     cwd: string;
     userId: string;
@@ -10,6 +19,9 @@ export interface CommandContext {
     updateEnv: (env: Record<string, string>) => void;
     updateProcesses: (processes: any[]) => void;
     prompt?: (message: string) => Promise<string>;
+    onSignal: (handler: SignalHandler) => void;
+    removeSignalHandler: (handler: SignalHandler) => void;
+    isInterrupted: () => boolean;
 }
 
 export interface CommandResult {
