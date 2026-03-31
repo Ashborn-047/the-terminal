@@ -4,6 +4,8 @@ import { Inode } from '../../vfs/types';
 import { permissionsToOctal } from '../../vfs/vfs';
 import { readStream } from '../utils';
 import { logger } from '../../../utils/logger';
+import { useTerminalStore } from '../../../stores/terminalStore';
+
 
 // ======================================================================
 //  pwd — print working directory
@@ -638,11 +640,36 @@ CommandRegistry.register('top', async (args, context, input) => {
 // ======================================================================
 CommandRegistry.register('kill', async (args, context, input) => {
     if (args.length === 0) return { output: '', error: 'kill: missing operand', exitCode: 1 };
+    
+    let signalToEmit = Signal.SIGTERM;
+    const signalArg = args.find(a => a.startsWith('-'));
+    if (signalArg) {
+        const sigNum = parseInt(signalArg.slice(1), 10);
+        if (sigNum === 9) signalToEmit = Signal.SIGKILL;
+        else if (sigNum === 15) signalToEmit = Signal.SIGTERM;
+        else if (sigNum === 2) signalToEmit = Signal.SIGINT;
+        // ... more signals could be added
+    }
+
     const pids = args.filter(a => !a.startsWith('-')).map(Number);
     if (pids.some(isNaN)) return { output: '', error: 'kill: invalid PID', exitCode: 1 };
-    const newProcesses = context.processes.filter(p => !pids.includes(p.pid));
-    if (newProcesses.length === context.processes.length) return { output: '', error: `kill: (${pids.join(' ')}) - No such process`, exitCode: 1 };
-    context.updateProcesses(newProcesses);
+    
+    const terminalStore = useTerminalStore.getState();
+    let found = false;
+    for (const pid of pids) {
+        const proc = context.processes.find(p => p.pid === pid);
+        if (proc) {
+            terminalStore.sendSignal(pid, signalToEmit);
+            found = true;
+            // If SIGKILL or SIGTERM, we also remove it from the process list as a simulation shortcut
+            if (signalToEmit === Signal.SIGKILL || signalToEmit === Signal.SIGTERM) {
+                const nextProcesses = context.processes.filter(p => p.pid !== pid);
+                context.updateProcesses(nextProcesses);
+            }
+        }
+    }
+
+    if (!found) return { output: '', error: `kill: (${pids.join(' ')}) - No such process`, exitCode: 1 };
     return { output: '', exitCode: 0 };
 });
 
