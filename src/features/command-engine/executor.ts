@@ -1,5 +1,5 @@
 import { VFS } from '../vfs/vfs';
-import { CommandContext, CommandResult, CommandPipeline, CommandAction } from './types';
+import { CommandContext, CommandResult, CommandPipeline, CommandAction, Signal } from './types';
 import { CommandRegistry } from './registry';
 import { CommandParser } from './parser';
 import { formatError } from '../../utils/error_codes';
@@ -17,9 +17,11 @@ export class CommandExecutor {
         return cwd + '/' + path;
     }
 
-    public async execute(pipeline: CommandPipeline, context: CommandContext): Promise<CommandResult> {
+    public async execute(pipeline: CommandPipeline, context: CommandContext, abortController?: AbortController): Promise<CommandResult> {
         let lastOutput: string | AsyncGenerator<string> = '';
         let lastResult: CommandResult = { output: '', exitCode: 0 };
+
+        const signal = abortController?.signal;
 
         for (let i = 0; i < pipeline.actions.length; i++) {
             const action = pipeline.actions[i];
