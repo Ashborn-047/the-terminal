@@ -46,7 +46,11 @@ export class CommandExecutor {
             const resolvedArgs = await this.resolveSubstitutions(action.args, context);
 
             // Expand environment variables
-            const expandedArgs = CommandParser.expand(resolvedArgs, context.env);
+            const envExpandedArgs = CommandParser.expand(resolvedArgs, context.env);
+
+            // Handle shell globbing (e.g., *, ?)
+            const expandedArgs = this.resolveGlobbing(envExpandedArgs, context);
+
             const resolvedRedirPath = action.redirectionPath ? (await this.resolveSubstitutions([action.redirectionPath], context))[0] : undefined;
             const expandedRedirPath = resolvedRedirPath ? CommandParser.expand([resolvedRedirPath], context.env)[0] : undefined;
 
@@ -85,6 +89,22 @@ export class CommandExecutor {
                 },
                 isInterrupted: () => signal?.aborted || false,
             };
+
+            // SUID / SGID Check (if we hypothetically matched commands to VFS executables)
+            // For now, since commands are registered logically and not executed from the VFS,
+            // we will simulate the check here for executable paths if they were in the VFS.
+            // If the command maps to a VFS file (e.g. ./script.sh or /usr/bin/sudo)
+            let effectiveUserId = context.userId;
+            const maybeVfsPath = this.getAbsolutePath(action.name, context.cwd);
+            const maybeVfsInode = this.vfs.getMetadata(maybeVfsPath, context.userId);
+
+            if (typeof maybeVfsInode !== 'string' && maybeVfsInode.type === 'file') {
+                if (maybeVfsInode.permissions.setuid) {
+                    effectiveUserId = maybeVfsInode.ownerId;
+                }
+            }
+
+            enrichedContext.userId = effectiveUserId;
 
             const result = await commandFn(expandedArgs, enrichedContext, input);
             lastResult = result;
@@ -164,6 +184,47 @@ export class CommandExecutor {
             resolved.push(current);
         }
         return resolved;
+    }
+
+    private resolveGlobbing(args: string[], context: CommandContext): string[] {
+        const result: string[] = [];
+        for (const arg of args) {
+            if (!arg.includes('*') && !arg.includes('?')) {
+                result.push(arg);
+                continue;
+            }
+
+            // A very simple glob resolution based on the current directory for now
+            // To be robust it needs to parse directory paths too
+            const isGlob = /^[\w\.\-\*]+$/.test(arg);
+            if (!isGlob) {
+                result.push(arg);
+                continue;
+            }
+
+            const regexPattern = arg
+                .replace(/\./g, '\\.')
+                .replace(/\*/g, '.*')
+                .replace(/\?/g, '.');
+            const regex = new RegExp(`^${regexPattern}$`);
+
+            const dirContent = context.vfs.listChildren(context.cwd, context.userId);
+            if (typeof dirContent !== 'string' && dirContent !== null) {
+                const matches = dirContent
+                    .map(child => child.name)
+                    .filter(name => regex.test(name));
+
+                if (matches.length > 0) {
+                    result.push(...matches.sort());
+                } else {
+                    // Bash usually leaves the glob as-is if no match
+                    result.push(arg);
+                }
+            } else {
+                result.push(arg);
+            }
+        }
+        return result;
     }
 
     private handleRedirection(path: string, content: string, type: 'overwrite' | 'append', userId: string) {

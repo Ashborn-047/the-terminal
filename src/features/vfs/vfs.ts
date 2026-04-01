@@ -233,9 +233,16 @@ export class VFS {
 
     private hasPermission(inode: Inode, userId: string, type: keyof VFSPermissions): boolean {
         if (userId === 'root') return true;
+
+        // Effective user/group IDs logic. In a real system, euid/egid are determined
+        // at process creation based on setuid/setgid bits of the executable.
+        // For the VFS, we can at least ensure standard checks. We assume `userId` here
+        // is the effective user ID. SUID is handled by the command executor elevating it.
+
         if (inode.ownerId === userId) return inode.permissions.owner[type];
-        // Note: simplified group check
+        // Note: simplified group check - in reality, user belongs to multiple groups
         if (inode.groupId === userId) return inode.permissions.group[type];
+
         return inode.permissions.others[type];
     }
 
