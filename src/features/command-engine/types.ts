@@ -3,48 +3,21 @@ import { VFS } from '../vfs/vfs';
 export enum Signal {
     SIGINT = 'SIGINT',
     SIGTERM = 'SIGTERM',
-    SIGKILL = 'SIGKILL',
-    SIGSTOP = 'SIGSTOP',
-    SIGCONT = 'SIGCONT',
-    SIGTSTP = 'SIGTSTP' // Ctrl+Z
+    SIGKILL = 'SIGKILL'
 }
 
 export type SignalHandler = (sig: Signal) => void;
 
-export type JobStatus = 'Running' | 'Stopped' | 'Terminated' | 'Done';
-
-export interface Job {
-    jid: number;
-    pid: number;
-    command: string;
-    status: JobStatus;
-    isBackground: boolean;
-}
-
-export interface Process {
-    pid: number;
-    ppid: number | null;
-    name: string;
-    uid: string;
-    gid: string;
-    status: JobStatus;
-    startTime: number;
-}
 
 export interface CommandContext {
     cwd: string;
     userId: string;
-    groups: string[];
     vfs: VFS;
     env: Record<string, string>;
     history: string[];
-    processes: Process[];
-    jobs: Job[];
-    aliases: Record<string, string>;
+    processes: { pid: number; name: string; user: string; startTime: number; status?: string }[];
     updateEnv: (env: Record<string, string>) => void;
-    updateProcesses: (processes: Process[]) => void;
-    updateJobs: (jobs: Job[]) => void;
-    updateAliases: (aliases: Record<string, string>) => void;
+    updateProcesses: (processes: any[]) => void;
     prompt?: (message: string) => Promise<string>;
     onSignal: (handler: SignalHandler) => void;
     removeSignalHandler: (handler: SignalHandler) => void;

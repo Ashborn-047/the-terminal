@@ -49,10 +49,10 @@ export const ERROR_CODES: Record<string, SystemError> = {
 
 /**
  * Formats a system error for display.
- * Returns standard POSIX-compliant error strings: "program: message"
+ * Returns standard POSIX-compliant error strings.
  */
-export function formatError(errorKey: keyof typeof ERROR_CODES | string, program?: string): string {
+export function formatError(errorKey: keyof typeof ERROR_CODES | string): string {
     const error = ERROR_CODES[errorKey] || ERROR_CODES.GENERIC_INTERNAL_ERROR;
-    const message = error.message;
-    return program ? `${program}: ${message}` : message;
+    // Strip custom error codes to preserve immersion and muscle memory
+    return error.message;
 }
