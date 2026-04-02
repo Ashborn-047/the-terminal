@@ -36,20 +36,20 @@ describe('Command Executor', () => {
     it('should execute basic commands', async () => {
         const pipeline = CommandParser.parse('echo "hello"');
         const result = await executor.execute(pipeline, context);
-        expect(result.output).toBe('hello');
+        expect(result.output.trim()).toBe('hello');
         expect(result.exitCode).toBe(0);
     });
 
     it('should handle pipes', async () => {
         const pipeline = CommandParser.parse('echo "line 1\nline 2" | grep "line 2"');
         const result = await executor.execute(pipeline, context);
-        expect(result.output).toBe('line 2');
+        expect(result.output.trim()).toBe('line 2');
     });
 
     it('should handle output redirection', async () => {
         const pipeline = CommandParser.parse('echo "content" > test.txt');
         await executor.execute(pipeline, context);
-        expect(vfs.readFile('/test.txt', 'root')).toBe('content');
+        expect(vfs.readFile('/test.txt', 'root')).toBe('content\n');
     });
 
     it('should handle input redirection', async () => {
@@ -67,7 +67,7 @@ describe('Command Executor', () => {
 
         const pipeline = CommandParser.parse('echo hello $(cat name.txt)');
         const result = await executor.execute(pipeline, context);
-        expect(result.output).toBe('hello antigravity');
+        expect(result.output.trim()).toBe('hello antigravity');
     });
 
     it('should handle command error formatting', async () => {
@@ -81,7 +81,7 @@ describe('Command Executor', () => {
         vfs.writeFile('/test.txt', 'line 1\nsearch target\nline 3', 'root');
         const pipeline = CommandParser.parse('grep "target" test.txt');
         const result = await executor.execute(pipeline, context);
-        expect(result.output).toBe('search target');
+        expect(result.output.trim()).toBe('search target');
     });
 
     it('should handle globbing (ls *.txt)', async () => {

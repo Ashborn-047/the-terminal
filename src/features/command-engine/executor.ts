@@ -268,10 +268,9 @@ export class CommandExecutor {
                     for (const child of children) {
                         const childPath = currentPath === '/' ? `/${child.name}` : `${currentPath}/${child.name}`;
                         const relativeToScanBase = scan.base === '.' 
-                            ? (childPath.startsWith(context.cwd) ? childPath.substring(context.cwd.length).replace(/^\//, '') : childPath)
+                            ? child.name 
                             : childPath.substring(this.getAbsolutePath(scan.base, context.cwd).length).replace(/^\//, '');
 
-                        // Dotfile logic: picomatch handles this based on pattern
                         if (picomatch(arg)(childPath) || picomatch(arg)(relativeToScanBase)) {
                             matches.push(childPath);
                         }

@@ -162,12 +162,40 @@ export class CommandParser {
     }
 
     private static tokenize(input: string): string[] {
-        const regex = /\$\((?:[^)(]|\([^)(]*\))*\)|[^\s"']+|"([^"]*)"|'([^']*)'/g;
         const tokens: string[] = [];
-        let match;
+        let i = 0;
+        let current = '';
+        let inSingle = false;
+        let inDouble = false;
 
-        while ((match = regex.exec(input)) !== null) {
-            tokens.push(match[1] || match[2] || match[0]);
+        while (i < input.length) {
+            const c = input[i];
+
+            if (c === "'" && !inDouble) {
+                inSingle = !inSingle;
+                i++;
+                continue;
+            }
+            if (c === '"' && !inSingle) {
+                inDouble = !inDouble;
+                i++;
+                continue;
+            }
+
+            if (!inSingle && !inDouble && /\s/.test(c)) {
+                if (current.length > 0) {
+                    tokens.push(current);
+                    current = '';
+                }
+                while (i + 1 < input.length && /\s/.test(input[i + 1])) i++;
+            } else {
+                current += c;
+            }
+            i++;
+        }
+
+        if (current.length > 0) {
+            tokens.push(current);
         }
 
         return tokens;

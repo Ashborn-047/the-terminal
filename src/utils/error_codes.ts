@@ -25,6 +25,11 @@ export const ERROR_CODES: Record<string, SystemError> = {
         message: 'No such file or directory.',
         description: 'The specified path does not exist.'
     },
+    NO_SUCH_FILE_OR_DIRECTORY: {
+        code: 'E_003',
+        message: 'No such file or directory.',
+        description: 'The specified path does not exist.'
+    },
     DIRECTORY_ALREADY_EXISTS: {
         code: 'E_004',
         message: 'File exists.',

@@ -184,20 +184,6 @@ export class VFS {
         this.processProvider = provider;
     }
 
-    public addSyscallListener(listener: (syscall: string, args: any[], result: any) => void): void {
-        this.syscallListeners.push(listener);
-    }
-
-    public removeSyscallListener(listener: (syscall: string, args: any[], result: any) => void): void {
-        this.syscallListeners = this.syscallListeners.filter(l => l !== listener);
-    }
-
-    private notifySyscall(syscall: string, args: any[], result: any): void {
-        for (const listener of this.syscallListeners) {
-            listener(syscall, args, result);
-        }
-    }
-
     private initializeDefaultFS() {
         this.mkdir('/', 'bin', 'root');
         this.mkdir('/', 'etc', 'root');
@@ -606,6 +592,25 @@ export class VFS {
         return null;
     }
 
+    public readFile(path: string, userId: string = 'root', groups: string[] = ['root']): string | { error: string } {
+        const resolved = this.resolve(path, userId, groups);
+        if (typeof resolved === 'string') {
+            this.notifySyscall('openat', [path, 'O_RDONLY'], -2); // ENOENT
+            return { error: resolved };
+        }
+        
+        if (!this.hasPermission(resolved, userId, groups, 'read')) {
+            this.notifySyscall('openat', [path, 'O_RDONLY'], -13); // EACCES
+            return { error: 'Permission denied' };
+        }
+
+        this.notifySyscall('openat', [path, 'O_RDONLY'], 3); // success
+        this.notifySyscall('read', [3, resolved.content || '', 1024], resolved.content?.length || 0);
+        this.notifySyscall('close', [3], 0);
+
+        return resolved.content || '';
+    }
+
     public listChildren(path: string, userId: string = 'root', groups: string[] = []): Inode[] | null | string {
         const r = this.resolve(path, userId, groups);
         if (typeof r === 'string') return r;
@@ -746,5 +751,17 @@ export class VFS {
                 result.groupId = username;
             }
         }
+    }
+
+    public addSyscallListener(listener: (syscall: string, args: any[], result: any) => void): void {
+        this.syscallListeners.push(listener);
+    }
+
+    public removeSyscallListener(listener: (syscall: string, args: any[], result: any) => void): void {
+        this.syscallListeners = this.syscallListeners.filter(l => l !== listener);
+    }
+
+    private notifySyscall(syscall: string, args: any[], result: any): void {
+        this.syscallListeners.forEach(listener => listener(syscall, args, result));
     }
 }

@@ -14,6 +14,7 @@ export const lsof = async (args: string[], context: CommandContext): Promise<Com
     lines.push('bash        1001 guest    0u      CHR        1,3      0t0       1025 /dev/pts/0');
     lines.push('bash        1001 guest    1u      CHR        1,3      0t0       1025 /dev/pts/0');
     lines.push('bash        1001 guest    2u      CHR        1,3      0t0       1025 /dev/pts/0');
+    lines.push('bash        1001 guest    3r      CHR        1,3      0t0       1025 /dev/null');
 
     // Dynamic output for running processes
     for (const p of context.processes) {
