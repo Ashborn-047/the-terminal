@@ -1,5 +1,4 @@
-import { CommandRegistry } from '../registry';
-import { logger } from '../../../utils/logger';
+import { CommandContext, CommandResult } from '../types';
 
 /**
  * apt / apt-get — simulated package manager
@@ -17,9 +16,9 @@ const APT_PACKAGES: Record<string, { version: string; description: string; size:
     'python3': { version: '3.11.2-1', description: 'interactive high-level object-oriented language', size: '32 KB' },
 };
 
-async function handleApt(args: string[], context: any) {
+export const apt = async (args: string[], context: CommandContext): Promise<CommandResult> => {
     if (args.length === 0) {
-        return { output: 'apt 2.6.0 (amd64)\nUsage: apt [options] command', exitCode: 0 };
+        return { output: 'apt 2.6.0 (amd64)\nUsage: apt [options] command\n', exitCode: 0 };
     }
 
     const command = args[0];
@@ -34,7 +33,7 @@ async function handleApt(args: string[], context: any) {
                         'Get:3 http://deb.debian.org/debian-security bookworm-security InRelease [48.0 kB]\n' +
                         'Reading package lists... Done\n' +
                         'Building dependency tree... Done\n' +
-                        'All packages are up to date.',
+                        'All packages are up to date.\n',
                 exitCode: 0
             };
 
@@ -59,18 +58,17 @@ async function handleApt(args: string[], context: any) {
                         `(Reading database ... 24567 files and directories currently installed.)\n` +
                         `Preparing to unpack .../${pkgName}_${pkg.version}_amd64.deb ...\n` +
                         `Unpacking ${pkgName} (${pkg.version}) ...\n` +
-                        `Setting up ${pkgName} (${pkg.version}) ...`,
+                        `Setting up ${pkgName} (${pkg.version}) ...\n`,
                 exitCode: 0
             };
 
         case 'search':
-            if (!pkgName) return { output: 'Sorting... Done\nFull Text Search... Done', exitCode: 0 };
-            const results = Object.entries(APT_PACKAGES)
-                .filter(([name]) => name.includes(pkgName))
+            const searchResults = Object.entries(APT_PACKAGES)
+                .filter(([name]) => !pkgName || name.includes(pkgName))
                 .map(([name, data]) => `${name}/${name} ${data.version} amd64\n  ${data.description}`);
             
             return {
-                output: `Sorting... Done\nFull Text Search... Done\n${results.join('\n')}`,
+                output: `Sorting... Done\nFull Text Search... Done\n${searchResults.join('\n')}\n`,
                 exitCode: 0
             };
 
@@ -78,14 +76,13 @@ async function handleApt(args: string[], context: any) {
             const allPkgs = Object.entries(APT_PACKAGES)
                 .map(([name, data]) => `${name}/${name} ${data.version} amd64 [installed]`);
             return {
-                output: `Listing... Done\n${allPkgs.join('\n')}`,
+                output: `Listing... Done\n${allPkgs.join('\n')}\n`,
                 exitCode: 0
             };
 
         default:
-            return { output: `E: Invalid operation ${command}`, exitCode: 1 };
+            return { output: `E: Invalid operation ${command}\n`, exitCode: 1 };
     }
-}
+};
 
-CommandRegistry.register('apt', async (args, context, input) => handleApt(args, context));
-CommandRegistry.register('apt-get', async (args, context, input) => handleApt(args, context));
+export const aptGet = apt;

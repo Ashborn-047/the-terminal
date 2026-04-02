@@ -1,14 +1,14 @@
-import { CommandRegistry } from '../registry';
+import { CommandContext, CommandResult } from '../types';
 import { COMMAND_DOCS } from '../../../data/commandDocs';
 
 /**
  * man — per project_documentation.md §4.4:
  * Interactive Command Reference integrated with commandDocs.ts
  */
-CommandRegistry.register('man', async (args, context, input) => {
+export const man = async (args: string[], context: CommandContext): Promise<CommandResult> => {
     if (args.length === 0) {
         return {
-            output: 'What manual page do you want?\nFor example, try \'man ls\'.',
+            output: 'What manual page do you want?\nFor example, try \'man ls\'.\n',
             exitCode: 0,
         };
     }
@@ -56,5 +56,5 @@ CommandRegistry.register('man', async (args, context, input) => {
         lines.push(`       ${doc.seeAlso.map(s => `${s}(1)`).join(', ')}`);
     }
 
-    return { output: lines.join('\n'), exitCode: 0 };
-});
+    return { output: lines.join('\n') + '\n', exitCode: 0 };
+};

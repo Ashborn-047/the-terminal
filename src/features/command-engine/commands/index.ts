@@ -43,6 +43,9 @@ import { tar, gzip, gunzip } from './archive';
 import { useradd, passwd } from './admin';
 import { dig } from './network';
 import { yum, dnf } from './pkg';
+import { man } from './man';
+import { apt, aptGet } from './apt';
+import { script } from './script';
 
 // Register Core Commands
 CommandRegistry.register('ls', ls);
@@ -110,7 +113,9 @@ CommandRegistry.register('passwd', passwd);
 CommandRegistry.register('dig', dig);
 CommandRegistry.register('yum', yum);
 CommandRegistry.register('dnf', dnf);
+CommandRegistry.register('man', man);
+CommandRegistry.register('apt', apt);
+CommandRegistry.register('apt-get', aptGet);
+CommandRegistry.register('script', script);
 
-// Keep existing legacy modules for now
-import './man';
-import './apt';
+// Finished modularization of legacy modules
