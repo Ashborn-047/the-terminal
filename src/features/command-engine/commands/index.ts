@@ -35,6 +35,14 @@ import { which } from './which';
 import { hostname } from './hostname';
 import { rmdir, dirname, basename } from './path';
 import { jobs, fg, bg } from './process';
+import { alias, unalias } from './alias';
+import { sort, uniq, cut } from './text';
+import { tee, xargs } from './io';
+import { sed, awk } from './sed_awk';
+import { tar, gzip, gunzip } from './archive';
+import { useradd, passwd } from './admin';
+import { dig } from './network';
+import { yum, dnf } from './pkg';
 
 // Register Core Commands
 CommandRegistry.register('ls', ls);
@@ -85,8 +93,24 @@ CommandRegistry.register('basename', basename);
 CommandRegistry.register('jobs', jobs);
 CommandRegistry.register('fg', fg);
 CommandRegistry.register('bg', bg);
+CommandRegistry.register('alias', alias);
+CommandRegistry.register('unalias', unalias);
+CommandRegistry.register('sort', sort);
+CommandRegistry.register('uniq', uniq);
+CommandRegistry.register('cut', cut);
+CommandRegistry.register('tee', tee);
+CommandRegistry.register('xargs', xargs);
+CommandRegistry.register('sed', sed);
+CommandRegistry.register('awk', awk);
+CommandRegistry.register('tar', tar);
+CommandRegistry.register('gzip', gzip);
+CommandRegistry.register('gunzip', gunzip);
+CommandRegistry.register('useradd', useradd);
+CommandRegistry.register('passwd', passwd);
+CommandRegistry.register('dig', dig);
+CommandRegistry.register('yum', yum);
+CommandRegistry.register('dnf', dnf);
 
 // Keep existing legacy modules for now
 import './man';
-import './extended';
 import './apt';

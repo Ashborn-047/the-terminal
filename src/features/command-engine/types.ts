@@ -40,9 +40,11 @@ export interface CommandContext {
     history: string[];
     processes: Process[];
     jobs: Job[];
+    aliases: Record<string, string>;
     updateEnv: (env: Record<string, string>) => void;
     updateProcesses: (processes: Process[]) => void;
     updateJobs: (jobs: Job[]) => void;
+    updateAliases: (aliases: Record<string, string>) => void;
     prompt?: (message: string) => Promise<string>;
     onSignal: (handler: SignalHandler) => void;
     removeSignalHandler: (handler: SignalHandler) => void;

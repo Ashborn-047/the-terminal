@@ -20,24 +20,46 @@ export class CommandExecutor {
     }
 
     public async execute(pipeline: CommandPipeline, context: CommandContext, abortController?: AbortController): Promise<CommandResult> {
+        // Alias expansion: expand the first word if it matches an alias
+        // Note: in a real shell, this happens before parsing and recursively.
+        let updatedPipeline = pipeline;
+        if (pipeline.actions.length > 0) {
+            const firstAction = pipeline.actions[0];
+            let expandedName = firstAction.name;
+            let expanded = true;
+            const visited = new Set<string>();
+
+            while (expanded && context.aliases[expandedName]) {
+                if (visited.has(expandedName)) break; // Prevent infinite loop
+                visited.add(expandedName);
+                expandedName = context.aliases[expandedName];
+            }
+
+            if (expandedName !== firstAction.name) {
+                // If it expanded to multiple words, we'd need to re-parse.
+                // For now, support simple 1-to-1 or 1-to-string mapping.
+                updatedPipeline = CommandParser.parse(expandedName + (firstAction.args.length ? ' ' + firstAction.args.join(' ') : ''));
+            }
+        }
+
         const terminalStore = useTerminalStore.getState();
-        const isBackground = pipeline.actions.some(a => a.background);
+        const isBackground = updatedPipeline.actions.some(a => a.background);
 
         if (isBackground) {
             const jid = terminalStore.jobs.length + 1;
             const pid = Math.floor(Math.random() * 9000) + 1000;
-            const commandStr = pipeline.actions.map(a => a.name + (a.args.length ? ' ' + a.args.join(' ') : '')).join(' | ');
+            const commandStr = updatedPipeline.actions.map(a => a.name + (a.args.length ? ' ' + a.args.join(' ') : '')).join(' | ');
 
             const job: Job = { jid, pid, command: commandStr, status: 'Running', isBackground: true };
             terminalStore.addJob(job);
 
             // Execute in background
-            this.executeAsync(pipeline, context, pid, jid);
+            this.executeAsync(updatedPipeline, context, pid, jid);
 
             return { output: `[${jid}] ${pid}\n`, exitCode: 0 };
         }
 
-        return this.executeForeground(pipeline, context, abortController);
+        return this.executeForeground(updatedPipeline, context, abortController);
     }
 
     private async executeForeground(pipeline: CommandPipeline, context: CommandContext, abortController?: AbortController): Promise<CommandResult> {
