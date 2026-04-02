@@ -30,7 +30,7 @@ export function useTerminal() {
         TERM: 'xterm-256color',
         SHELL: '/bin/bash',
     });
-    const { processes, setProcesses } = useTerminalStore();
+    const { processes, setProcesses, jobs, setJobs } = useTerminalStore();
 
     // Sync terminal identity when Zustand hydrates the persisted username
     useEffect(() => {
@@ -171,14 +171,19 @@ export function useTerminal() {
         const context: CommandContext = {
             cwd: currentCwd,
             userId: currentUserId,
+            groups: ['guest'], // Map from user store in real scenario
             vfs: vfsRef.current,
             env,
             history: historyRef.current.map(h => h.command),
             processes,
+            jobs,
+            aliases: {}, 
             updateEnv: (newEnv) => setEnv(newEnv),
             updateProcesses: (newProcesses) => setProcesses(newProcesses),
+            updateJobs: (newJobs) => setJobs(newJobs),
+            updateAliases: () => {}, 
             prompt: async (message: string) => new Promise(resolve => setPendingPrompt({ message, resolve })),
-            onSignal: () => {},
+            onSignal: () => () => {},
             removeSignalHandler: () => {},
             isInterrupted: () => false,
         };

@@ -3,7 +3,7 @@ import { VFS } from '../../vfs/vfs';
 import { CommandExecutor } from '../executor';
 import { CommandParser } from '../parser';
 import { CommandContext } from '../types';
-import '../commands/core'; // Register commands
+import '../commands'; // Register commands via modular index
 
 describe('Command Executor', () => {
     let vfs: VFS;
@@ -21,8 +21,12 @@ describe('Command Executor', () => {
             env: { HOME: '/home/root' },
             history: [],
             processes: [],
+            jobs: [],
+            aliases: {},
             updateEnv: () => { },
             updateProcesses: () => { },
+            updateJobs: () => { },
+            updateAliases: () => { },
             onSignal: () => () => { },
             removeSignalHandler: () => { },
             isInterrupted: () => false,
