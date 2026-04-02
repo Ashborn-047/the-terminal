@@ -9,7 +9,7 @@ export const ps = async (args: string[], context: CommandContext): Promise<Comma
         const timeStr = `00:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
         if (showAll) {
             const cpu = p.name === 'cryptominer' ? '99.9' : '0.0';
-            return `${p.user.padEnd(8)} ${p.pid.toString().padStart(5)}  ${cpu}  0.1  2356   1400 pts/0    ${p.status || 'S'}    12:00   ${timeStr} ${p.name}`;
+            return `${(p.uid || 'root').padEnd(8)} ${p.pid.toString().padStart(5)}  ${cpu}  0.1  2356   1400 pts/0    ${p.status || 'S'}    12:00   ${timeStr} ${p.name}`;
         }
         return `${p.pid.toString().padStart(5)} pts/0    ${timeStr} ${p.name}`;
     });
@@ -22,7 +22,7 @@ export const top = async (args: string[], context: CommandContext): Promise<Comm
     const rows = context.processes.map(p => {
         const elapsed = Math.floor((Date.now() - p.startTime) / 1000), timeStr = `${Math.floor(elapsed / 60)}:${(elapsed % 60).toString().padStart(2, '0')}.00`;
         const cpu = p.name === 'cryptominer' ? 99.9 : 0.0;
-        return { cpu, row: `${p.pid.toString().padStart(5)} ${p.user.padEnd(8)} 20   0    2356   1400    800 ${p.status || 'S'}  ${cpu.toFixed(1).padStart(4)}   0.0   ${timeStr.padStart(7)} ${p.name}` };
+        return { cpu, row: `${p.pid.toString().padStart(5)} ${(p.uid || 'root').padEnd(8)} 20   0    2356   1400    800 ${p.status || 'S'}  ${cpu.toFixed(1).padStart(4)}   0.0   ${timeStr.padStart(7)} ${p.name}` };
     }).sort((a, b) => b.cpu - a.cpu);
 
     const output = [
@@ -42,30 +42,88 @@ export const kill = async (args: string[], context: CommandContext): Promise<Com
     
     let signalToEmit = Signal.SIGTERM;
     const signalArg = args.find(a => a.startsWith('-'));
+    const targets = args.filter(a => !a.startsWith('-'));
+
     if (signalArg) {
-        const sigNum = parseInt(signalArg.slice(1), 10);
-        if (sigNum === 9) signalToEmit = Signal.SIGKILL;
-        else if (sigNum === 15) signalToEmit = Signal.SIGTERM;
-        else if (sigNum === 2) signalToEmit = Signal.SIGINT;
+        const sigStr = signalArg.slice(1).toUpperCase();
+        if (sigStr === '9' || sigStr === 'KILL') signalToEmit = Signal.SIGKILL;
+        else if (sigStr === '15' || sigStr === 'TERM') signalToEmit = Signal.SIGTERM;
+        else if (sigStr === '2' || sigStr === 'INT') signalToEmit = Signal.SIGINT;
+        else if (sigStr === '19' || sigStr === 'STOP') signalToEmit = Signal.SIGSTOP;
+        else if (sigStr === '18' || sigStr === 'CONT') signalToEmit = Signal.SIGCONT;
     }
 
-    const pids = args.filter(a => !a.startsWith('-')).map(Number);
-    if (pids.some(isNaN)) return { output: '', error: 'kill: invalid PID', exitCode: 1 };
-    
     const terminalStore = useTerminalStore.getState();
     let found = false;
-    for (const pid of pids) {
-        const proc = context.processes.find(p => p.pid === pid);
+    let output = '';
+
+    for (const target of targets) {
+        let pid = parseInt(target, 10);
+        
+        // Support %JID
+        if (target.startsWith('%')) {
+            const jid = parseInt(target.slice(1), 10);
+            const job = context.jobs.find(j => j.jid === jid);
+            if (job) pid = job.pid;
+        }
+
+        if (isNaN(pid)) {
+            output += `kill: ${target}: invalid PID or job ID\n`;
+            continue;
+        }
+
+        const proc = context.processes.find(p => p.pid === pid) || context.jobs.find(j => j.pid === pid);
         if (proc) {
             terminalStore.sendSignal(pid, signalToEmit);
             found = true;
+            
+            // Realism: Terminating a job updates the job table
             if (signalToEmit === Signal.SIGKILL || signalToEmit === Signal.SIGTERM) {
-                const nextProcesses = context.processes.filter(p => p.pid !== pid);
-                context.updateProcesses(nextProcesses);
+                const jid = context.jobs.find(j => j.pid === pid)?.jid;
+                if (jid !== undefined) terminalStore.updateJobStatus(jid, 'Terminated');
             }
+        } else {
+            output += `kill: (${target}) - No such process\n`;
         }
     }
 
-    if (!found) return { output: '', error: `kill: (${pids.join(' ')}) - No such process`, exitCode: 1 };
-    return { output: '', exitCode: 0 };
+    return { output, exitCode: found ? 0 : 1 };
+};
+
+export const jobs = async (args: string[], context: CommandContext): Promise<CommandResult> => {
+    if (context.jobs.length === 0) return { output: '', exitCode: 0 };
+    
+    const lines = context.jobs.map(j => {
+        const current = j.jid === Math.max(...context.jobs.map(job => job.jid)) ? '+' : '-';
+        return `[${j.jid}]${current}  ${j.status.padEnd(10)} ${j.command}`;
+    });
+    
+    return { output: lines.join('\n') + '\n', exitCode: 0 };
+};
+
+export const fg = async (args: string[], context: CommandContext): Promise<CommandResult> => {
+    const jid = args.length > 0 ? parseInt(args[0].replace('%', ''), 10) : (context.jobs.length > 0 ? Math.max(...context.jobs.map(j => j.jid)) : null);
+    if (jid === null || isNaN(jid)) return { output: '', error: 'fg: no such job', exitCode: 1 };
+
+    const job = context.jobs.find(j => j.jid === jid);
+    if (!job) return { output: '', error: 'fg: no such job', exitCode: 1 };
+
+    // In a simulator, we print the command and "bring" it to the foreground
+    // by effectively doing nothing (it's already backgrounded and will finish)
+    // but the UI should show it as foregrounded.
+    return { output: `${job.command}\n`, exitCode: 0 };
+};
+
+export const bg = async (args: string[], context: CommandContext): Promise<CommandResult> => {
+    const jid = args.length > 0 ? parseInt(args[0].replace('%', ''), 10) : (context.jobs.length > 0 ? Math.max(...context.jobs.map(j => j.jid)) : null);
+    if (jid === null || isNaN(jid)) return { output: '', error: 'bg: no such job', exitCode: 1 };
+
+    const job = context.jobs.find(j => j.jid === jid);
+    if (!job) return { output: '', error: 'bg: no such job', exitCode: 1 };
+
+    const terminalStore = useTerminalStore.getState();
+    terminalStore.sendSignal(job.pid, Signal.SIGCONT);
+    terminalStore.updateJobStatus(job.jid, 'Running');
+
+    return { output: `[${job.jid}] ${job.command} &\n`, exitCode: 0 };
 };

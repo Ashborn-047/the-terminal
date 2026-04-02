@@ -30,6 +30,11 @@ import { env } from './env';
 import { id, groups } from './identity';
 import { su } from './su';
 import { printf } from './printf';
+import { du } from './du';
+import { which } from './which';
+import { hostname } from './hostname';
+import { rmdir, dirname, basename } from './path';
+import { jobs, fg, bg } from './process';
 
 // Register Core Commands
 CommandRegistry.register('ls', ls);
@@ -71,6 +76,15 @@ CommandRegistry.register('id', id);
 CommandRegistry.register('groups', groups);
 CommandRegistry.register('su', su);
 CommandRegistry.register('printf', printf);
+CommandRegistry.register('du', du);
+CommandRegistry.register('which', which);
+CommandRegistry.register('hostname', hostname);
+CommandRegistry.register('rmdir', rmdir);
+CommandRegistry.register('dirname', dirname);
+CommandRegistry.register('basename', basename);
+CommandRegistry.register('jobs', jobs);
+CommandRegistry.register('fg', fg);
+CommandRegistry.register('bg', bg);
 
 // Keep existing legacy modules for now
 import './man';

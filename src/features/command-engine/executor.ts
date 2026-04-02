@@ -1,5 +1,5 @@
 import { VFS } from '../vfs/vfs';
-import { CommandContext, CommandResult, CommandPipeline, Signal } from './types';
+import { CommandContext, CommandResult, CommandPipeline, Signal, Job, Process } from './types';
 import { CommandRegistry } from './registry';
 import { CommandParser } from './parser';
 import { formatError } from '../../utils/error_codes';
@@ -20,6 +20,27 @@ export class CommandExecutor {
     }
 
     public async execute(pipeline: CommandPipeline, context: CommandContext, abortController?: AbortController): Promise<CommandResult> {
+        const terminalStore = useTerminalStore.getState();
+        const isBackground = pipeline.actions.some(a => a.background);
+
+        if (isBackground) {
+            const jid = terminalStore.jobs.length + 1;
+            const pid = Math.floor(Math.random() * 9000) + 1000;
+            const commandStr = pipeline.actions.map(a => a.name + (a.args.length ? ' ' + a.args.join(' ') : '')).join(' | ');
+
+            const job: Job = { jid, pid, command: commandStr, status: 'Running', isBackground: true };
+            terminalStore.addJob(job);
+
+            // Execute in background
+            this.executeAsync(pipeline, context, pid, jid);
+
+            return { output: `[${jid}] ${pid}\n`, exitCode: 0 };
+        }
+
+        return this.executeForeground(pipeline, context, abortController);
+    }
+
+    private async executeForeground(pipeline: CommandPipeline, context: CommandContext, abortController?: AbortController): Promise<CommandResult> {
         let lastOutput: string | AsyncGenerator<string> = '';
         let lastResult: CommandResult = { output: '', exitCode: 0 };
 
@@ -153,24 +174,26 @@ export class CommandExecutor {
                     }
                 }
             }
-
-            // Background check
-            if (pipeline.actions.length > 0 && pipeline.actions[pipeline.actions.length - 1].background) {
-                const pid = Math.floor(Math.random() * 9000) + 1000;
-                const bgAction = pipeline.actions[pipeline.actions.length - 1];
-                context.updateProcesses([
-                    ...context.processes,
-                    { pid, name: bgAction.name, user: context.userId, startTime: Date.now() }
-                ]);
-                return { output: `[1] ${pid}\n`, exitCode: 0 };
-            }
-
-            if (signal?.aborted) {
-                return { ...lastResult, exitCode: 130 };
-            }
             return lastResult;
+        } catch (e) {
+            return {
+                output: '',
+                error: `exec: internal error: ${e}`,
+                exitCode: 1
+            };
         } finally {
             terminalStore.setForegroundProcess(null);
+        }
+    }
+
+    private async executeAsync(pipeline: CommandPipeline, context: CommandContext, pid: number, jid: number) {
+        const terminalStore = useTerminalStore.getState();
+        try {
+            const result = await this.executeForeground(pipeline, context);
+            terminalStore.updateJobStatus(jid, 'Done');
+            // In a real terminal, we'd print [jid]+ Done ... here if it was interactive
+        } catch (e) {
+            terminalStore.updateJobStatus(jid, 'Terminated');
         }
     }
 
