@@ -61,6 +61,7 @@ export class VFS {
     private inodes: Record<string, Inode>;
     private umask: string = '0022';
     private processProvider: () => any[] = () => [];
+    private syscallListeners: ((syscall: string, args: any[], result: any) => void)[] = [];
 
     constructor(snapshot?: VFSSnapshot) {
         if (snapshot) {
@@ -183,6 +184,20 @@ export class VFS {
         this.processProvider = provider;
     }
 
+    public addSyscallListener(listener: (syscall: string, args: any[], result: any) => void): void {
+        this.syscallListeners.push(listener);
+    }
+
+    public removeSyscallListener(listener: (syscall: string, args: any[], result: any) => void): void {
+        this.syscallListeners = this.syscallListeners.filter(l => l !== listener);
+    }
+
+    private notifySyscall(syscall: string, args: any[], result: any): void {
+        for (const listener of this.syscallListeners) {
+            listener(syscall, args, result);
+        }
+    }
+
     private initializeDefaultFS() {
         this.mkdir('/', 'bin', 'root');
         this.mkdir('/', 'etc', 'root');
@@ -260,6 +275,19 @@ export class VFS {
         followSymlinks: boolean = true,
         _depth: number = 0
     ): Inode | string {
+        const result = this.resolveInternal(path, userId, groups, startNodeId, followSymlinks, _depth);
+        this.notifySyscall('stat', [path], typeof result === 'string' ? -1 : 0);
+        return result;
+    }
+
+    private resolveInternal(
+        path: string,
+        userId: string = 'root',
+        groups: string[] = ['root'],
+        startNodeId: string = this.rootId,
+        followSymlinks: boolean = true,
+        _depth: number = 0
+    ): Inode | string {
         if (_depth > MAX_SYMLINK_DEPTH) return 'Too many levels of symbolic links';
         if (path === '/') return this.inodes[this.rootId];
 
@@ -313,6 +341,16 @@ export class VFS {
     }
 
     public readFile(path: string, userId: string = 'root', groups: string[] = []): string | { error: string } {
+        const result = this.readFileInternal(path, userId, groups);
+        this.notifySyscall('openat', [path], typeof result === 'object' ? -1 : 3);
+        if (typeof result === 'string') {
+            this.notifySyscall('read', [3, result.length], result.length);
+            this.notifySyscall('close', [3], 0);
+        }
+        return result;
+    }
+
+    private readFileInternal(path: string, userId: string = 'root', groups: string[] = []): string | { error: string } {
         const result = this.resolve(path, userId, groups);
         if (typeof result === 'string') return { error: result };
 
@@ -332,6 +370,16 @@ export class VFS {
     }
 
     public writeFile(path: string, content: string, userId: string = 'root', groups: string[] = []): boolean | { error: string } {
+        const result = this.writeFileInternal(path, content, userId, groups);
+        this.notifySyscall('openat', [path, 'O_WRONLY|O_CREAT|O_TRUNC'], typeof result === 'object' ? -1 : 3);
+        if (result === true) {
+            this.notifySyscall('write', [3, content.length], content.length);
+            this.notifySyscall('close', [3], 0);
+        }
+        return result;
+    }
+
+    private writeFileInternal(path: string, content: string, userId: string = 'root', groups: string[] = []): boolean | { error: string } {
         let result = this.resolve(path, userId, groups);
 
         if (typeof result === 'string') {
@@ -364,6 +412,13 @@ export class VFS {
     }
 
     public mkdir(parentPath: string, name: string, ownerId: string = 'root', mode?: string, groups: string[] = []): Inode | string {
+        const result = this.mkdirInternal(parentPath, name, ownerId, mode, groups);
+        const fullPath = parentPath === '/' ? '/' + name : parentPath + '/' + name;
+        this.notifySyscall('mkdir', [fullPath], typeof result === 'string' ? -1 : 0);
+        return result;
+    }
+
+    private mkdirInternal(parentPath: string, name: string, ownerId: string = 'root', mode?: string, groups: string[] = []): Inode | string {
         const parentResult = this.resolve(parentPath, ownerId, groups.length > 0 ? groups : [ownerId]);
         if (typeof parentResult === 'string') return parentResult;
 
@@ -657,8 +712,7 @@ export class VFS {
     }
 
     public getMetadata(path: string, userId: string = 'root', groups: string[] = []): Inode | string {
-        const result = this.resolve(path, userId, groups);
-        return result;
+        return this.resolve(path, userId, groups);
     }
 
     public exists(path: string, userId: string = 'root', groups: string[] = []): boolean {
