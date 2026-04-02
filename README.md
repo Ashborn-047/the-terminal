@@ -17,14 +17,13 @@ The Terminal is more than just a simulator—it's a path to **Terminal Professio
 
 ### ✨ Core Features
 
-- **🖥️ Advanced Shell Engine** — Support for **50+ commands**, pipes `|`, redirections (`>`, `>>`, `<<`, `2>`, `&>`), and command substitution `$(...)`.
-- **📂 Linux VFS** — Sophisticated in-memory filesystem with Inode management, octal permissions, symlinks, and persistable state.
+- **🖥️ Advanced Shell Engine** — Support for **60+ commands**, pipes `|`, redirections (`>`, `>>`, `<<`, `2>`, `&>`), command substitution `$(...)`, background jobs (`&`), and **recursive globbing** (`**`).
+- **📂 High-Fidelity VFS** — Sophisticated in-memory filesystem with Inode management, octal permissions (UID/GID), SUID safety, symlinks, and **real-time syscall tracing**.
+- **🚦 Process & Job Control** — Robust job table management with `jobs`, `fg`, `bg`, and POSIX signal handling (`SIGINT`, `SIGTSTP`, `SIGCONT`, `SIGTERM`).
+- **🔬 Observability Toolkit** — Advanced SRE tools including `strace` (syscall tracing), `lsof` (open file listing), `ps`, `top`, and `du`.
 - **🧪 Curriculum System** — **18 Modules & 38 Labs** covering everything from basic navigation to advanced sysadmin troubleshooting.
-- **🏟️ Challenge Arena** — Dedicated **Arena** with "Survival Mode" challenges and "Ultimate Mastery" tests to push your skills to the limit.
-- **🎮 Real-Time Progression** — Live Leaderboards, Daily Quests, Streak Heatmap and Achievement unlocks powered by **SpacetimeDB**.
-- **💬 AI-Powered Mentorship** — Interactive Chat interface for real-time guidance during complex labs, featuring **Lab-Gated Channels**.
-- **🎨 Neo-Brutalist UI** — A premium, high-contrast visual experience designed for the modern developer with an ARIA-compliant 100% accessible interface.
-- **🛡️ Production Ready** — Integrated with `@sentry/react` for robust telemetry and error monitoring.
+- **🎮 Real-Time Progression** — Live Leaderboards and Achievement unlocks powered by **SpacetimeDB**.
+- **🎨 Neo-Brutalist UI** — A premium, high-contrast visual experience with an ARIA-compliant 100% accessible interface.
 
 ---
 
@@ -126,6 +125,24 @@ To ensure the app is usable even without a live backend connection, a **Mock Mod
 ### 🎨 UI/UX Overhaul
 - **Page-Level Navigation**: Transitioning from tab-based views to distinct route-based pages.
 - **Improved Scrolling**: Fixing overflow-hidden issues for a better experience.
+
+---
+
+## ⚖️ Known Differences from Real Linux
+
+While designed for high realism, the simulator has specific intentional differences:
+
+### 1. **Signal Propagation**
+Signals are handled at the `terminalStore` level. While they simulate `SIGSTOP`/`SIGCONT` behavior, background jobs are not actual separate threads; they are asynchronous generator cycles within the main loop.
+
+### 2. **SUID on Scripts**
+For security and realism, SUID bits on `#!` shebang scripts are ignored (matching the behavior of modern Linux kernels like Debian/Ubuntu).
+
+### 3. **Globbing - `nullglob`**
+The simulator defaults to a `nullglob` behavior where non-matching patterns are returned as literals, consistent with bash's standard configuration.
+
+### 4. **Mocked SRE Tools**
+Tools like `strace` and `lsof` operate on a simulated event bus (`notifySyscall`). They provide 100% realistic output for VFS operations but do not trace raw kernel-level memory allocations or network syscalls.
 
 ---
 
