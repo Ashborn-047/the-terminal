@@ -12,6 +12,7 @@ export type SignalHandler = (sig: Signal) => void;
 export interface CommandContext {
     cwd: string;
     userId: string;
+    groups: string[];
     vfs: VFS;
     env: Record<string, string>;
     history: string[];

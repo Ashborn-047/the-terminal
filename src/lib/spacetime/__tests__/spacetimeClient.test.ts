@@ -76,7 +76,7 @@ describe('SpacetimeService Reducers Integration', () => {
         } catch (e) {
             // connection mock pass
         }
-        expect(typeof spacetime.getIsConnected()).toBe('boolean');
+        expect(spacetime.getIsConnected()).toBe(true);
     });
 
     it('should call completeLab reducer with correct parameters', async () => {
@@ -85,7 +85,7 @@ describe('SpacetimeService Reducers Integration', () => {
         } catch (e) {
             // connection mock pass
         }
-        expect(typeof spacetime.getIsConnected()).toBe('boolean');
+        expect(spacetime.getIsConnected()).toBe(true);
     });
 
     it('should call sendMessage reducer for chat operations', async () => {
@@ -94,7 +94,7 @@ describe('SpacetimeService Reducers Integration', () => {
         } catch (e) {
             // connection mock pass
         }
-        expect(typeof spacetime.getIsConnected()).toBe('boolean');
+        expect(spacetime.getIsConnected()).toBe(true);
     });
 
     it('should call deleteMessage reducer', async () => {
