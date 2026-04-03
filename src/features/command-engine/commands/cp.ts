@@ -17,18 +17,21 @@ export const cp = async (args: string[], context: CommandContext): Promise<Comma
 
     if (targets.length < 2) return { output: '', error: 'cp: missing file operand', exitCode: 1 };
 
-    const destPath = targets.pop()!;
+    const destPathRaw = targets.pop()!;
+    const destPath = context.resolvePath(destPathRaw);
     for (const srcPath of targets) {
+        const fullSrc = context.resolvePath(srcPath);
         if (interactive && !force && context.vfs.exists(destPath, context.userId, context.groups) && context.prompt) {
             const confirmed = await context.prompt(`cp: overwrite '${destPath}'? `);
             if (confirmed.toLowerCase() !== 'y') continue;
         }
-        const result = context.vfs.cp(srcPath, destPath, recursive, context.userId, context.groups);
+        const result = context.vfs.cp(fullSrc, destPath, recursive, context.userId, context.groups);
         if (typeof result === 'string') return { output: '', error: `cp: ${result}`, exitCode: 1 };
         
         if (preserve) {
-            const srcMeta = context.vfs.getMetadata(srcPath, context.userId, context.groups);
-            const destFinalPath = context.vfs.isDirectory(destPath, context.userId, context.groups) ? `${destPath}/${srcPath.split('/').pop()}` : destPath;
+            const srcMeta = context.vfs.getMetadata(fullSrc, context.userId, context.groups);
+            const isDestDir = context.vfs.isDirectory(destPath, context.userId, context.groups);
+            const destFinalPath = isDestDir ? (destPath === '/' ? `/${fullSrc.split('/').pop()}` : `${destPath}/${fullSrc.split('/').pop()}`) : destPath;
             const destMeta = context.vfs.getMetadata(destFinalPath, context.userId, context.groups);
             if (typeof srcMeta !== 'string' && typeof destMeta !== 'string') {
                 destMeta.permissions = { ...srcMeta.permissions };

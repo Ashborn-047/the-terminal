@@ -17,7 +17,8 @@ export const cat = async (args: string[], context: CommandContext, input: string
     } else {
         for (const filePath of filePaths) {
             if (context.isInterrupted()) break;
-            const content = context.vfs.readFile(filePath, context.userId, context.groups);
+            const fullPath = context.resolvePath(filePath);
+            const content = context.vfs.readFile(fullPath, context.userId, context.groups);
             if (typeof content === 'object' && 'error' in content) {
                 // Natural error formatting: program: message
                 error += `cat: ${filePath}: ${content.error}\n`;

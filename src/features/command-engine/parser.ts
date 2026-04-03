@@ -168,8 +168,25 @@ export class CommandParser {
         let inSingle = false;
         let inDouble = false;
 
+        let parenLevel = 0;
         while (i < input.length) {
             const c = input[i];
+            const next = input[i + 1];
+
+            if (!inSingle && !inDouble) {
+                if (c === '$' && next === '(') {
+                    parenLevel++;
+                    current += '$(';
+                    i += 2;
+                    continue;
+                }
+                if (c === ')' && parenLevel > 0) {
+                    parenLevel--;
+                    current += ')';
+                    i++;
+                    continue;
+                }
+            }
 
             if (c === "'" && !inDouble) {
                 inSingle = !inSingle;
@@ -182,7 +199,7 @@ export class CommandParser {
                 continue;
             }
 
-            if (!inSingle && !inDouble && /\s/.test(c)) {
+            if (!inSingle && !inDouble && parenLevel === 0 && /\s/.test(c)) {
                 if (current.length > 0) {
                     tokens.push(current);
                     current = '';

@@ -68,7 +68,7 @@ describe('useTerminal', () => {
 
         expect(result.current.history.length).toBe(1);
         expect(result.current.history[0].command).toBe('echo "hello"');
-        expect(result.current.history[0].output).toBe('hello');
+        expect(result.current.history[0].output).toBe('hello\n');
     });
 
     it('should clear history when "clear" command is executed', async () => {

@@ -26,7 +26,7 @@ export const chmod = async (args: string[], context: CommandContext): Promise<Co
     };
 
     const walk = (path: string): string | null => {
-        const resolved = context.vfs.resolve(path, context.userId, context.groups);
+        const resolved = context.vfs.resolve(path, context.userId, undefined, true, 0, context.groups);
         if (typeof resolved === 'string') return resolved;
         const inode = resolved as Inode;
         const err = applyMode(path, inode);
@@ -45,7 +45,8 @@ export const chmod = async (args: string[], context: CommandContext): Promise<Co
     };
 
     for (const path of paths) {
-        const err = walk(path);
+        const fullPath = context.resolvePath(path);
+        const err = walk(fullPath);
         if (err) return { output: '', error: err, exitCode: 1 };
     }
     return { output: '', exitCode: 0 };

@@ -20,11 +20,12 @@ export const rm = async (args: string[], context: CommandContext): Promise<Comma
     }
 
     for (const path of paths) {
+        const fullPath = context.resolvePath(path);
         if (interactive && !force && context.prompt) {
             const confirmed = await context.prompt(`rm: remove file '${path}'? `);
             if (confirmed.toLowerCase() !== 'y') continue;
         }
-        const result = context.vfs.rm(path, recursive, context.userId, context.groups);
+        const result = context.vfs.rm(fullPath, recursive, context.userId, context.groups);
         if (typeof result === 'string') {
             if (force && result === 'No such file or directory') continue;
             return { output: '', error: `rm: cannot remove '${path}': ${result}`, exitCode: 1 };

@@ -18,3 +18,11 @@ export async function readStream(input: string | AsyncGenerator<string>): Promis
     }
     return result;
 }
+
+/**
+ * Normalizes a path by prepending the CWD if the path is relative.
+ */
+export function getAbsolutePath(path: string, cwd: string): string {
+    if (!path || path.startsWith('/')) return path;
+    return cwd === '/' ? `/${path}` : `${cwd}/${path}`;
+}

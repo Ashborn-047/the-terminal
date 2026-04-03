@@ -1,10 +1,11 @@
 import { VFS } from '../vfs/vfs';
-import { CommandContext, CommandResult, CommandPipeline, Signal, Job, Process } from './types';
+import { CommandContext, CommandResult, CommandPipeline, CommandAction, Signal } from './types';
 import { CommandRegistry } from './registry';
 import { CommandParser } from './parser';
 import { formatError } from '../../utils/error_codes';
 import { useTerminalStore } from '../../stores/terminalStore';
-import picomatch from 'picomatch';
+import { getAbsolutePath } from './utils';
+import pm from 'picomatch';
 
 export class CommandExecutor {
     private vfs: VFS;
@@ -13,56 +14,8 @@ export class CommandExecutor {
         this.vfs = vfs;
     }
 
-    private getAbsolutePath(path: string, cwd: string): string {
-        if (path.startsWith('/')) return path;
-        if (cwd === '/') return '/' + path;
-        return cwd + '/' + path;
-    }
 
     public async execute(pipeline: CommandPipeline, context: CommandContext, abortController?: AbortController): Promise<CommandResult> {
-        // Alias expansion: expand the first word if it matches an alias
-        // Note: in a real shell, this happens before parsing and recursively.
-        let updatedPipeline = pipeline;
-        if (pipeline.actions.length > 0) {
-            const firstAction = pipeline.actions[0];
-            let expandedName = firstAction.name;
-            let expanded = true;
-            const visited = new Set<string>();
-
-            while (expanded && context.aliases[expandedName]) {
-                if (visited.has(expandedName)) break; // Prevent infinite loop
-                visited.add(expandedName);
-                expandedName = context.aliases[expandedName];
-            }
-
-            if (expandedName !== firstAction.name) {
-                // If it expanded to multiple words, we'd need to re-parse.
-                // For now, support simple 1-to-1 or 1-to-string mapping.
-                updatedPipeline = CommandParser.parse(expandedName + (firstAction.args.length ? ' ' + firstAction.args.join(' ') : ''));
-            }
-        }
-
-        const terminalStore = useTerminalStore.getState();
-        const isBackground = updatedPipeline.actions.some(a => a.background);
-
-        if (isBackground) {
-            const jid = terminalStore.jobs.length + 1;
-            const pid = Math.floor(Math.random() * 9000) + 1000;
-            const commandStr = updatedPipeline.actions.map(a => a.name + (a.args.length ? ' ' + a.args.join(' ') : '')).join(' | ');
-
-            const job: Job = { jid, pid, command: commandStr, status: 'Running', isBackground: true };
-            terminalStore.addJob(job);
-
-            // Execute in background
-            this.executeAsync(updatedPipeline, context, pid, jid);
-
-            return { output: `[${jid}] ${pid}\n`, exitCode: 0 };
-        }
-
-        return this.executeForeground(updatedPipeline, context, abortController);
-    }
-
-    private async executeForeground(pipeline: CommandPipeline, context: CommandContext, abortController?: AbortController): Promise<CommandResult> {
         let lastOutput: string | AsyncGenerator<string> = '';
         let lastResult: CommandResult = { output: '', exitCode: 0 };
 
@@ -81,13 +34,27 @@ export class CommandExecutor {
                 const action = pipeline.actions[i];
                 const isLast = i === pipeline.actions.length - 1;
 
-                const command = CommandRegistry.get(action.name);
-                if (!command) {
-                    return {
-                        output: '',
-                        error: formatError('COMMAND_NOT_FOUND', action.name),
-                        exitCode: 127
-                    };
+                let commandFn = CommandRegistry.get(action.name);
+                if (!commandFn) {
+                    // Script Fallback: If it's a file in VFS, interpret it line-by-line
+                    const scriptPath = getAbsolutePath(action.name, context.cwd);
+                    const inode = this.vfs.getMetadata(scriptPath, context.userId, context.groups);
+                    if (typeof inode !== 'string' && inode.type === 'file') {
+                        commandFn = async (args, ctx, input) => {
+                            const lines = (inode.content || '').split('\n').filter(l => l.trim() && !l.startsWith('#!'));
+                            let finalResult: CommandResult = { output: '', exitCode: 0 };
+                            for (const line of lines) {
+                                // Simple line-by-line execution
+                                const p = CommandParser.parse(line);
+                                // Pass current input only to the first command? 
+                                // Standard bash script doesn't pass stdin to every line.
+                                finalResult = await this.execute(p, ctx);
+                            }
+                            return finalResult;
+                        };
+                    } else {
+                        return { output: '', error: formatError('COMMAND_NOT_FOUND'), exitCode: 127 };
+                    }
                 }
 
                 // Handle substitutions $(command)
@@ -96,18 +63,18 @@ export class CommandExecutor {
                 // Expand environment variables
                 const envExpandedArgs = CommandParser.expand(resolvedArgs, context.env);
 
-                // Handle shell globbing (e.g., *, ?)
+                // Handle shell globbing (e.g., *, ?, **)
                 const expandedArgs = this.resolveGlobbing(envExpandedArgs, context);
 
                 const resolvedRedirPath = action.redirectionPath ? (await this.resolveSubstitutions([action.redirectionPath], context))[0] : undefined;
                 const expandedRedirPath = resolvedRedirPath ? CommandParser.expand([resolvedRedirPath], context.env)[0] : undefined;
 
                 // Execute the command
-                let currentInput: string | AsyncGenerator<string> = lastOutput;
+                let input = lastOutput;
                 if (action.redirectionType === 'input' && expandedRedirPath) {
-                    const fullPath = this.getAbsolutePath(expandedRedirPath, context.cwd);
-                    const fileContent = this.vfs.readFile(fullPath, context.userId, context.groups);
-                    currentInput = typeof fileContent === 'string' ? fileContent : '';
+                    const fullPath = getAbsolutePath(expandedRedirPath, context.cwd);
+                    const fileContent = this.vfs.readFile(fullPath, context.userId);
+                    input = typeof fileContent === 'string' ? fileContent : '';
                 } else if (action.redirectionType === 'heredoc' && action.redirectionPath) {
                     const delimiter = action.redirectionPath;
                     let heredocLines = [];
@@ -119,62 +86,63 @@ export class CommandExecutor {
                             heredocLines.push(line);
                         }
                     }
-                    currentInput = heredocLines.join('\n');
+                    input = heredocLines.join('\n');
                 }
 
-                // Create a PID for the current execution
                 const executionPid = initialPid;
                 const enrichedContext: CommandContext = {
                     ...context,
                     onSignal: (handler) => terminalStore.onSignal(executionPid, handler),
                     removeSignalHandler: (handler) => {
-                        // Cleanup is handled by terminalStore
+                        // This is handled by the cleanup in onSignal's return
                     },
                     isInterrupted: () => signal?.aborted || false,
+                    resolvePath: (path: string) => getAbsolutePath(path, context.cwd),
                 };
 
-                // Realism: SUID bit check
+                // SUID / SGID Check
                 let effectiveUserId = context.userId;
-                const maybeVfsPath = this.getAbsolutePath(action.name, context.cwd);
-                const maybeVfsInode = this.vfs.getMetadata(maybeVfsPath, context.userId, context.groups);
-
+                const maybeVfsPath = getAbsolutePath(action.name, context.cwd);
+                const maybeVfsInode = this.vfs.getMetadata(maybeVfsPath, context.userId);
                 if (typeof maybeVfsInode !== 'string' && maybeVfsInode.type === 'file') {
                     if (maybeVfsInode.permissions.setuid) {
-                        // Realism: SUID is ignored for shebang (#!) scripts on modern Linux
-                        const content = this.vfs.readFile(maybeVfsPath, context.userId, context.groups);
-                        const isScript = typeof content === 'string' && content.startsWith('#!');
-                        
-                        if (!isScript) {
-                            effectiveUserId = maybeVfsInode.ownerId;
-                        }
+                        effectiveUserId = maybeVfsInode.ownerId;
                     }
                 }
-
                 enrichedContext.userId = effectiveUserId;
-                enrichedContext.groups = [...context.groups];
-                if (!enrichedContext.groups.includes(effectiveUserId)) {
-                    enrichedContext.groups.push(effectiveUserId);
+
+                if (isLast && action.background) {
+                    const pid = Math.floor(Math.random() * 9000) + 1000;
+                    const jid = context.jobs.length + 1;
+                    const newJob = { jid, pid, command: action.name, status: 'Running' as const, isBackground: true };
+                    
+                    context.updateProcesses([
+                        ...context.processes,
+                        { pid, name: action.name, user: context.userId, startTime: Date.now() }
+                    ]);
+                    context.updateJobs([...context.jobs, newJob]);
+
+                    // Run the command without awaiting it
+                    commandFn(expandedArgs, enrichedContext, input).catch(e => console.error('Background job error:', e));
+                    return { output: `[1] ${pid}\n`, exitCode: 0 };
                 }
 
-                const result: CommandResult = await command(expandedArgs, enrichedContext, currentInput);
+                const result = await commandFn(expandedArgs, enrichedContext, input);
                 lastResult = result;
 
                 if (result.exitCode !== 0 && action.redirectionType !== 'stderr' && action.redirectionType !== 'both' && !isLast) {
                     return result;
                 }
 
-                // If this is the last command, we handle output or streaming
                 if (isLast) {
                     if (result.stream) {
                         let finalOutput = '';
                         for await (const chunk of result.stream) {
-                            if (signal?.aborted) break;
                             finalOutput += chunk;
                         }
                         lastResult.output = finalOutput;
                     }
                 } else {
-                    // If not last, set input for next command in pipeline
                     lastOutput = result.stream || result.output;
                 }
 
@@ -182,40 +150,21 @@ export class CommandExecutor {
                 if (action.redirectionType !== 'none' && expandedRedirPath) {
                     const outputToRedirect = lastResult.output;
                     if (action.redirectionType === 'overwrite' || action.redirectionType === 'append') {
-                        const fullPath = this.getAbsolutePath(expandedRedirPath, context.cwd);
-                        const writeResult = this.handleRedirection(
-                            fullPath,
-                            outputToRedirect,
-                            action.redirectionType,
-                            context.userId,
-                            context.groups
-                        );
+                        const fullPath = getAbsolutePath(expandedRedirPath, context.cwd);
+                        const writeResult = this.vfs.writeFile(fullPath, outputToRedirect, context.userId, context.groups);
                         if (typeof writeResult === 'object' && 'error' in writeResult) {
                             return { output: outputToRedirect, error: writeResult.error, exitCode: 1 };
                         }
                     }
                 }
             }
+
+            if (signal?.aborted) {
+                return { ...lastResult, exitCode: 130 };
+            }
             return lastResult;
-        } catch (e) {
-            return {
-                output: '',
-                error: `exec: internal error: ${e}`,
-                exitCode: 1
-            };
         } finally {
             terminalStore.setForegroundProcess(null);
-        }
-    }
-
-    private async executeAsync(pipeline: CommandPipeline, context: CommandContext, pid: number, jid: number) {
-        const terminalStore = useTerminalStore.getState();
-        try {
-            const result = await this.executeForeground(pipeline, context);
-            terminalStore.updateJobStatus(jid, 'Done');
-            // In a real terminal, we'd print [jid]+ Done ... here if it was interactive
-        } catch (e) {
-            terminalStore.updateJobStatus(jid, 'Terminated');
         }
     }
 
@@ -224,14 +173,16 @@ export class CommandExecutor {
         for (const arg of args) {
             let current = arg;
             let match;
-            // Match $(...)
             while ((match = current.match(/\$\(([^)]+)\)/))) {
                 const subCommand = match[1];
                 const pipeline = CommandParser.parse(subCommand);
                 const result = await this.execute(pipeline, context);
-                // Replace $(...) with result output, trimmed and words joined by single space
                 const replacement = result.output.trim().replace(/\s+/g, ' ');
                 current = current.replace(match[0], replacement);
+            }
+            // Strip quotes
+            if ((current.startsWith("'") && current.endsWith("'")) || (current.startsWith('"') && current.endsWith('"'))) {
+                current = current.substring(1, current.length - 1);
             }
             resolved.push(current);
         }
@@ -241,37 +192,29 @@ export class CommandExecutor {
     private resolveGlobbing(args: string[], context: CommandContext): string[] {
         const result: string[] = [];
         for (const arg of args) {
-            // Check if it looks like a glob (fast check first)
-            if (!arg.includes('*') && !arg.includes('?') && !arg.includes('[') && !arg.includes('{')) {
-                result.push(arg);
-                continue;
-            }
-
-            // High-fidelity check using picomatch
-            if (!picomatch.scan(arg).isGlob) {
+            if (!pm.scan(arg).isGlob) {
                 result.push(arg);
                 continue;
             }
 
             try {
-                // Determine search base (highest directory without a glob)
-                const scan = picomatch.scan(arg);
-                const baseDir = scan.base === '.' ? context.cwd : this.getAbsolutePath(scan.base, context.cwd);
-                const pattern = scan.glob;
-
+                const scan = (pm as any).scan(arg);
+                const baseDir = getAbsolutePath(scan.base, context.cwd);
+                
                 // Recursive walker to handle ** patterns
                 const matches: string[] = [];
                 const walk = (currentPath: string) => {
                     const children = this.vfs.listChildren(currentPath, context.userId, context.groups);
-                    if (typeof children === 'string' || children === null) return;
+                    if (!Array.isArray(children)) return;
 
+                    const matchFn = pm(arg, { dot: true });
                     for (const child of children) {
                         const childPath = currentPath === '/' ? `/${child.name}` : `${currentPath}/${child.name}`;
                         const relativeToScanBase = scan.base === '.' 
                             ? child.name 
-                            : childPath.substring(this.getAbsolutePath(scan.base, context.cwd).length).replace(/^\//, '');
+                            : childPath.substring(baseDir.length).replace(/^\//, '');
 
-                        if (picomatch(arg)(childPath) || picomatch(arg)(relativeToScanBase)) {
+                        if (matchFn(childPath) || matchFn(relativeToScanBase)) {
                             matches.push(childPath);
                         }
 
@@ -284,26 +227,14 @@ export class CommandExecutor {
                 walk(baseDir);
 
                 if (matches.length > 0) {
-                    // Sort matches for consistent output
                     result.push(...matches.sort());
                 } else {
-                    // Nullglob: leave pattern literal if no matches
-                    result.push(arg);
+                    result.push(arg); // Standard Bash: keep as-is if no match
                 }
             } catch (e) {
                 result.push(arg);
             }
         }
         return result;
-    }
-
-    private handleRedirection(path: string, content: string, type: 'overwrite' | 'append', userId: string, groups: string[]) {
-        if (type === 'overwrite') {
-            return this.vfs.writeFile(path, content, userId, groups);
-        } else {
-            const currentContent = this.vfs.readFile(path, userId, groups);
-            const existing = typeof currentContent === 'string' ? currentContent : '';
-            return this.vfs.writeFile(path, existing + content, userId, groups);
-        }
     }
 }

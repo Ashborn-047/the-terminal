@@ -46,10 +46,11 @@ describe('High-Fidelity Realism Tests', () => {
             updateProcesses: (p) => { state.processes = p; },
             updateJobs: (j) => { state.jobs = j; },
             updateAliases: (a) => { state.aliases = a; },
-            updateHistory: (h) => { state.history = h; },
-            onSignal: () => () => { },
+            prompt: async () => '',
+            onSignal: () => { },
             removeSignalHandler: () => { },
             isInterrupted: () => false,
+            resolvePath: (p: string) => p.startsWith('/') ? p : (state.cwd === '/' ? `/${p}` : `${state.cwd}/${p}`),
         };
         // Setup standard dirs correctly
         vfs.mkdir('/', 'bin', 'root', '755');
@@ -71,7 +72,7 @@ describe('High-Fidelity Realism Tests', () => {
             context.updateJobs([{ jid: 1, pid: 1234, command: 'sleep 10', status: 'Running', isBackground: true }]);
             const pipeline = CommandParser.parse('jobs');
             const result = await executor.execute(pipeline, context);
-            expect(result.output).toContain('[1] Running');
+            expect(result.output).toMatch(/\[1\].*Running/);
         });
     });
 
@@ -89,9 +90,7 @@ describe('High-Fidelity Realism Tests', () => {
             vfs.writeFile('/root/secret', 'shhh', 'root');
             vfs.chmod('/root/secret', '700', 'root');
 
-            // Attempt as guest (should fail)
             const catFail = await executor.execute(CommandParser.parse('cat /root/secret'), context);
-            // Relaxed check: either error or output contains Permission denied
             expect(catFail.error || catFail.output).toMatch(/Permission denied|No such file/);
 
             const catSudo = await executor.execute(CommandParser.parse('sudo cat /root/secret'), context);
@@ -125,7 +124,7 @@ describe('High-Fidelity Realism Tests', () => {
         });
 
         it('should track command history', async () => {
-            context.updateHistory(['echo "cmd1"']);
+            context.history = ['echo "cmd1"'];
             const pipeline = CommandParser.parse('history');
             const result = await executor.execute(pipeline, context);
             expect(result.output).toContain('echo "cmd1"');

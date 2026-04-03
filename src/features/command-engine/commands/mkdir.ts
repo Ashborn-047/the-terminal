@@ -17,26 +17,25 @@ export const mkdir = async (args: string[], context: CommandContext): Promise<Co
     if (targets.length === 0) return { output: '', error: 'mkdir: missing operand', exitCode: 1 };
 
     for (const dir of targets) {
-        if (recursive) {
-            const parts = dir.split('/').filter(p => p.length > 0);
-            let currentPath = dir.startsWith('/') ? '' : context.cwd;
-            for (let i = 0; i < parts.length; i++) {
-                const part = parts[i];
-                const checkPath = currentPath === '' ? '/' + part : (currentPath === '/' ? '/' + part : currentPath + '/' + part);
-                if (!context.vfs.exists(checkPath, context.userId, context.groups)) {
-                    const parent = currentPath === '' ? '/' : currentPath;
-                    const result = context.vfs.mkdir(parent, part, context.userId, mode, context.groups);
-                    if (typeof result === 'string') return { output: '', error: `mkdir: ${result}`, exitCode: 1 };
+        const fullPath = context.resolvePath(dir);
+        const parts = fullPath.split('/').filter(p => p.length > 0);
+        
+        let currentPath = '/';
+        for (let i = 0; i < parts.length; i++) {
+            const part = parts[i];
+            const isLast = i === parts.length - 1;
+            const checkPath = currentPath === '/' ? `/${part}` : `${currentPath}/${part}`;
+            
+            if (!context.vfs.exists(checkPath, context.userId, context.groups)) {
+                if (!recursive && !isLast) {
+                    return { output: '', error: `mkdir: cannot create directory '${dir}': No such file or directory`, exitCode: 1 };
                 }
-                currentPath = checkPath;
+                const result = context.vfs.mkdir(currentPath, part, context.userId, isLast ? mode : undefined, context.groups);
+                if (typeof result === 'string') return { output: '', error: `mkdir: ${result}`, exitCode: 1 };
+            } else if (isLast && !recursive) {
+                return { output: '', error: `mkdir: cannot create directory '${dir}': File exists`, exitCode: 1 };
             }
-        } else {
-            const parts = dir.split('/').filter(p => p.length > 0);
-            const name = parts.pop() || '';
-            const parentRelative = parts.join('/');
-            const parentPath = dir.startsWith('/') ? '/' + parentRelative : (parentRelative ? context.cwd + '/' + parentRelative : context.cwd);
-            const result = context.vfs.mkdir(parentPath, name, context.userId, mode, context.groups);
-            if (typeof result === 'string') return { output: '', error: `mkdir: ${result}`, exitCode: 1 };
+            currentPath = checkPath;
         }
     }
     return { output: '', exitCode: 0 };

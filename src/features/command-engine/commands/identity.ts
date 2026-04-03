@@ -27,15 +27,24 @@ export const id = async (args: string[], context: CommandContext): Promise<Comma
     const users = parsePasswd(passwdContent);
     const groups = parseGroup(groupContent);
 
+    const showUidOnly = args.includes('-u');
+    const showUsernameOnly = args.includes('-un');
+    const filteredArgs = args.filter(a => !a.startsWith('-'));
+    
     let targetUser = users.find(u => u.username === context.userId || u.uid === parseInt(context.userId));
-    if (args.length > 0) {
-        targetUser = users.find(u => u.username === args[0]);
-        if (!targetUser) return { output: '', error: `id: '${args[0]}': no such user`, exitCode: 1 };
+    if (filteredArgs.length > 0) {
+        targetUser = users.find(u => u.username === filteredArgs[0]);
+        if (!targetUser) return { output: '', error: `id: '${filteredArgs[0]}': no such user`, exitCode: 1 };
     }
 
     if (!targetUser) {
-        // Fallback for current user if not in passwd
+        if (showUidOnly) return { output: `${context.userId}\n`, exitCode: 0 };
         return { output: `uid=${context.userId} gid=${context.userId} groups=${context.groups.join(',')}\n`, exitCode: 0 };
+    }
+
+    if (showUidOnly) {
+        if (showUsernameOnly) return { output: `${targetUser.username}\n`, exitCode: 0 };
+        return { output: `${targetUser.uid}\n`, exitCode: 0 };
     }
 
     const primaryGroup = groups.find(g => g.gid === targetUser!.gid) || { groupname: targetUser.username, gid: targetUser.gid };

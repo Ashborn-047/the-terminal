@@ -51,7 +51,7 @@ export const grep = async (args: string[], context: CommandContext, input: strin
     };
 
     const processPath = async (path: string): Promise<void> => {
-        const resolved = context.vfs.resolve(path, context.userId, context.groups);
+        const resolved = context.vfs.resolve(path, context.userId, undefined, true, 0, context.groups);
         if (typeof resolved === 'string') return;
         const inode = resolved as Inode;
 
@@ -79,7 +79,10 @@ export const grep = async (args: string[], context: CommandContext, input: strin
         const content = await readStream(input);
         searchContent(content, '');
     } else {
-        for (const fp of filePaths) await processPath(fp);
+        for (const fp of filePaths) {
+            const fullPath = context.resolvePath(fp);
+            await processPath(fullPath);
+        }
     }
 
     return { output: outputLines.join('\n'), exitCode: outputLines.length > 0 ? 0 : 1 };

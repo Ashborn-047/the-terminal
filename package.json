@@ -83,7 +83,7 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@types/node": "^25.3.3",
-    "@types/picomatch": "^4.0.2",
+    "@types/picomatch": "^4.0.3",
     "@vitejs/plugin-react": "^4.7.0",
     "jsdom": "^28.1.0",
     "tailwindcss": "4.1.12",

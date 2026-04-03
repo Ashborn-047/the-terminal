@@ -7,10 +7,12 @@ export const ln = async (args: string[], context: CommandContext): Promise<Comma
     if (!symbolic) return { output: '', error: 'ln: hard links not supported, use -s', exitCode: 1 };
 
     const target = paths[0], linkName = paths[1];
-    const parts = linkName.split('/').filter(p => p.length > 0);
-    const name = parts.pop() || '', parentPath = linkName.startsWith('/') ? '/' + parts.join('/') : (parts.length > 0 ? parts.join('/') : context.cwd);
+    const fullLinkPath = context.resolvePath(linkName);
+    const parts = fullLinkPath.split('/').filter(p => p.length > 0);
+    const name = parts.pop() || '';
+    const parentDir = '/' + parts.join('/') || '/';
     
-    const result = context.vfs.ln(parentPath || context.cwd, name, target, context.userId, symbolic, context.groups);
+    const result = context.vfs.ln(parentDir, name, target, context.userId, true, context.groups);
     if (typeof result === 'string') return { output: '', error: `ln: ${result}`, exitCode: 1 };
     return { output: '', exitCode: 0 };
 };

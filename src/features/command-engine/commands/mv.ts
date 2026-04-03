@@ -13,17 +13,19 @@ export const mv = async (args: string[], context: CommandContext): Promise<Comma
 
     if (targets.length < 2) return { output: '', error: 'mv: missing operand', exitCode: 1 };
 
-    const destPath = targets.pop()!;
+    const destPathRaw = targets.pop()!;
+    const destPath = context.resolvePath(destPathRaw);
     for (const srcPath of targets) {
+        const fullSrc = context.resolvePath(srcPath);
         if (interactive && !force && context.vfs.exists(destPath, context.userId, context.groups) && context.prompt) {
             const confirmed = await context.prompt(`mv: overwrite '${destPath}'? `);
             if (confirmed.toLowerCase() !== 'y') continue;
         }
-        const result = context.vfs.mv(srcPath, destPath, context.userId, context.groups);
+        const result = context.vfs.mv(fullSrc, destPath, context.userId, context.groups);
         if (typeof result === 'string') {
             if (force && result === 'Destination already exists') {
                 context.vfs.rm(destPath, true, context.userId, context.groups);
-                const retryResult = context.vfs.mv(srcPath, destPath, context.userId, context.groups);
+                const retryResult = context.vfs.mv(fullSrc, destPath, context.userId, context.groups);
                 if (typeof retryResult === 'string') return { output: '', error: `mv: ${retryResult}`, exitCode: 1 };
                 continue;
             }

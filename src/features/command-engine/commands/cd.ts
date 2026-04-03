@@ -8,9 +8,9 @@ export const cd = async (args: string[], context: CommandContext): Promise<Comma
         path = '/home/' + context.userId + path.slice(1);
     }
 
-    const result = context.vfs.resolveRelative(path, context.cwd, context.userId, context.groups);
+    const result = context.vfs.resolve(path, context.userId, undefined, true, 0, context.groups);
     if (typeof result === 'string') {
-        return { output: '', error: formatError('NO_SUCH_FILE_OR_DIRECTORY', `cd: ${path}`), exitCode: 1 };
+        return { output: '', error: formatError('NO_SUCH_FILE_OR_DIRECTORY'), exitCode: 1 };
     }
 
     const inode = result as Inode;

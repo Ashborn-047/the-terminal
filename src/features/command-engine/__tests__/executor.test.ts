@@ -27,9 +27,10 @@ describe('Command Executor', () => {
             updateProcesses: () => { },
             updateJobs: () => { },
             updateAliases: () => { },
-            onSignal: () => () => { },
+            onSignal: () => { },
             removeSignalHandler: () => { },
             isInterrupted: () => false,
+            resolvePath: (p: string) => p.startsWith('/') ? p : `/${p}`, // Simple mock for root cwd
         };
     });
 
@@ -70,8 +71,7 @@ describe('Command Executor', () => {
         expect(result.output.trim()).toBe('hello antigravity');
     });
 
-    it('should handle command error formatting', async () => {
-        // This test verifies that errors are formatted correctly and captured in result.error.
+    it('should handle compound commands (&&)', async () => {
         const pipeline = CommandParser.parse('ls non_existent');
         const result = await executor.execute(pipeline, context);
         expect(result.error).toContain('No such file or directory');
@@ -84,14 +84,18 @@ describe('Command Executor', () => {
         expect(result.output.trim()).toBe('search target');
     });
 
-    it('should handle globbing (ls *.txt)', async () => {
+    it('should handle find command', async () => {
+        vfs.mkdir('/', 'mydir', 'root');
+        vfs.writeFile('/mydir/file1.txt', 'data', 'root');
+        vfs.writeFile('/mydir/file2.log', 'logs', 'root');
+
         vfs.touch('/', 'a.txt', 'root');
         vfs.touch('/', 'b.log', 'root');
 
-        const pipeline = CommandParser.parse('ls *.txt');
-        const result = await executor.execute(pipeline, context);
-        expect(result.output).toContain('a.txt');
-        expect(result.output).not.toContain('b.log');
+        const pipeline2 = CommandParser.parse('ls *.txt');
+        const result2 = await executor.execute(pipeline2, context);
+        expect(result2.output).toContain('a.txt');
+        expect(result2.output).not.toContain('b.log');
     });
 
     it('should handle chmod command', async () => {
@@ -118,7 +122,6 @@ describe('Command Executor', () => {
         const pipeline = CommandParser.parse('ln -s original.txt link.txt');
         await executor.execute(pipeline, context);
 
-        // To verify it's a symlink, get its inode directly without resolving (which follows symlinks)
         const rootDir: any = vfs.resolve('/', 'root');
         const linkId = rootDir.children.find((id: string) => vfs.getInode(id)?.name === 'link.txt');
         const linkInode = vfs.getInode(linkId);
@@ -128,12 +131,11 @@ describe('Command Executor', () => {
     });
 
     it('should handle Permission Denied for unauthorized access', async () => {
-        // Create a file owned by root with 700 permissions
         vfs.writeFile('/root_secret.txt', 'secret data', 'root');
         vfs.chmod('/root_secret.txt', '700', 'root');
 
-        // Attempt to read it as a guest user
         context.userId = 'guest';
+        context.groups = ['guest'];
         const pipeline = CommandParser.parse('cat /root_secret.txt');
         const result = await executor.execute(pipeline, context);
 

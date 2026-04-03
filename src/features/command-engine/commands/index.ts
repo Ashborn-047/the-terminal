@@ -48,6 +48,7 @@ import { apt, aptGet } from './apt';
 import { script } from './script';
 import { strace } from './strace';
 import { lsof } from './lsof';
+import { who } from './who';
 
 // Register Core Commands
 CommandRegistry.register('ls', ls);
@@ -121,5 +122,6 @@ CommandRegistry.register('apt-get', aptGet);
 CommandRegistry.register('script', script);
 CommandRegistry.register('strace', strace);
 CommandRegistry.register('lsof', lsof);
+CommandRegistry.register('who', who);
 
 // Finished modularization of legacy modules

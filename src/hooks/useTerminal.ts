@@ -171,7 +171,7 @@ export function useTerminal() {
         const context: CommandContext = {
             cwd: currentCwd,
             userId: currentUserId,
-            groups: ['guest'], // Map from user store in real scenario
+            groups: currentUserId === 'root' ? ['root'] : [currentUserId, 'users'], 
             vfs: vfsRef.current,
             env,
             history: historyRef.current.map(h => h.command),

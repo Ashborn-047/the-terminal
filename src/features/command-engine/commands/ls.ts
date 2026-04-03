@@ -32,9 +32,9 @@ export const ls = async (args: string[], context: CommandContext): Promise<Comma
     let exitCode = 0;
 
     const listDir = (dirPath: string, isRecursiveCall: boolean = false) => {
-        const result = context.vfs.resolveRelative(dirPath, context.cwd, context.userId, context.groups);
+        const result = context.vfs.resolve(dirPath, context.userId, undefined, true, 0, context.groups);
         if (typeof result === 'string') {
-            errors.push(formatError('NO_SUCH_FILE_OR_DIRECTORY', `ls: ${dirPath}`));
+            errors.push(formatError('NO_SUCH_FILE_OR_DIRECTORY')); // Fix: formatError only needs 1 arg
             exitCode = 1;
             return;
         }
@@ -113,7 +113,10 @@ export const ls = async (args: string[], context: CommandContext): Promise<Comma
         return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)}G`.padStart(5);
     }
 
-    for (const p of paths) listDir(p);
+    for (const p of paths) {
+        const fullPath = context.resolvePath(p);
+        listDir(fullPath);
+    }
 
     return {
         output: outputLines.join('\n').trim(),

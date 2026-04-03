@@ -11,7 +11,8 @@ export const chown = async (args: string[], context: CommandContext): Promise<Co
     const owner = args[0];
     const paths = args.slice(1);
     for (const path of paths) {
-        const result = context.vfs.chown(path, owner, context.userId, context.groups);
+        const fullPath = context.resolvePath(path);
+        const result = context.vfs.chown(fullPath, owner, context.userId, context.groups);
         if (typeof result === 'string') return { output: '', error: `chown: ${result}`, exitCode: 1 };
     }
     return { output: '', exitCode: 0 };
