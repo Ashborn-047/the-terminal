@@ -22,6 +22,7 @@ interface TerminalState {
     setForegroundProcess: (pid: number | null) => void;
     sendSignal: (pid: number, sig: Signal) => void;
     onSignal: (pid: number, handler: (sig: Signal) => void) => () => void;
+    updateJobStatus: (jid: number, status: string) => void;
 }
 
 const signalHandlers = new Map<number, Set<(sig: Signal) => void>>();
@@ -41,6 +42,16 @@ export const useTerminalStore = create<TerminalState>((set) => ({
         if (handlers) {
             handlers.forEach((handler) => handler(sig));
         }
+        // Immediately remove from process table if it's a kill signal to sync UI state
+        // In reality, the process exiting should emit a signal to remove itself, but this is a PoC bridge
+        if (sig === Signal.SIGKILL || sig === Signal.SIGTERM) {
+            set((state) => ({ processes: state.processes.filter((p) => p.pid !== pid) }));
+        }
+    },
+    updateJobStatus: (jid, status) => {
+        set((state) => ({
+            jobs: state.jobs.map(j => j.jid === jid ? { ...j, status } : j)
+        }));
     },
     onSignal: (pid, handler) => {
         if (!signalHandlers.has(pid)) {

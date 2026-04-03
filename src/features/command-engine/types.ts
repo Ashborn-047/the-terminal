@@ -28,6 +28,7 @@ export interface CommandContext {
     removeSignalHandler: (handler: SignalHandler) => void;
     isInterrupted: () => boolean;
     resolvePath: (path: string) => string;
+    abortSignal?: AbortSignal;
 }
 
 export interface CommandResult {

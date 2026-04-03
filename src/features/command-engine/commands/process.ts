@@ -80,7 +80,9 @@ export const kill = async (args: string[], context: CommandContext): Promise<Com
             // Realism: Terminating a job updates the job table
             if (signalToEmit === Signal.SIGKILL || signalToEmit === Signal.SIGTERM) {
                 const jid = context.jobs.find(j => j.pid === pid)?.jid;
-                if (jid !== undefined) terminalStore.updateJobStatus(jid, 'Terminated');
+                if (jid !== undefined) {
+                    terminalStore.updateJobStatus(jid, 'Terminated');
+                }
             }
         } else {
             output += `kill: (${target}) - No such process\n`;

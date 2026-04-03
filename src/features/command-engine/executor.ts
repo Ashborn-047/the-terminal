@@ -90,26 +90,50 @@ export class CommandExecutor {
                 }
 
                 const executionPid = initialPid;
+
+                // Add AbortController for true high-fidelity signal propagation
+                const abortController = new AbortController();
+
+                // Tie standard DOM signal to context for commands that support it natively
+                if (signal) {
+                    signal.addEventListener('abort', () => abortController.abort());
+                }
+
                 const enrichedContext: CommandContext = {
                     ...context,
-                    onSignal: (handler) => terminalStore.onSignal(executionPid, handler),
+                    abortSignal: abortController.signal,
+                    onSignal: (handler) => terminalStore.onSignal(executionPid, (sig) => {
+                        // True kernel simulation: propagate SIGKILL/SIGTERM directly to the AbortController
+                        if (sig === Signal.SIGKILL || sig === Signal.SIGTERM || sig === Signal.SIGINT) {
+                            abortController.abort(sig);
+                        }
+                        handler(sig);
+                    }),
                     removeSignalHandler: (handler) => {
                         // This is handled by the cleanup in onSignal's return
                     },
-                    isInterrupted: () => signal?.aborted || false,
+                    isInterrupted: () => signal?.aborted || abortController.signal.aborted || false,
                     resolvePath: (path: string) => getAbsolutePath(path, context.cwd),
                 };
 
                 // SUID / SGID Check
                 let effectiveUserId = context.userId;
+                let effectiveGroups = [...context.groups];
+
                 const maybeVfsPath = getAbsolutePath(action.name, context.cwd);
                 const maybeVfsInode = this.vfs.getMetadata(maybeVfsPath, context.userId);
+
                 if (typeof maybeVfsInode !== 'string' && maybeVfsInode.type === 'file') {
                     if (maybeVfsInode.permissions.setuid) {
                         effectiveUserId = maybeVfsInode.ownerId;
                     }
+                    if (maybeVfsInode.permissions.setgid) {
+                        effectiveGroups.push(maybeVfsInode.groupId);
+                    }
                 }
+
                 enrichedContext.userId = effectiveUserId;
+                enrichedContext.groups = effectiveGroups;
 
                 if (isLast && action.background) {
                     const pid = Math.floor(Math.random() * 9000) + 1000;

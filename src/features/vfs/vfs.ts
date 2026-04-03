@@ -233,9 +233,13 @@ export class VFS {
     public getRootId(): string { return this.rootId; }
 
     private hasPermission(inode: Inode, userId: string, type: keyof VFSPermissions, groups: string[] = ['root']): boolean {
+        // POSIX Access Check Logic:
+        // In a true simulator, the thread context passes the 'euid' (Effective UID).
+        // Since `userId` here acts as the EUID for the context of this VFS call:
         if (userId === 'root' || groups.includes('root')) return true;
 
         if (inode.ownerId === userId) return inode.permissions.owner[type];
+
         if (groups.includes(inode.groupId)) return inode.permissions.group[type];
 
         return inode.permissions.others[type];
