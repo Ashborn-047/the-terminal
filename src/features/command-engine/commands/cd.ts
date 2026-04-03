@@ -8,7 +8,8 @@ export const cd = async (args: string[], context: CommandContext): Promise<Comma
         path = '/home/' + context.userId + path.slice(1);
     }
 
-    const result = context.vfs.resolve(path, context.userId, undefined, true, 0, context.groups);
+    const resolvedPath = context.resolvePath(path);
+    const result = context.vfs.resolve(resolvedPath, context.userId, undefined, true, 0, context.groups);
     if (typeof result === 'string') {
         return { output: '', error: formatError('NO_SUCH_FILE_OR_DIRECTORY'), exitCode: 1 };
     }

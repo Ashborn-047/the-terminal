@@ -121,7 +121,7 @@ export class CommandExecutor {
                 let effectiveGroups = [...context.groups];
 
                 const maybeVfsPath = getAbsolutePath(action.name, context.cwd);
-                const maybeVfsInode = this.vfs.getMetadata(maybeVfsPath, context.userId);
+                const maybeVfsInode = this.vfs.getMetadata(maybeVfsPath, context.userId, context.groups);
 
                 if (typeof maybeVfsInode !== 'string' && maybeVfsInode.type === 'file') {
                     if (maybeVfsInode.permissions.setuid) {
