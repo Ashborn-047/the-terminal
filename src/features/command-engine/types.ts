@@ -3,7 +3,11 @@ import { VFS } from '../vfs/vfs';
 export enum Signal {
     SIGINT = 'SIGINT',
     SIGTERM = 'SIGTERM',
-    SIGKILL = 'SIGKILL'
+    SIGKILL = 'SIGKILL',
+    SIGHUP = 'SIGHUP',
+    // Process control signals (used by bg/fg)
+    SIGSTOP = 'SIGSTOP',
+    SIGCONT = 'SIGCONT'
 }
 
 export type SignalHandler = (sig: Signal) => void;

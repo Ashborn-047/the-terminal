@@ -35,6 +35,7 @@ export const grep = async (args: string[], context: CommandContext, input: strin
         try { regex = new RegExp(pattern, caseInsensitive ? 'i' : ''); } catch (e) { return 0; }
 
         for (let i = 0; i < lines.length; i++) {
+            // Check for interruption on every line (existing) + every 1000 lines for large files
             if (context.isInterrupted()) break;
             const line = lines[i];
             let matches = regex.test(line);

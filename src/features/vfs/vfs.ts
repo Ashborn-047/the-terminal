@@ -232,17 +232,17 @@ export class VFS {
     // Accessors
     public getRootId(): string { return this.rootId; }
 
-    private hasPermission(inode: Inode, userId: string, type: keyof VFSPermissions, groups: string[] = ['root']): boolean {
-        // POSIX Access Check Logic:
-        // In a true simulator, the thread context passes the 'euid' (Effective UID).
-        // Since `userId` here acts as the EUID for the context of this VFS call:
-        if (userId === 'root' || groups.includes('root')) return true;
+    private hasPermission(inode: Inode, userId: string, type: keyof VFSPermissions, groups: string[] = []): boolean {
+        // Security: Only UID 0 (root user) bypasses permission checks.
+        // The 'root' group grants only group-level permissions, NOT full bypass.
+        if (userId === 'root') return true;
 
         if (inode.ownerId === userId) return inode.permissions.owner[type];
 
         if (groups.includes(inode.groupId)) return inode.permissions.group[type];
 
         return inode.permissions.others[type];
+
     }
 
     public resolve(
@@ -507,7 +507,8 @@ export class VFS {
     }
 
     public chown(path: string, newOwner: string, userId: string = 'root', groups: string[] = []): boolean | string {
-        if (userId !== 'root' && !groups.includes('root')) return 'Permission denied';
+        // Security: Only UID 0 can chown. Root group membership is insufficient.
+        if (userId !== 'root') return 'Permission denied';
 
         const result = this.resolve(path, userId, this.rootId, true, 0, groups);
         if (typeof result === 'string') return result;

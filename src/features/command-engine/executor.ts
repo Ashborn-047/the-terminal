@@ -92,27 +92,36 @@ export class CommandExecutor {
                 const executionPid = initialPid;
 
                 // Add AbortController for true high-fidelity signal propagation
-                const abortController = new AbortController();
+                const commandAbortController = new AbortController();
 
                 // Tie standard DOM signal to context for commands that support it natively
                 if (signal) {
-                    signal.addEventListener('abort', () => abortController.abort());
+                    signal.addEventListener('abort', () => commandAbortController.abort());
                 }
+
+                // Track cleanup function for signal handler removal
+                let signalCleanup: (() => void) | null = null;
 
                 const enrichedContext: CommandContext = {
                     ...context,
-                    abortSignal: abortController.signal,
-                    onSignal: (handler) => terminalStore.onSignal(executionPid, (sig) => {
-                        // True kernel simulation: propagate SIGKILL/SIGTERM directly to the AbortController
-                        if (sig === Signal.SIGKILL || sig === Signal.SIGTERM || sig === Signal.SIGINT) {
-                            abortController.abort(sig);
-                        }
-                        handler(sig);
-                    }),
-                    removeSignalHandler: (handler) => {
-                        // This is handled by the cleanup in onSignal's return
+                    abortSignal: commandAbortController.signal,
+                    onSignal: (handler) => {
+                        signalCleanup = terminalStore.onSignal(executionPid, (sig) => {
+                            // True kernel simulation: propagate SIGKILL/SIGTERM directly to the AbortController
+                            if (sig === Signal.SIGKILL || sig === Signal.SIGTERM || sig === Signal.SIGINT) {
+                                commandAbortController.abort(sig);
+                            }
+                            handler(sig);
+                        });
                     },
-                    isInterrupted: () => signal?.aborted || abortController.signal.aborted || false,
+                    removeSignalHandler: () => {
+                        // Properly unbind the signal listener to prevent memory leaks
+                        if (signalCleanup) {
+                            signalCleanup();
+                            signalCleanup = null;
+                        }
+                    },
+                    isInterrupted: () => signal?.aborted || commandAbortController.signal.aborted || false,
                     resolvePath: (path: string) => getAbsolutePath(path, context.cwd),
                 };
 
@@ -136,38 +145,73 @@ export class CommandExecutor {
                 enrichedContext.groups = effectiveGroups;
 
                 if (isLast && action.background) {
-                    const pid = Math.floor(Math.random() * 9000) + 1000;
+                    // Background job: generate a SINGLE PID used for BOTH the job table AND signal registry
+                    const bgPid = Math.floor(Math.random() * 9000) + 1000;
                     const jid = context.jobs.length + 1;
-                    const newJob = { jid, pid, command: action.name, status: 'Running' as const, isBackground: true };
+                    const newJob = { jid, pid: bgPid, command: action.name, status: 'Running' as const, isBackground: true };
                     
                     context.updateProcesses([
                         ...context.processes,
-                        { pid, name: action.name, user: context.userId, startTime: Date.now() }
+                        { pid: bgPid, name: action.name, user: context.userId, startTime: Date.now() }
                     ]);
                     context.updateJobs([...context.jobs, newJob]);
 
-                    // Run the command without awaiting it
-                    commandFn(expandedArgs, enrichedContext, input).catch(e => console.error('Background job error:', e));
-                    return { output: `[1] ${pid}\n`, exitCode: 0 };
+                    // Create a dedicated AbortController for this background job
+                    const bgAbortController = new AbortController();
+
+                    // Register signal handler with the SAME bgPid used in job table
+                    const bgSignalCleanup = terminalStore.onSignal(bgPid, (sig) => {
+                        if (sig === Signal.SIGKILL || sig === Signal.SIGTERM || sig === Signal.SIGINT) {
+                            bgAbortController.abort(sig);
+                        }
+                    });
+
+                    // Override context for background execution with correct PID binding
+                    const bgContext: CommandContext = {
+                        ...enrichedContext,
+                        abortSignal: bgAbortController.signal,
+                        onSignal: (handler) => {
+                            terminalStore.onSignal(bgPid, handler);
+                        },
+                        isInterrupted: () => bgAbortController.signal.aborted,
+                    };
+
+                    // Run the command without awaiting it, with proper cleanup
+                    commandFn(expandedArgs, bgContext, input)
+                        .catch(e => console.error('Background job error:', e))
+                        .finally(() => {
+                            bgSignalCleanup(); // Clean up signal handler to prevent memory leak
+                        });
+                    return { output: `[${jid}] ${bgPid}\n`, exitCode: 0 };
                 }
 
-                const result = await commandFn(expandedArgs, enrichedContext, input);
-                lastResult = result;
+                // Foreground execution with signal handler cleanup
+                try {
+                    const result = await commandFn(expandedArgs, enrichedContext, input);
+                    lastResult = result;
+                } finally {
+                    // Clean up signal handler after command finishes (success, error, or kill)
+                    if (signalCleanup) {
+                        (signalCleanup as () => void)();
+                        signalCleanup = null;
+                    }
+                }
 
-                if (result.exitCode !== 0 && action.redirectionType !== 'stderr' && action.redirectionType !== 'both' && !isLast) {
-                    return result;
+                if (lastResult.exitCode !== 0 && action.redirectionType !== 'stderr' && action.redirectionType !== 'both' && !isLast) {
+                    return lastResult;
                 }
 
                 if (isLast) {
-                    if (result.stream) {
+                    if (lastResult.stream) {
                         let finalOutput = '';
-                        for await (const chunk of result.stream) {
+                        for await (const chunk of lastResult.stream) {
                             finalOutput += chunk;
                         }
                         lastResult.output = finalOutput;
                     }
                 } else {
-                    lastOutput = result.stream || result.output;
+                    lastOutput = lastResult.stream || lastResult.output;
+
                 }
 
                 // Handle redirection
