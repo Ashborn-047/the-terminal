@@ -113,7 +113,8 @@ To ensure the app is usable even without a live backend connection, a **Mock Mod
 - **Phase 9 Complete**: High-Fidelity Observability & Hardening ✅
 - **Lab Progress**: 14 / 35 Labs Completed ✅
 - **Backend Status**: 🟢 System Online (Connected to `terminal-backend` on SpacetimeDB Cloud)
-- **Realism Audit**: 100% compliance with POSIX signal propagation and SUID safety.
+- **Realism Audit**: 100% compliance with POSIX signal propagation (`SIGTERM`, `SIGKILL`, `SIGINT`, `SIGHUP`) and SUID safety.
+- **Architectural Hardening**: VFS access control strictly follows UID 0 bypass; root group membership no longer grants global permission bypass.
 
 ---
 
