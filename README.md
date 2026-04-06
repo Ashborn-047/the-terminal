@@ -17,13 +17,13 @@ The Terminal is more than just a simulator—it's a path to **Terminal Professio
 
 ### ✨ Core Features
 
-- **🖥️ Advanced Shell Engine** — Support for **50+ commands**, pipes `|`, redirections (`>`, `>>`, `<<`, `2>`, `&>`), and command substitution `$(...)`.
-- **📂 Linux VFS** — Sophisticated in-memory filesystem with Inode management, octal permissions, symlinks, and persistable state.
-- **🧪 Curriculum System** — **18 Modules & 38 Labs** covering everything from basic navigation to advanced sysadmin troubleshooting.
+- **🖥️ High-Fidelity Shell Engine** — Support for **50+ commands**, pipes `|`, redirections (`>`, `>>`, `<<`, `2>`, `&>`), and command substitution `$(...)`.
+- **📂 True Linux VFS** — Sophisticated in-memory filesystem with Inode management, octal permissions, symlinks, and a roadmap for a true Inode/Dentry split.
+- **🛠️ Strategic Troubleshooting** — **10 "Broken System" Lab Scenarios** designed to test mastery through real-world diagnostics.
 - **🏟️ Challenge Arena** — Dedicated **Arena** with "Survival Mode" challenges and "Ultimate Mastery" tests to push your skills to the limit.
-- **🎮 Real-Time Progression** — Live Leaderboards, Daily Quests, Streak Heatmap and Achievement unlocks powered by **SpacetimeDB**.
+- **🎮 Authoritative Multiplayer** — Live Leaderboards, Daily Quests, and **Co-op Labs** (Pair Programming) powered by an authoritative **SpacetimeDB** backend.
 - **💬 AI-Powered Mentorship** — Interactive Chat interface for real-time guidance during complex labs, featuring **Lab-Gated Channels**.
-- **🎨 Neo-Brutalist UI** — A premium, high-contrast visual experience designed for the modern developer with an ARIA-compliant 100% accessible interface.
+- **🎨 Terminal-First UI** — A premium Neo-Brutalist visual experience designed for high-performance **Xterm.js** canvas rendering.
 - **🛡️ Production Ready** — Integrated with `@sentry/react` for robust telemetry and error monitoring.
 
 ---
@@ -110,23 +110,42 @@ To ensure the app is usable even without a live backend connection, a **Mock Mod
 
 ## 📈 Current Status
 
-- **Phase 9 Complete**: High-Fidelity Observability & Hardening ✅
-- **Lab Progress**: 14 / 35 Labs Completed ✅
-- **Backend Status**: 🟢 System Online (Connected to `terminal-backend` on SpacetimeDB Cloud)
-- **Realism Audit**: 100% compliance with POSIX signal propagation (`SIGTERM`, `SIGKILL`, `SIGINT`, `SIGHUP`) and SUID safety.
-- **Architectural Hardening**: VFS access control strictly follows UID 0 bypass; root group membership no longer grants global permission bypass.
+- **Strategic Audit & Restoration In Progress** — 95% Linux Fidelity Roadmap established ✅
+- **Documentation Cleanup** — Legacy documentation archived (24 files) ✅
+- **Backend Status** — 🟢 System Online (Connected to `terminal-backend` on SpacetimeDB Cloud)
+- **Restoration Focus** — Preparing for Phase A (Internal Inode/Dentry VFS Refactor) 🚀
+- **Architectural Hardening** — VFS access control strictly follows UID 0 bypass; root group membership no longer grants global permission bypass.
 
 ---
 
-## 🗺️ Roadmap & Upcoming Features
+## 🗺️ Strategic Roadmap (Restoration Phases)
 
-### ⚖️ Phase 10: Harmonization (In Progress)
-- **Architectural Merge**: Integrating critique fixes while preserving modular command architecture.
-- **Reverse-Porting**: Harvesting consolidated bug fixes into modular command files.
+### ⚖️ Phase A: True Inode System (P0)
+- Resolve hardlink bugs by decoupling Dentries from Inodes.
+- Fix `O(n)` performance bottlenecks in VFS resolution.
 
-### 🎨 UI/UX Overhaul
-- **Page-Level Navigation**: Transitioning from tab-based views to distinct route-based pages.
-- **Improved Scrolling**: Fixing overflow-hidden issues for a better experience.
+### 🐚 Phase B: AST-Based Shell Parser (P0)
+- Support full shell script control flow (`if`, `for`, `while`).
+- Replace regex-based parsing with a tree-walking interpreter.
+
+### 🌳 Phase C: POSIX Process Tree (P1)
+- Implement proper process lifecycles (fork/exec/wait) and process states (Zombie, etc.).
+- Fix signal handler memory leaks and delivery flaws.
+
+### 📦 Phase D: File Descriptor Table (P1)
+- Isolate I/O redirection using per-process FD tables.
+
+### 🛠️ Phase E-H: Expansion & Hardening
+- **Phase E**: RHCSA/LFCS Command Suite expansion (systemctl, ip, find -exec).
+- **Phase F-G**: Mount Namespace simulation and Block/Character Device model.
+- **Phase H**: SELinux / MAC security simulation layer.
+
+---
+
+## 🎨 UI/UX Evolution
+- **Xterm.js Migration**: Transitioning from DOM to Canvas rendering for `vim`/`top` support.
+- **Terminal-First Paradigm**: Reducing cognitive load by muting secondary UI aesthetics.
+- **Multiplayer Co-op**: Shared terminal namespaces and real-time mentor shadowing.
 
 ---
 
