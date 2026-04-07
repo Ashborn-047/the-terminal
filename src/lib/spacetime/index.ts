@@ -1,4 +1,5 @@
 import { DbConnection } from "./bindings";
+import { CreateFileArgs, WriteFileArgs, DeleteFileArgs, MoveFileArgs, ChmodArgs } from "./bindings/vfs_reducer_args";
 
 class SpacetimeService {
     private conn: DbConnection | null = null;
@@ -128,6 +129,38 @@ class SpacetimeService {
     public async heartbeat(currentLab: string | undefined) {
         if (!this.conn) throw new Error("Not connected");
         return this.conn.reducers.heartbeat({ currentLab });
+    }
+
+    // --- VFS Reducers ---
+    
+    public async createFile(args: CreateFileArgs) {
+        if (this.isMock) return;
+        if (!this.conn) throw new Error("Not connected");
+        return this.conn.reducers.createFile(args);
+    }
+
+    public async writeFile(args: WriteFileArgs) {
+        if (this.isMock) return;
+        if (!this.conn) throw new Error("Not connected");
+        return this.conn.reducers.writeFile(args);
+    }
+
+    public async deleteFile(args: DeleteFileArgs) {
+        if (this.isMock) return;
+        if (!this.conn) throw new Error("Not connected");
+        return this.conn.reducers.deleteFile(args);
+    }
+
+    public async moveFile(args: MoveFileArgs) {
+        if (this.isMock) return;
+        if (!this.conn) throw new Error("Not connected");
+        return this.conn.reducers.moveFile(args);
+    }
+
+    public async chmod(args: ChmodArgs) {
+        if (this.isMock) return;
+        if (!this.conn) throw new Error("Not connected");
+        return this.conn.reducers.chmod(args);
     }
 
     public getIsConnected() {

@@ -1,27 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// 1. Mock SpacetimeDB completely
-vi.mock('../../../../lib/spacetime/bindings', () => ({
-    DbConnection: {
-        builder: vi.fn(() => ({
-            withUri: vi.fn().mockReturnThis(),
-            withDatabaseName: vi.fn().mockReturnThis(),
-            onConnect: vi.fn().mockReturnThis(),
-            onDisconnect: vi.fn().mockReturnThis(),
-            onConnectError: vi.fn().mockReturnThis(),
-            build: vi.fn(() => ({
-                reducers: {
-                    completeLab: vi.fn(),
-                },
-                db: {
-                    user: { iter: vi.fn(() => []) },
-                },
-                subscriptionBuilder: vi.fn(() => ({
-                    onApplied: vi.fn().mockReturnThis(),
-                    subscribeToAllTables: vi.fn(),
-                })),
-            })),
-        }))
+vi.mock('../../../../lib/spacetime/index', () => ({
+    spacetime: {
+        completeLab: vi.fn().mockResolvedValue({}),
+        createFile: vi.fn().mockResolvedValue({}),
+        writeFile: vi.fn().mockResolvedValue({}),
+        deleteFile: vi.fn().mockResolvedValue({}),
+        moveFile: vi.fn().mockResolvedValue({}),
+        chmod: vi.fn().mockResolvedValue({}),
     }
 }));
 
@@ -134,7 +120,7 @@ describe('Lab + VFS + SpacetimeDB Integration', () => {
         expect(progress.currentStepIndex).toBe(0);
 
         // 2. Initialize terminal hook
-        const { result } = renderHook(() => useTerminal('guest'));
+        const { result } = renderHook(() => useTerminal());
 
         // 3. User executes the first step
         await act(async () => {
@@ -182,7 +168,7 @@ describe('Lab + VFS + SpacetimeDB Integration', () => {
             useLabStore.getState().startLab('diy-test-1');
         });
 
-        const { result } = renderHook(() => useTerminal('guest'));
+        const { result } = renderHook(() => useTerminal());
 
         // User executes commands to fulfill DIY criteria
         await act(async () => {
@@ -193,7 +179,7 @@ describe('Lab + VFS + SpacetimeDB Integration', () => {
         // We simulate that UI call here.
         let isVerified = false;
         await act(async () => {
-            const resultDIY = VerificationEngine.verifyDIYLab(mockDIYLab, result.current.vfs, 'guest');
+            const resultDIY = VerificationEngine.verifyDIYLab(mockDIYLab, result.current.vfs, 'guest', []);
             isVerified = resultDIY.success;
             if (isVerified) {
                 useLabStore.getState().completeLab('diy-test-1');
