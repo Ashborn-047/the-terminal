@@ -49,6 +49,7 @@ import { script } from './script';
 import { strace } from './strace';
 import { lsof } from './lsof';
 import { who } from './who';
+import { stat } from './stat';
 
 // Register Core Commands
 CommandRegistry.register('ls', ls);
@@ -123,5 +124,6 @@ CommandRegistry.register('script', script);
 CommandRegistry.register('strace', strace);
 CommandRegistry.register('lsof', lsof);
 CommandRegistry.register('who', who);
+CommandRegistry.register('stat', stat);
 
 // Finished modularization of legacy modules
