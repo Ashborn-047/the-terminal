@@ -11,8 +11,11 @@ export const sleep = async (args: string[], context: CommandContext): Promise<Co
 
         const abortHandler = () => {
             cleanup();
+            if (context.abortSignal) {
+                context.abortSignal.removeEventListener('abort', abortHandler);
+            }
             const reason = context.abortSignal?.reason;
-            // Distinguish exit codes based on signal if we wanted to (130 for SIGINT, 137 for SIGKILL, 143 for SIGTERM)
+            // Distinguish exit codes based on signal (130 for SIGINT, 137 for SIGKILL, 143 for SIGTERM)
             const exitCode = reason === Signal.SIGKILL ? 137 : (reason === Signal.SIGTERM ? 143 : 130);
             resolve({ output: '', exitCode });
         };
@@ -24,14 +27,11 @@ export const sleep = async (args: string[], context: CommandContext): Promise<Co
             }
         }
 
-        // Backward compatibility with the event emitter style signal handler
+        // Backward compatibility fallback
         context.onSignal((sig) => {
-            if (sig === Signal.SIGINT || sig === Signal.SIGKILL || sig === Signal.SIGTERM) {
-                // The AbortController handles it, but this acts as a fallback for older implementations
-                if (!context.abortSignal) {
-                     cleanup();
-                     resolve({ output: '', exitCode: 130 });
-                }
+            if (!context.abortSignal && (sig === Signal.SIGINT || sig === Signal.SIGKILL || sig === Signal.SIGTERM)) {
+                 cleanup();
+                 resolve({ output: '', exitCode: 130 });
             }
         });
 

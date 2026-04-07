@@ -39,8 +39,8 @@ export const ls = async (args: string[], context: CommandContext): Promise<Comma
             return;
         }
 
-        const inode = result as Inode;
-        if (inode.type !== 'directory' || !inode.children) {
+        const inode = result as (Inode & { name: string });
+        if (inode.type !== 'directory') {
             outputLines.push(inode.name);
             return;
         }
@@ -65,12 +65,12 @@ export const ls = async (args: string[], context: CommandContext): Promise<Comma
                 const permStr = formatPermissions(child.permissions);
                 const rawSize = child.type === 'file' ? (child.size || 0) : 0;
                 const sizeStr = humanReadable ? formatHumanSize(rawSize) : String(rawSize).padStart(5);
-                const date = new Date(child.modifiedAt).toLocaleDateString('en-US', {
+                const date = new Date(child.mtime).toLocaleDateString('en-US', {
                     month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
                 });
                 const color = child.type === 'directory' ? colorRoot : (child.type === 'symlink' ? colorLink : colorFile);
                 const suffix = child.type === 'symlink' ? ` -> ${child.target || ''}` : '';
-                outputLines.push(`${typeChar}${permStr} 1 ${child.ownerId} ${child.groupId} ${sizeStr} ${date} ${color}${child.name}${colorReset}${suffix}`);
+                outputLines.push(`${typeChar}${permStr} ${child.nlink} ${child.ownerId} ${child.groupId} ${sizeStr} ${date} ${color}${child.name}${colorReset}${suffix}`);
             }
         } else {
             const list = children.map(n => {

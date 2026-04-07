@@ -31,10 +31,10 @@ export const chmod = async (args: string[], context: CommandContext): Promise<Co
         const inode = resolved as Inode;
         const err = applyMode(path, inode);
         if (err) return err;
-        if (recursive && inode.type === 'directory' && inode.children) {
-            for (const childId of inode.children) {
-                const child = context.vfs.getInode(childId);
-                if (child) {
+        if (recursive && inode.type === 'directory') {
+            const childrenResult = context.vfs.listChildren(path, context.userId, context.groups);
+            if (Array.isArray(childrenResult)) {
+                for (const child of childrenResult) {
                     const childPath = path === '/' ? `/${child.name}` : `${path}/${child.name}`;
                     const walkErr = walk(childPath);
                     if (walkErr) return walkErr;

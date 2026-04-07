@@ -122,12 +122,12 @@ describe('Command Executor', () => {
         const pipeline = CommandParser.parse('ln -s original.txt link.txt');
         await executor.execute(pipeline, context);
 
-        const rootDir: any = vfs.resolve('/', 'root');
-        const linkId = rootDir.children.find((id: string) => vfs.getInode(id)?.name === 'link.txt');
-        const linkInode = vfs.getInode(linkId);
+        const children = vfs.listChildren('/', 'root');
+        expect(Array.isArray(children)).toBe(true);
+        const link = (children as any[]).find(c => c.name === 'link.txt');
 
-        expect(linkInode?.type).toBe('symlink');
-        expect(linkInode?.target).toBe('original.txt');
+        expect(link?.type).toBe('symlink');
+        expect(link?.target).toBe('original.txt');
     });
 
     it('should handle Permission Denied for unauthorized access', async () => {

@@ -23,8 +23,8 @@ export interface Inode {
     id: string;
     type: FileType;
     permissions: InodePermissions;
-    uid: number;   // User ID of the owner
-    gid: number;   // Group ID of the owner
+    ownerId: string; // User ID of the owner
+    groupId: string; // Group ID of the owner
     nlink: number; // Link count (number of dentries pointing here)
     size: number;
     atime: number; // Access time
@@ -44,6 +44,7 @@ export interface Dentry {
     name: string;    // Name of the file/dir in this context
     inodeId: string; // The inode this entry points to
     parentId: string | null; // ID of the parent Dentry
+    children?: string[]; // IDs of child dentries
 }
 
 export interface VFSSnapshot {

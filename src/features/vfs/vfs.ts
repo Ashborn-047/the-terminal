@@ -2,10 +2,12 @@ import { v4 as uuidv4 } from 'uuid';
 import {
     Inode,
     InodePermissions,
+    Dentry,
     FileType,
     VFSSnapshot,
     VFSPermissions
 } from './types';
+import { InodeTable } from './InodeTable';
 import { snapshots } from './snapshots';
 import { formatError } from '../../utils/error_codes';
 import { logger } from '../../utils/logger';
@@ -22,7 +24,6 @@ export const DEFAULT_FILE_PERMISSIONS: InodePermissions = {
     others: { read: true, write: false, execute: false },
 };
 
-/** Convert InodePermissions to octal string like "755" or "1755" */
 export function permissionsToOctal(perms: InodePermissions): string {
     const toDigit = (p: VFSPermissions) =>
         (p.read ? 4 : 0) + (p.write ? 2 : 0) + (p.execute ? 1 : 0);
@@ -31,7 +32,6 @@ export function permissionsToOctal(perms: InodePermissions): string {
     return special > 0 ? `${special}${pStr}` : pStr;
 }
 
-/** Convert octal string like "755" or "1755" to InodePermissions */
 export function octalToPermissions(mode: string): InodePermissions | null {
     if (!/^[0-7]{3,4}$/.test(mode)) return null;
     let special = 0;
@@ -57,47 +57,85 @@ export function octalToPermissions(mode: string): InodePermissions | null {
 const MAX_SYMLINK_DEPTH = 20;
 
 export class VFS {
-    private rootId: string;
-    private inodes: Record<string, Inode>;
+    private rootDentryId: string;
+    private dentries: Record<string, Dentry> = {};
+    private inodeTable: InodeTable;
+    
+    // O(1) Dentry Traversal Cache (`${parentId}:${name}` -> DentryId)
+    private dentryIndex: Map<string, string> = new Map();
+
     private umask: string = '0022';
     private processProvider: () => any[] = () => [];
     private syscallListeners: ((syscall: string, args: any[], result: any) => void)[] = [];
 
     constructor(snapshot?: VFSSnapshot) {
-        if (snapshot) {
-            this.rootId = snapshot.rootId;
-            this.inodes = { ...snapshot.inodes };
+        if (snapshot && snapshot.dentries && snapshot.inodeTable) {
+            this.rootDentryId = snapshot.rootDentryId;
+            this.dentries = { ...snapshot.dentries };
+            this.inodeTable = new InodeTable(snapshot.inodeTable as any);
+            this.rebuildIndices();
         } else {
+            const rootInodeId = uuidv4();
+            const now = Date.now();
             const rootInode: Inode = {
-                id: uuidv4(),
+                id: rootInodeId,
                 type: 'directory',
-                name: '/',
                 permissions: { ...DEFAULT_DIR_PERMISSIONS },
                 ownerId: 'root',
                 groupId: 'root',
+                nlink: 1,
                 size: 0,
-                createdAt: Date.now(),
-                modifiedAt: Date.now(),
-                children: [],
+                atime: now,
+                mtime: now,
+                ctime: now,
             };
-            this.rootId = rootInode.id;
-            this.inodes = { [rootInode.id]: rootInode };
+
+            const rootDentry: Dentry = {
+                id: uuidv4(),
+                name: '/',
+                inodeId: rootInodeId,
+                parentId: null,
+                children: []
+            };
+
+            this.rootDentryId = rootDentry.id;
+            this.dentries[this.rootDentryId] = rootDentry;
+            this.inodeTable = new InodeTable({ [rootInodeId]: rootInode });
+            
+            this.rebuildIndices();
             this.initializeDefaultFS();
         }
     }
 
-    /**
-     * VFS Serialization — per Doc 2 §3.1
-     */
+    private rebuildIndices(): void {
+        this.dentryIndex.clear();
+        for (const d of Object.values(this.dentries)) {
+            if (d.parentId) {
+                this.dentryIndex.set(`${d.parentId}:${d.name}`, d.id);
+            }
+        }
+    }
+
     public serialize(): string {
-        return JSON.stringify({ rootId: this.rootId, inodes: this.inodes });
+        return JSON.stringify({ 
+            rootDentryId: this.rootDentryId, 
+            dentries: this.dentries,
+            inodeTable: JSON.parse(this.inodeTable.serialize())
+        });
     }
 
     public deserialize(data: string): void {
         try {
-            const newSnapshot: VFSSnapshot = JSON.parse(data);
-            this.rootId = newSnapshot.rootId;
-            this.inodes = newSnapshot.inodes;
+            const newSnapshot = JSON.parse(data);
+            if (newSnapshot.dentries) {
+                this.rootDentryId = newSnapshot.rootDentryId;
+                this.dentries = newSnapshot.dentries;
+                this.inodeTable = new InodeTable(newSnapshot.inodeTable);
+                this.rebuildIndices();
+            } else {
+                 // Failsafe for older direct-inode snapshots.
+                 console.warn("Legacy snapshot detected. VFS schema migrated; legacy states skipped.");
+            }
         } catch (e) {
             console.error('Failed to deserialize VFS:', e);
         }
@@ -105,11 +143,13 @@ export class VFS {
 
     public loadSnapshot(name: string): void {
         const snapshot = snapshots[name];
-        if (snapshot) {
-            this.rootId = snapshot.rootId;
-            this.inodes = JSON.parse(JSON.stringify(snapshot.inodes));
+        if (snapshot && snapshot.dentries) {
+            this.rootDentryId = snapshot.rootDentryId;
+            this.dentries = JSON.parse(JSON.stringify(snapshot.dentries));
+            this.inodeTable = new InodeTable(snapshot.inodeTable as any);
+            this.rebuildIndices();
         } else {
-            console.warn(`Snapshot "${name}" not found.`);
+            console.warn(`Snapshot "${name}" not found or incompatible with Wave 1 Schema.`);
         }
     }
 
@@ -146,37 +186,58 @@ export class VFS {
         };
     }
 
+    private addDentry(parentDentryId: string, name: string, inodeId: string): Dentry {
+        const newDentry: Dentry = {
+            id: uuidv4(),
+            name,
+            inodeId,
+            parentId: parentDentryId,
+            children: []
+        };
+        this.dentries[newDentry.id] = newDentry;
+        
+        const parentDentry = this.dentries[parentDentryId];
+        if (parentDentry) {
+            parentDentry.children = parentDentry.children || [];
+            parentDentry.children.push(newDentry.id);
+            this.dentryIndex.set(`${parentDentryId}:${name}`, newDentry.id);
+        }
+        return newDentry;
+    }
+
     public createVirtualFile(
         parentPath: string,
         name: string,
         handler: (userId: string) => string,
         ownerId: string = 'root'
     ): Inode | string {
-        const parentResult = this.resolve(parentPath, ownerId);
+        const parentResult = this.resolveDentry(parentPath, this.rootDentryId, true, 0, ownerId);
         if (typeof parentResult === 'string') return parentResult;
 
-        const parentInode = parentResult as Inode;
-        if (parentInode.type !== 'directory') return 'Not a directory';
+        const parentInode = this.inodeTable.getInodeRef(parentResult.inodeId);
+        if (parentInode?.type !== 'directory') return 'Not a directory';
 
         const newId = uuidv4();
+        const now = Date.now();
         const newInode: Inode = {
             id: newId,
             type: 'file',
-            name,
             permissions: { ...DEFAULT_FILE_PERMISSIONS }, // Typically 644
             ownerId,
             groupId: ownerId,
+            nlink: 1,
             size: 0,
-            createdAt: Date.now(),
-            modifiedAt: Date.now(),
+            atime: now,
+            mtime: now,
+            ctime: now,
             isVirtual: true,
             handler,
         };
 
-        this.inodes[newId] = newInode;
-        parentInode.children = parentInode.children || [];
-        parentInode.children.push(newId);
-        parentInode.modifiedAt = Date.now();
+        this.inodeTable.setInode(newInode);
+        this.addDentry(parentResult.id, name, newId);
+        this.inodeTable.updateInode(parentInode.id, { mtime: now });
+        
         return newInode;
     }
 
@@ -213,7 +274,6 @@ export class VFS {
             'root'
         );
 
-        // Virtual Files Initiation
         const bootTime = Date.now();
         this.createVirtualFile('/proc', 'version', () => 'Linux version 6.1.0-the-terminal (gcc version 12.2.0) #1 SMP PREEMPT_DYNAMIC Mon Mar 30 15:00:00 UTC 2026\n');
         this.createVirtualFile('/proc', 'uptime', () => {
@@ -222,129 +282,136 @@ export class VFS {
         });
         this.createVirtualFile('/proc', 'stat', () => {
             const procs = this.processProvider();
-            const totalLoad = procs.length * 100; // Simulated
+            const totalLoad = procs.length * 100;
             return `cpu  ${totalLoad} 0 492 10293 293 0 10 0 0 0\nprocesses ${procs.length + 42}\n`;
         });
         this.createVirtualFile('/dev', 'null', () => '');
         this.createVirtualFile('/dev', 'zero', () => '\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0');
     }
 
-    // Accessors
-    public getRootId(): string { return this.rootId; }
-
-    private hasPermission(inode: Inode, userId: string, type: keyof VFSPermissions, groups: string[] = []): boolean {
-        // Security: Only UID 0 (root user) bypasses permission checks.
-        // The 'root' group grants only group-level permissions, NOT full bypass.
-        if (userId === 'root') return true;
-
-        if (inode.ownerId === userId) return inode.permissions.owner[type];
-
-        if (groups.includes(inode.groupId)) return inode.permissions.group[type];
-
-        return inode.permissions.others[type];
-
+    public getRootId(): string { 
+        return this.dentries[this.rootDentryId].inodeId; 
     }
 
-    public resolve(
+    private hasPermission(inode: Inode, userId: string, type: keyof VFSPermissions, groups: string[] = []): boolean {
+        if (userId === 'root') return true;
+        if (inode.ownerId === userId) return inode.permissions.owner[type];
+        if (groups.includes(inode.groupId)) return inode.permissions.group[type];
+        return inode.permissions.others[type];
+    }
+
+    private resolveDentry(
         path: string,
-        userId: string = 'root',
-        startNodeId: string = this.rootId,
+        startDentryId: string = this.rootDentryId,
         followSymlinks: boolean = true,
         _depth: number = 0,
+        userId: string = 'root',
         groups: string[] = []
-    ): Inode | string {
+    ): Dentry | string {
         if (_depth > MAX_SYMLINK_DEPTH) return 'Too many levels of symbolic links';
-        if (path === '/') return this.inodes[this.rootId];
+        if (path === '/') return this.dentries[this.rootDentryId];
 
-        console.log(`[VFS] Resolving: ${path} (from ${startNodeId === this.rootId ? '/' : 'some-id'}, uid: ${userId})`);
         const parts = path.split('/').filter(p => p.length > 0);
-        let currentId = path.startsWith('/') ? this.rootId : startNodeId;
+        let currentDentry = path.startsWith('/') ? this.dentries[this.rootDentryId] : this.dentries[startDentryId];
 
         for (let i = 0; i < parts.length; i++) {
             const part = parts[i];
-            const currentInode = this.inodes[currentId];
-
+            const currentInode = this.inodeTable.getInodeRef(currentDentry.inodeId);
             if (!currentInode) return formatError('FILE_NOT_FOUND');
 
             if (part === '.') continue;
             if (part === '..') {
-                const parentId = this.findParentId(currentId);
-                currentId = parentId || this.rootId;
+                const parentId = currentDentry.parentId || this.rootDentryId;
+                currentDentry = this.dentries[parentId];
                 continue;
             }
 
-            if (currentInode.type !== 'directory' || !currentInode.children) {
-                return formatError('NOT_A_DIRECTORY');
-            }
+            if (currentInode.type !== 'directory') return formatError('NOT_A_DIRECTORY');
 
             if (!this.hasPermission(currentInode, userId, 'execute', groups)) {
                 logger.security('PERMISSION_DENIED', { path, part, userId, action: 'execute' });
                 return formatError('PERMISSION_DENIED');
             }
 
-            const childId = currentInode.children.find(id => this.inodes[id]?.name === part);
-            if (!childId) return formatError('FILE_NOT_FOUND');
+            const childDentryId = this.dentryIndex.get(`${currentDentry.id}:${part}`);
+            if (!childDentryId) return formatError('FILE_NOT_FOUND');
 
-            const childInode = this.inodes[childId];
+            let childDentry = this.dentries[childDentryId];
+            const childInode = this.inodeTable.getInodeRef(childDentry.inodeId);
 
-            if (childInode.type === 'symlink' && followSymlinks) {
+            if (childInode && childInode.type === 'symlink' && followSymlinks) {
                 const target = childInode.target || '';
-                const resolved = this.resolve(target, userId, this.rootId, true, _depth + 1, groups);
+                const resolved = this.resolveDentry(target, this.rootDentryId, true, _depth + 1, userId, groups);
                 if (typeof resolved === 'string') return resolved;
-
+                
                 if (i < parts.length - 1) {
                     const remaining = parts.slice(i + 1).join('/');
-                    return this.resolve(remaining, userId, resolved.id, true, _depth + 1, groups);
+                    return this.resolveDentry(remaining, resolved.id, true, _depth + 1, userId, groups);
                 }
-                return resolved;
+                childDentry = resolved;
             }
 
-            currentId = childId;
+            currentDentry = childDentry;
         }
 
-        return this.inodes[currentId];
+        return currentDentry;
+    }
+
+    public resolve(
+        path: string,
+        userId: string = 'root',
+        startNodeId?: string, // Ignored in newer api but kept for signature comp
+        followSymlinks: boolean = true,
+        _depth: number = 0,
+        groups: string[] = []
+    ): (Inode & { name: string }) | string {
+        const result = this.resolveDentry(path, this.rootDentryId, followSymlinks, _depth, userId, groups);
+        if (typeof result === 'string') return result;
+        const inode = this.inodeTable.getInodeRef(result.inodeId);
+        if (!inode) return formatError('FILE_NOT_FOUND');
+        return { ...inode, name: result.name };
     }
 
     public writeFile(path: string, content: string, userId: string = 'root', groups: string[] = []): boolean | { error: string } {
-        let result = this.resolve(path, userId, this.rootId, true, 0, groups);
+        let result = this.resolveDentry(path, this.rootDentryId, true, 0, userId, groups);
 
         if (typeof result === 'string') {
             if (result === formatError('FILE_NOT_FOUND')) {
-                // Try to create the file
                 const parts = path.split('/').filter(p => p.length > 0);
                 const name = parts.pop() || '';
                 const parentPath = path.startsWith('/') ? '/' + parts.join('/') : parts.join('/') || '/';
 
                 const touchResult = this.touch(parentPath, name, userId);
                 if (typeof touchResult === 'string') return { error: touchResult };
-                result = touchResult;
+                
+                const dentryResult = this.resolveDentry(path, this.rootDentryId, true, 0, userId, groups);
+                if (typeof dentryResult === 'string') return { error: dentryResult };
+                result = dentryResult;
             } else {
                 return { error: result };
             }
         }
 
-        const inode = result as Inode;
-        if (inode.type !== 'file') return { error: 'Not a file' };
+        const inode = this.inodeTable.getInodeRef((result as Dentry).inodeId);
+        if (inode?.type !== 'file') return { error: 'Not a file' };
 
         if (!this.hasPermission(inode, userId, 'write', groups)) {
             logger.security('PERMISSION_DENIED', { path, userId, action: 'write' });
             return { error: formatError('PERMISSION_DENIED') };
         }
 
-        inode.content = content;
-        inode.size = content.length;
-        inode.modifiedAt = Date.now();
+        this.inodeTable.updateInode(inode.id, { content, size: content.length });
         return true;
     }
 
     public mkdir(parentPath: string, name: string, ownerId: string = 'root', mode?: string, groups: string[] = []): Inode | string {
-        const parentResult = this.resolve(parentPath, ownerId, this.rootId, true, 0, groups);
+        const parentResult = this.resolveDentry(parentPath, this.rootDentryId, true, 0, ownerId, groups);
         if (typeof parentResult === 'string') return parentResult;
 
-        const parentInode = parentResult as Inode;
-        if (parentInode.type !== 'directory') return 'Not a directory';
+        const parentInode = this.inodeTable.getInodeRef(parentResult.inodeId);
+        if (parentInode?.type !== 'directory') return 'Not a directory';
 
-        if (parentInode.children?.some(id => this.inodes[id]?.name === name)) {
+        if (this.dentryIndex.has(`${parentResult.id}:${name}`)) {
             return formatError('DIRECTORY_ALREADY_EXISTS');
         }
 
@@ -352,68 +419,70 @@ export class VFS {
         const initialPerms = mode ? octalToPermissions(mode) : DEFAULT_DIR_PERMISSIONS;
         if (!initialPerms) return 'Invalid mode';
 
+        const now = Date.now();
         const newInode: Inode = {
             id: newId,
             type: 'directory',
-            name,
             permissions: mode ? initialPerms : this.applyUmask({ ...DEFAULT_DIR_PERMISSIONS }),
             ownerId,
             groupId: ownerId,
+            nlink: 1,
             size: 0,
-            createdAt: Date.now(),
-            modifiedAt: Date.now(),
-            children: [],
+            atime: now,
+            mtime: now,
+            ctime: now,
         };
 
-        this.inodes[newId] = newInode;
-        parentInode.children = parentInode.children || [];
-        parentInode.children.push(newId);
-        parentInode.modifiedAt = Date.now();
+        this.inodeTable.setInode(newInode);
+        this.addDentry(parentResult.id, name, newId);
+        this.inodeTable.updateInode(parentInode.id, { mtime: now, ctime: now });
         return newInode;
     }
 
     public touch(parentPath: string, name: string, ownerId: string = 'root', groups: string[] = []): Inode | string {
-        const parentResult = this.resolve(parentPath, ownerId, this.rootId, true, 0, groups);
+        const parentResult = this.resolveDentry(parentPath, this.rootDentryId, true, 0, ownerId, groups);
         if (typeof parentResult === 'string') return parentResult;
 
-        const parentInode = parentResult as Inode;
-        if (parentInode.type !== 'directory') return 'Not a directory';
+        const parentInode = this.inodeTable.getInodeRef(parentResult.inodeId);
+        if (parentInode?.type !== 'directory') return 'Not a directory';
 
-        const existingId = parentInode.children?.find(id => this.inodes[id]?.name === name);
-        if (existingId) {
-            this.inodes[existingId].modifiedAt = Date.now();
-            return this.inodes[existingId];
+        const existingDentryId = this.dentryIndex.get(`${parentResult.id}:${name}`);
+        if (existingDentryId) {
+            const existingInodeId = this.dentries[existingDentryId].inodeId;
+            this.inodeTable.updateInode(existingInodeId, { mtime: Date.now() });
+            return this.inodeTable.getInodeRef(existingInodeId)!;
         }
 
         const newId = uuidv4();
+        const now = Date.now();
         const newInode: Inode = {
             id: newId,
             type: 'file',
-            name,
             permissions: this.applyUmask({ ...DEFAULT_FILE_PERMISSIONS }),
             ownerId,
             groupId: ownerId,
+            nlink: 1,
             size: 0,
-            createdAt: Date.now(),
-            modifiedAt: Date.now(),
+            atime: now,
+            mtime: now,
+            ctime: now,
             content: '',
         };
 
-        this.inodes[newId] = newInode;
-        parentInode.children = parentInode.children || [];
-        parentInode.children.push(newId);
-        parentInode.modifiedAt = Date.now();
+        this.inodeTable.setInode(newInode);
+        this.addDentry(parentResult.id, name, newId);
+        this.inodeTable.updateInode(parentInode.id, { mtime: now, ctime: now });
         return newInode;
     }
 
     public ln(parentPath: string, name: string, target: string, ownerId: string = 'root', symbolic: boolean = false, groups: string[] = []): Inode | string {
-        const parentResult = this.resolve(parentPath, ownerId, this.rootId, true, 0, groups);
+        const parentResult = this.resolveDentry(parentPath, this.rootDentryId, true, 0, ownerId, groups);
         if (typeof parentResult === 'string') return parentResult;
 
-        const parentInode = parentResult as Inode;
-        if (parentInode.type !== 'directory') return 'Not a directory';
+        const parentInode = this.inodeTable.getInodeRef(parentResult.inodeId);
+        if (parentInode?.type !== 'directory') return 'Not a directory';
 
-        if (parentInode.children?.some(id => this.inodes[id]?.name === name)) {
+        if (this.dentryIndex.has(`${parentResult.id}:${name}`)) {
             return formatError('DIRECTORY_ALREADY_EXISTS');
         }
 
@@ -421,49 +490,52 @@ export class VFS {
         if (!symbolic && typeof targetResult === 'string') return targetResult;
         if (!symbolic && (targetResult as Inode).type === 'directory') return 'hard link not allowed for directory';
 
-        const newId = uuidv4();
-        const newInode: Inode = symbolic ? {
-            id: newId,
-            type: 'symlink',
-            name,
-            permissions: { ...DEFAULT_FILE_PERMISSIONS },
-            ownerId,
-            groupId: ownerId,
-            size: target.length,
-            createdAt: Date.now(),
-            modifiedAt: Date.now(),
-            target,
-        } : {
-            ...(targetResult as Inode),
-            id: newId,
-            name,
-            modifiedAt: Date.now(),
-        };
-
-        this.inodes[newId] = newInode;
-        parentInode.children = parentInode.children || [];
-        parentInode.children.push(newId);
-        parentInode.modifiedAt = Date.now();
-        return newInode;
+        if (symbolic) {
+            const newId = uuidv4();
+            const now = Date.now();
+            const newInode: Inode = {
+                id: newId,
+                type: 'symlink',
+                permissions: { ...DEFAULT_FILE_PERMISSIONS },
+                ownerId,
+                groupId: ownerId,
+                nlink: 1,
+                size: target.length,
+                atime: now,
+                mtime: now,
+                ctime: now,
+                target,
+            };
+            this.inodeTable.setInode(newInode);
+            this.addDentry(parentResult.id, name, newId);
+            return newInode;
+        } else {
+            // Strict POSIX hardlinks via Inode decoupling!
+            const targetInode = targetResult as Inode;
+            this.inodeTable.incrementLink(targetInode.id);
+            this.addDentry(parentResult.id, name, targetInode.id);
+            this.inodeTable.updateInode(targetInode.id, { ctime: Date.now() });
+            return targetInode;
+        }
     }
 
     public rm(path: string, recursive: boolean = false, userId: string = 'root', groups: string[] = []): boolean | string {
-        const result = this.resolve(path, userId, this.rootId, false, 0, groups);
-        if (typeof result === 'string') return result;
+        const dentryResult = this.resolveDentry(path, this.rootDentryId, false, 0, userId, groups);
+        if (typeof dentryResult === 'string') return dentryResult;
 
-        const inode = result as Inode;
-        if (inode.id === this.rootId) return 'Cannot remove root directory';
+        if (dentryResult.id === this.rootDentryId) return 'Cannot remove root directory';
 
-        if (inode.type === 'directory' && !recursive && (inode.children?.length || 0) > 0) {
+        const inode = this.inodeTable.getInodeRef(dentryResult.inodeId);
+        if (!inode) return 'Internal error: inode missing';
+
+        if (inode.type === 'directory' && !recursive && (dentryResult.children?.length || 0) > 0) {
             return 'Directory not empty';
         }
 
-        const parentId = this.findParentId(inode.id);
-        if (!parentId) return 'Internal error: parent not found';
+        const parentDentry = this.dentries[dentryResult.parentId!];
+        const parentInode = this.inodeTable.getInodeRef(parentDentry.inodeId);
+        if (!parentInode) return 'Internal error: parent inode missing';
 
-        const parentInode = this.inodes[parentId];
-
-        // Sticky bit check: only owner of file/dir or root can delete
         if (parentInode.permissions.sticky && userId !== 'root') {
             if (inode.ownerId !== userId && parentInode.ownerId !== userId) {
                 return 'Operation not permitted (Sticky bit set)';
@@ -474,25 +546,31 @@ export class VFS {
             return 'Permission denied';
         }
 
-        if (inode.type === 'directory' && recursive && inode.children) {
-            const children = [...inode.children];
+        if (inode.type === 'directory' && recursive && dentryResult.children) {
+            const children = [...dentryResult.children];
             for (const childId of children) {
-                const child = this.inodes[childId];
-                if (child) {
-                    const childPath = `${path === '/' ? '' : path}/${child.name}`;
+                const childDentry = this.dentries[childId];
+                if (childDentry) {
+                    const childPath = `${path === '/' ? '' : path}/${childDentry.name}`;
                     this.rm(childPath, true, userId);
                 }
             }
         }
 
-        parentInode.children = parentInode.children?.filter(id => id !== inode.id);
-        parentInode.modifiedAt = Date.now();
-        delete this.inodes[inode.id];
+        parentDentry.children = parentDentry.children?.filter(id => id !== dentryResult.id);
+        this.inodeTable.updateInode(parentInode.id, { mtime: Date.now(), ctime: Date.now() });
+        
+        this.dentryIndex.delete(`${parentDentry.id}:${dentryResult.name}`);
+        delete this.dentries[dentryResult.id];
+
+        // Clean up Inode tracking
+        this.inodeTable.decrementLink(inode.id);
+
         return true;
     }
 
     public chmod(path: string, mode: string, userId: string = 'root', groups: string[] = []): boolean | string {
-        const result = this.resolve(path, userId, this.rootId, true, 0, groups);
+        const result = this.resolve(path, userId, this.rootDentryId, true, 0, groups);
         if (typeof result === 'string') return result;
 
         const inode = result as Inode;
@@ -501,183 +579,179 @@ export class VFS {
         const perms = octalToPermissions(mode);
         if (!perms) return 'Invalid mode';
 
-        inode.permissions = perms;
-        inode.modifiedAt = Date.now();
+        this.inodeTable.updateInode(inode.id, { permissions: perms, ctime: Date.now() });
         return true;
     }
 
     public chown(path: string, newOwner: string, userId: string = 'root', groups: string[] = []): boolean | string {
-        // Security: Only UID 0 can chown. Root group membership is insufficient.
         if (userId !== 'root') return 'Permission denied';
 
-        const result = this.resolve(path, userId, this.rootId, true, 0, groups);
+        const result = this.resolve(path, userId, this.rootDentryId, true, 0, groups);
         if (typeof result === 'string') return result;
 
         const inode = result as Inode;
-        inode.ownerId = newOwner;
-        inode.modifiedAt = Date.now();
+        this.inodeTable.updateInode(inode.id, { ownerId: newOwner, ctime: Date.now() });
         return true;
     }
 
-    private findParentId(inodeId: string): string | null {
-        for (const id in this.inodes) {
-            if (this.inodes[id].children?.includes(inodeId)) return id;
-        }
-        return null;
-    }
-
     public readFile(path: string, userId: string = 'root', groups: string[] = []): string | { error: string } {
-        const resolved = this.resolve(path, userId, this.rootId, true, 0, groups);
+        const resolved = this.resolve(path, userId, this.rootDentryId, true, 0, groups);
         if (typeof resolved === 'string') {
-            this.notifySyscall('openat', [path, 'O_RDONLY'], -2); // ENOENT
+            this.notifySyscall('openat', [path, 'O_RDONLY'], -2);
             return { error: resolved };
         }
         
         if (!this.hasPermission(resolved, userId, 'read', groups)) {
-            this.notifySyscall('openat', [path, 'O_RDONLY'], -13); // EACCES
+            this.notifySyscall('openat', [path, 'O_RDONLY'], -13);
             return { error: 'Permission denied' };
         }
 
-        this.notifySyscall('openat', [path, 'O_RDONLY'], 3); // success
+        this.notifySyscall('openat', [path, 'O_RDONLY'], 3);
         this.notifySyscall('read', [3, resolved.content || '', 1024], resolved.content?.length || 0);
         this.notifySyscall('close', [3], 0);
 
         return resolved.content || '';
     }
 
-    public listChildren(path: string, userId: string = 'root', groups: string[] = []): Inode[] | null | string {
-        const r = this.resolve(path, userId, this.rootId, true, 0, groups);
-        if (typeof r === 'string') return r;
-        if (r.type !== 'directory') return 'Not a directory';
+    public listChildren(path: string, userId: string = 'root', groups: string[] = []): (Inode & { name: string })[] | string {
+        const dentryResult = this.resolveDentry(path, this.rootDentryId, true, 0, userId, groups);
+        if (typeof dentryResult === 'string') return dentryResult;
+        
+        const inode = this.inodeTable.getInodeRef(dentryResult.inodeId);
+        if (inode?.type !== 'directory') return 'Not a directory';
 
-        if (!this.hasPermission(r, userId, 'read', groups)) {
+        if (!this.hasPermission(inode, userId, 'read', groups)) {
             return 'Permission denied';
         }
 
-        return (r.children || [])
-            .map(id => this.inodes[id])
-            .filter((n): n is Inode => !!n);
+        return (dentryResult.children || [])
+            .map(id => {
+                const d = this.dentries[id];
+                const i = this.inodeTable.getInodeRef(d.inodeId);
+                return i ? { ...i, name: d.name } : null;
+            })
+            .filter((n): n is Inode & { name: string } => !!n);
     }
-    public getPath(id: string): string {
-        const inode = this.inodes[id];
-        if (!inode) return '';
-        if (id === this.rootId) return '/';
-        const parentId = this.findParentId(id);
+    
+    public getPath(dentryId: string): string {
+        const dentry = this.dentries[dentryId];
+        if (!dentry) return '';
+        if (dentryId === this.rootDentryId) return '/';
+        const parentId = dentry.parentId;
         if (!parentId) return '';
         const parentPath = this.getPath(parentId);
-        return parentPath === '/' ? `/${inode.name}` : `${parentPath}/${inode.name}`;
+        return parentPath === '/' ? `/${dentry.name}` : `${parentPath}/${dentry.name}`;
     }
 
     public cp(srcPath: string, destPath: string, recursive: boolean = false, userId: string = 'root', groups: string[] = []): boolean | string {
-        const srcResult = this.resolve(srcPath, userId, this.rootId, true, 0, groups);
+        const srcResult = this.resolveDentry(srcPath, this.rootDentryId, true, 0, userId, groups);
         if (typeof srcResult === 'string') return srcResult;
+        const srcInode = this.inodeTable.getInodeRef(srcResult.inodeId)!;
 
-        const srcInode = srcResult as Inode;
         if (srcInode.type === 'directory' && !recursive) return 'omitting directory';
 
         const destParts = destPath.split('/').filter(p => p.length > 0);
         const destName = destParts.pop() || '';
         const destParentPath = destPath.startsWith('/') ? '/' + destParts.join('/') : destParts.join('/');
 
-        const destParentResult = this.resolve(destParentPath || '/', userId, this.rootId, true, 0, groups);
+        const destParentResult = this.resolveDentry(destParentPath || '/', this.rootDentryId, true, 0, userId, groups);
         if (typeof destParentResult === 'string') return destParentResult;
-        const destParentInode = destParentResult as Inode;
 
-        const copyRecursive = (inode: Inode, parentId: string, newName: string): void => {
+        const copyRecursive = (inode: Inode, parentDentryId: string, newName: string): void => {
             const newId = uuidv4();
             const copy: Inode = {
                 ...inode,
                 id: newId,
-                name: newName,
-                createdAt: Date.now(),
-                modifiedAt: Date.now(),
-                children: inode.type === 'directory' ? [] : undefined,
+                ctime: Date.now(),
+                mtime: Date.now()
             };
-            this.inodes[newId] = copy;
-            this.inodes[parentId].children?.push(newId);
+            this.inodeTable.setInode(copy);
+            const newDentry = this.addDentry(parentDentryId, newName, newId);
 
-            if (inode.type === 'directory' && inode.children) {
-                for (const childId of inode.children) {
-                    const child = this.inodes[childId];
-                    if (child) copyRecursive(child, newId, child.name);
+            if (inode.type === 'directory') {
+                const srcDentry = Object.values(this.dentries).find(d => d.inodeId === inode.id);
+                if (srcDentry && srcDentry.children) {
+                    for (const childId of srcDentry.children) {
+                        const childDentry = this.dentries[childId];
+                        const childInode = this.inodeTable.getInodeRef(childDentry.inodeId);
+                        if (childInode) copyRecursive(childInode, newDentry.id, childDentry.name);
+                    }
                 }
             }
         };
 
-        copyRecursive(srcInode, destParentInode.id, destName);
-        destParentInode.modifiedAt = Date.now();
+        copyRecursive(srcInode, destParentResult.id, destName);
+        this.inodeTable.updateInode(destParentResult.inodeId, { mtime: Date.now() });
         return true;
     }
 
     public mv(srcPath: string, destPath: string, userId: string = 'root', groups: string[] = []): boolean | string {
-        const srcResult = this.resolve(srcPath, userId, this.rootId, true, 0, groups);
+        const srcResult = this.resolveDentry(srcPath, this.rootDentryId, true, 0, userId, groups);
         if (typeof srcResult === 'string') return srcResult;
-        const srcInode = srcResult as Inode;
 
         const destParts = destPath.split('/').filter(p => p.length > 0);
         const destName = destParts.pop() || '';
         const destParentPath = destPath.startsWith('/') ? '/' + destParts.join('/') : destParts.join('/');
 
-        const destParentResult = this.resolve(destParentPath || '/', userId, this.rootId, true, 0, groups);
+        const destParentResult = this.resolveDentry(destParentPath || '/', this.rootDentryId, true, 0, userId, groups);
         if (typeof destParentResult === 'string') return destParentResult;
-        const destParentInode = destParentResult as Inode;
 
-        if (destParentInode.children?.some(id => this.inodes[id]?.name === destName)) {
+        if (this.dentryIndex.has(`${destParentResult.id}:${destName}`)) {
             return 'Destination already exists';
         }
 
-        const oldParentId = this.findParentId(srcInode.id);
-        if (oldParentId) {
-            const oldParent = this.inodes[oldParentId];
-            oldParent.children = oldParent.children?.filter(id => id !== srcInode.id);
-            oldParent.modifiedAt = Date.now();
+        const oldParentDentry = this.dentries[srcResult.parentId!];
+        if (oldParentDentry) {
+            oldParentDentry.children = oldParentDentry.children?.filter(id => id !== srcResult.id);
+            this.dentryIndex.delete(`${oldParentDentry.id}:${srcResult.name}`);
+            this.inodeTable.updateInode(oldParentDentry.inodeId, { mtime: Date.now() });
         }
 
-        srcInode.name = destName;
-        destParentInode.children = destParentInode.children || [];
-        destParentInode.children.push(srcInode.id);
-        destParentInode.modifiedAt = Date.now();
-        srcInode.modifiedAt = Date.now();
+        srcResult.name = destName;
+        srcResult.parentId = destParentResult.id;
+        
+        destParentResult.children = destParentResult.children || [];
+        destParentResult.children.push(srcResult.id);
+        this.dentryIndex.set(`${destParentResult.id}:${destName}`, srcResult.id);
+        this.inodeTable.updateInode(destParentResult.inodeId, { mtime: Date.now() });
+
         return true;
     }
 
     public getSnapshot(): VFSSnapshot {
-        return { rootId: this.rootId, inodes: { ...this.inodes } };
+        // Build lightweight serialization wrapper since Table maintains memory
+        return JSON.parse(this.serialize());
     }
 
     public getInode(id: string): Inode | null {
-        return this.inodes[id] || null;
+        return this.inodeTable.getInodeRef(id);
     }
 
     public getMetadata(path: string, userId: string = 'root', groups: string[] = []): Inode | string {
-        const result = this.resolve(path, userId, this.rootId, true, 0, groups);
-        return result;
+        return this.resolve(path, userId, this.rootDentryId, true, 0, groups);
     }
 
     public exists(path: string, userId: string = 'root', groups: string[] = []): boolean {
-        return typeof this.resolve(path, userId, this.rootId, true, 0, groups) !== 'string';
+        return typeof this.resolve(path, userId, this.rootDentryId, true, 0, groups) !== 'string';
     }
 
     public isDirectory(path: string, userId: string = 'root', groups: string[] = []): boolean {
-        const res = this.resolve(path, userId, this.rootId, true, 0, groups);
+        const res = this.resolve(path, userId, this.rootDentryId, true, 0, groups);
         return typeof res !== 'string' && res.type === 'directory';
     }
 
     public isFile(path: string, userId: string = 'root', groups: string[] = []): boolean {
-        const res = this.resolve(path, userId, this.rootId, true, 0, groups);
+        const res = this.resolve(path, userId, this.rootDentryId, true, 0, groups);
         return typeof res !== 'string' && res.type === 'file';
     }
 
     public ensureUserHome(username: string): void {
         const homePath = '/home/' + username;
         if (!this.exists(homePath)) {
-            // Create as root to ensure we have permission in /home
             this.mkdir('/home', username, 'root');
-            // Update ownership
             const result = this.resolve(homePath, 'root');
             if (typeof result !== 'string') {
-                result.ownerId = username;
-                result.groupId = username;
+                this.inodeTable.updateInode(result.id, { ownerId: username, groupId: username });
             }
         }
     }

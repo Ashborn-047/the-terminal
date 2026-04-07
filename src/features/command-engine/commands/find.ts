@@ -24,10 +24,10 @@ export const find = async (args: string[], context: CommandContext): Promise<Com
             results.push(path);
         }
 
-        if (res.type === 'directory' && res.children) {
-            for (const cid of res.children) {
-                const child = context.vfs.getInode(cid);
-                if (child) {
+        if (res.type === 'directory') {
+            const childrenResult = context.vfs.listChildren(path, context.userId, context.groups);
+            if (Array.isArray(childrenResult)) {
+                for (const child of childrenResult) {
                     await walk(path === '/' ? `/${child.name}` : `${path}/${child.name}`);
                 }
             }
