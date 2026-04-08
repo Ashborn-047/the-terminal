@@ -130,4 +130,45 @@ describe('High-Fidelity Realism Tests', () => {
             expect(result.output).toContain('echo "cmd1"');
         });
     });
+    describe('Phase 9: Engine Hardening (Advanced Redirections & Streaming)', () => {
+        it('should append output with >>', async () => {
+            await executor.execute(CommandParser.parse('echo line1 > test.txt'), context);
+            await executor.execute(CommandParser.parse('echo line2 >> test.txt'), context);
+            const result = await executor.execute(CommandParser.parse('cat test.txt'), context);
+            expect(result.output).toBe('line1\nline2');
+        });
+
+        it('should redirect stderr with 2>', async () => {
+            // cat a non-existent file should produce error on stderr
+            await executor.execute(CommandParser.parse('cat non_existent 2> error.log'), context);
+            const result = await executor.execute(CommandParser.parse('cat error.log'), context);
+            // vfs error format might vary, but it should be in error.log
+            expect(result.output).toMatch(/No such file or directory/i);
+        });
+
+        it('should redirect both stdout and stderr with &>', async () => {
+            await executor.execute(CommandParser.parse('echo hello &> out.log'), context);
+            const out1 = await executor.execute(CommandParser.parse('cat out.log'), context);
+            expect(out1.output).toBe('hello');
+
+            await executor.execute(CommandParser.parse('ls non_existent &> out.log'), context);
+            const out2 = await executor.execute(CommandParser.parse('cat out.log'), context);
+            expect(out2.output).toMatch(/No such file or directory/i);
+        });
+
+        it('should return a stream for curl command', async () => {
+            const pipeline = CommandParser.parse('curl http://test.com');
+            const result = await executor.execute(pipeline, context);
+            expect(result.stream).toBeDefined();
+            
+            // Consume first few chunks
+            const chunks = [];
+            let i = 0;
+            for await (const chunk of result.stream!) {
+                chunks.push(chunk);
+                if (i++ > 2) break;
+            }
+            expect(chunks.length).toBeGreaterThan(0);
+        });
+    });
 });

@@ -209,7 +209,8 @@ export class CommandExecutor {
                 }
 
                 if (isLast) {
-                    if (lastResult.stream) {
+                    // Only exhaust the stream if we have a redirection that needs the full output
+                    if (lastResult.stream && action.redirectionType !== 'none') {
                         let finalOutput = '';
                         for await (const chunk of lastResult.stream) {
                             finalOutput += chunk;
