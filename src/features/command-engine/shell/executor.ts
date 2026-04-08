@@ -101,27 +101,24 @@ export class ShellExecutor {
             for (const redir of redirections) {
                 const path = await this.expand(redir.path, env);
                 const fullPath = context.resolvePath(path);
-                
                 if (redir.type === 'overwrite' || redir.type === 'append') {
                     const writeRes = await this.vfs.writeFile(
                         fullPath, 
-                        result.output, 
+                        result.output || '', 
                         context.userId, 
                         context.groups, 
-                        { append: redir.type === 'append' } as any 
+                        redir.type === 'append'
                     );
                     if (typeof writeRes === 'object' && writeRes !== null && 'error' in writeRes) {
                         return { output: '', error: `bash: ${path}: ${this.formatVfsError((writeRes as any).error)}`, exitCode: 1 };
                     }
                     result.output = ''; 
                 } else if (redir.type === 'stderr') {
-                    if (result.error) {
-                         const writeRes = await this.vfs.writeFile(fullPath, result.error, context.userId, context.groups);
-                         if (typeof writeRes === 'object' && writeRes !== null && 'error' in writeRes) {
-                            return { output: '', error: `bash: ${path}: ${this.formatVfsError((writeRes as any).error)}`, exitCode: 1 };
-                         }
-                         result.error = undefined;
+                    const writeRes = await this.vfs.writeFile(fullPath, result.error || '', context.userId, context.groups);
+                    if (typeof writeRes === 'object' && writeRes !== null && 'error' in writeRes) {
+                        return { output: '', error: `bash: ${path}: ${this.formatVfsError((writeRes as any).error)}`, exitCode: 1 };
                     }
+                    result.error = undefined;
                 } else if (redir.type === 'both') {
                     const combined = (result.output || '') + (result.error || '');
                     const writeRes = await this.vfs.writeFile(fullPath, combined, context.userId, context.groups);

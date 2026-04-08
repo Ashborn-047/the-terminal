@@ -75,7 +75,7 @@ export const TerminalComponent: React.FC = () => {
                 PWD: cwd,
                 PATH: '/usr/bin:/bin',
                 TERM: 'xterm-256color',
-                PS1: `\x1b[1;37m[\u@the-terminal \W]$\x1b[0m `
+                PS1: `\\x1b[1;37m[\\u@the-terminal \\W]$\\x1b[0m `
             });
         }
 
@@ -185,9 +185,14 @@ export const TerminalComponent: React.FC = () => {
 
             const result = await executor.execute(ast, context, shellEnvRef.current);
             
-            if (result.output) {
+            if (result.stream) {
+                for await (const chunk of result.stream) {
+                    term.write(chunk);
+                }
+            } else if (result.output) {
                 term.writeln(result.output);
             }
+
             if (result.error) {
                 term.writeln(`\x1b[1;31m${result.error}\x1b[0m`);
             }

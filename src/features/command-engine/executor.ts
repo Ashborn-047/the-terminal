@@ -222,13 +222,27 @@ export class CommandExecutor {
                 }
 
                 // Handle redirection
-                if (action.redirectionType !== 'none' && expandedRedirPath) {
-                    const outputToRedirect = lastResult.output;
+                if (action.redirectionType !== 'none' && action.redirectionType !== 'input' && expandedRedirPath) {
+                    const fullPath = getAbsolutePath(expandedRedirPath, context.cwd);
+                    let contentToRedir = '';
+                    let shouldAppend = action.redirectionType === 'append';
+
                     if (action.redirectionType === 'overwrite' || action.redirectionType === 'append') {
-                        const fullPath = getAbsolutePath(expandedRedirPath, context.cwd);
-                        const writeResult = this.vfs.writeFile(fullPath, outputToRedirect, context.userId, context.groups);
-                        if (typeof writeResult === 'object' && 'error' in writeResult) {
-                            return { output: outputToRedirect, error: writeResult.error, exitCode: 1 };
+                        contentToRedir = lastResult.output;
+                        lastResult.output = ''; 
+                    } else if (action.redirectionType === 'stderr') {
+                        contentToRedir = lastResult.error || '';
+                        lastResult.error = undefined;
+                    } else if (action.redirectionType === 'both') {
+                        contentToRedir = (lastResult.output || '') + (lastResult.error || '');
+                        lastResult.output = '';
+                        lastResult.error = undefined;
+                    }
+
+                    if (contentToRedir || action.redirectionType === 'overwrite' || action.redirectionType === 'append') {
+                        const writeResult = await this.vfs.writeFile(fullPath, contentToRedir, context.userId, context.groups, shouldAppend);
+                        if (typeof writeResult === 'object' && writeResult !== null && 'error' in writeResult) {
+                            return { output: lastResult.output, error: writeResult.error, exitCode: 1 };
                         }
                     }
                 }
