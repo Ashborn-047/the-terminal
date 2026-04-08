@@ -135,6 +135,24 @@ class SpacetimeService {
         return this.conn.reducers.heartbeat({ currentLab });
     }
 
+    public async sendTerminalOutput(sessionId: string, data: string) {
+        if (this.isMock) {
+            // Mock broadcast
+            return;
+        }
+        if (!this.conn) throw new Error("Not connected");
+        // In a real implementation, this would call the generated binding
+        // return this.conn.reducers.sendTerminalOutput({ sessionId, data });
+        console.log(`[SPACETIME] Broadcasting output for ${sessionId}`);
+    }
+
+    public async subscribeToSession(sessionId: string) {
+        if (this.isMock) return;
+        if (!this.conn) throw new Error("Not connected");
+        // Custom subscription filter for session output
+        // this.conn.subscriptionBuilder().onApplied(() => ...).subscribeToSession(sessionId);
+    }
+
     // --- VFS Reducers ---
     
     public async createFile(args: CreateFileArgs) {

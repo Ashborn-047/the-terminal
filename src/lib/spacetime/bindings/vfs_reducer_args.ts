@@ -1,6 +1,7 @@
 export type CreateFileArgs = {
     path: string;
     content: string;
+    isSymlink?: boolean;
 };
 
 export type WriteFileArgs = {

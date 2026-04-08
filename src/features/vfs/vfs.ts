@@ -73,6 +73,7 @@ export class VFS {
     private umask: string = '0022';
     private processProvider: () => any[] = () => [];
     private syscallListeners: ((syscall: string, args: any[], result: any) => void)[] = [];
+    private procDentryId: string | null = null;
 
     constructor(snapshot?: VFSSnapshot) {
         if (snapshot && snapshot.dentries && snapshot.inodeTable) {
@@ -109,6 +110,16 @@ export class VFS {
             this.inodeTable = new InodeTable({ [rootInodeId]: rootInode });
             this.rebuildIndices();
             this.initializeDefaultFS();
+            this.mountProc();
+        }
+    }
+
+    private mountProc(): void {
+        const root = this.dentries[this.rootDentryId];
+        const procInode = this.mkdirSync('/', 'proc');
+        if (typeof procInode !== 'string') {
+            const dentry = Array.from(Object.values(this.dentries)).find(d => d.name === 'proc' && d.parentId === this.rootDentryId);
+            if (dentry) this.procDentryId = dentry.id;
         }
     }
 
@@ -165,7 +176,7 @@ export class VFS {
         const newInode: Inode = {
             id: newId,
             type: 'directory',
-            permissions: mode ? this.parseMode(mode) : { ...DEFAULT_DIR_PERMISSIONS },
+            permissions: mode ? this.parseOctalMode(parseInt(mode, 8)) : { ...DEFAULT_DIR_PERMISSIONS },
             ownerId,
             groupId: ownerId,
             nlink: 2,
@@ -181,13 +192,29 @@ export class VFS {
         return newInode;
     }
 
-    private parseMode(mode: string): InodePermissions {
-        const m = parseInt(mode, 8);
+    private parseOctalMode(mode: number): InodePermissions {
+        const m = mode;
+        const special = (m >> 9) & 7;
         return {
             owner: { read: !!(m & 0o400), write: !!(m & 0o200), execute: !!(m & 0o100) },
             group: { read: !!(m & 0o040), write: !!(m & 0o020), execute: !!(m & 0o010) },
             others: { read: !!(m & 0o004), write: !!(m & 0o002), execute: !!(m & 0o001) },
+            setuid: !!(special & 4),
+            setgid: !!(special & 2),
+            sticky: !!(special & 1),
         };
+    }
+
+    private parseStringMode(mode: string, current: InodePermissions): InodePermissions {
+        // Basic implementation for symbolic modes (u/g/o/a +/- r/w/x)
+        // For now, if it looks like an octal string, use that.
+        if (/^[0-7]+$/.test(mode)) {
+            const perms = octalToPermissions(mode);
+            return perms || current;
+        }
+        
+        // TODO: Full symbolic mode parser. For Phase 3.1, octal is the primary requirement.
+        return current; 
     }
 
     private rebuildIndices(): void {
@@ -199,7 +226,28 @@ export class VFS {
         }
     }
 
-    public serialize(): string {
+    /**
+     * MANDATORY WAVE 3 BLOOCKER: 
+     * Creates a new VFS instance from a base image (snapshot).
+     */
+    public static async createFromSnapshot(snapshot: VFSSnapshot): Promise<VFS> {
+        const vfs = new VFS();
+        await vfs.restoreFromSnapshot(snapshot);
+        return vfs;
+    }
+
+    /**
+     * MANDATORY WAVE 3 BLOOCKER:
+     * Restores this VFS instance from a serialized snapshot.
+     */
+    public async restoreFromSnapshot(snapshot: VFSSnapshot): Promise<void> {
+        this.rootDentryId = snapshot.rootDentryId;
+        this.dentries = JSON.parse(JSON.stringify(snapshot.dentries));
+        this.inodeTable = new InodeTable(snapshot.inodeTable as any);
+        this.rebuildIndices();
+    }
+
+    private serialize(): string {
         return JSON.stringify({ 
             rootDentryId: this.rootDentryId, 
             dentries: this.dentries,
@@ -244,6 +292,7 @@ export class VFS {
             console.warn(`Snapshot "${name}" is incompatible.`);
         }
     }
+
 
     private migrateLegacySnapshot(legacy: { rootId: string, inodes: Record<string, any> }): void {
         this.dentries = {};
@@ -579,7 +628,7 @@ export class VFS {
             if (this.dentryIndex.has(`${parentResult.id}:${name}`)) return formatError('DIRECTORY_ALREADY_EXISTS');
 
             const newId = uuidv4();
-            const initialPerms = mode ? this.parseMode(mode) : DEFAULT_DIR_PERMISSIONS;
+            const initialPerms = mode ? this.parseOctalMode(parseInt(mode, 8)) : DEFAULT_DIR_PERMISSIONS;
             if (!initialPerms) return 'Invalid mode';
 
             const now = Date.now();
@@ -701,6 +750,23 @@ export class VFS {
         }
     }
 
+    /**
+     * MANDATORY WAVE 3 BLOOCKER:
+     * Standard symlink implementation with (target, linkpath) signature.
+     */
+    public async symlink(target: string, linkpath: string, ownerId: string = 'root'): Promise<void> {
+        const parts = linkpath.split('/').filter(p => p.length > 0);
+        const name = parts.pop() || '';
+        const parentPath = linkpath.startsWith('/') ? '/' + parts.join('/') : parts.join('/') || '/';
+        
+        const result = this.ln(parentPath, name, target, ownerId, true);
+        if (typeof result === 'string') {
+            throw new Error(result);
+        }
+        
+        await spacetime.createFile({ path: linkpath, content: target, isSymlink: true });
+    }
+
     public async rm(path: string, recursive: boolean = false, userId: string = 'root', groups: string[] = []): Promise<boolean | string> {
         try {
             const dentryResult = this.resolveDentry(path, this.rootDentryId, false, 0, userId, groups);
@@ -750,20 +816,19 @@ export class VFS {
             return 'SpacetimeDB conflict: rm reverted';
         }
     }
-
-    public async chmod(path: string, mode: string, userId: string = 'root', groups: string[] = []): Promise<boolean | string> {
+    public async chmod(path: string, mode: string | number, userId: string = 'root', groups: string[] = []): Promise<boolean | string> {
         try {
             const result = this.resolve(path, userId, this.rootDentryId, true, 0, groups);
             if (typeof result === 'string') return result;
 
             const inode = result as Inode;
-            if (inode.ownerId !== userId && userId !== 'root') return 'Permission denied';
+            if (userId !== 'root' && inode.ownerId !== userId) return 'Operation not permitted';
 
-            const perms = octalToPermissions(mode);
+            const perms = typeof mode === 'number' ? this.parseOctalMode(mode) : this.parseStringMode(mode, inode.permissions);
             if (!perms) return 'Invalid mode';
 
             this.inodeTable.updateInode(inode.id, { permissions: perms, ctime: Date.now() });
-            await spacetime.chmod({ path, mode });
+            await spacetime.chmod({ path, mode: typeof mode === 'number' ? mode.toString(8) : mode });
             return true;
         } catch (err) {
             return 'SpacetimeDB conflict: chmod reverted';
@@ -805,24 +870,39 @@ export class VFS {
         return resolved.content || '';
     }
 
-    public listChildren(path: string, userId: string = 'root', groups: string[] = []): (Inode & { name: string })[] | string {
-        const dentryResult = this.resolveDentry(path, this.rootDentryId, true, 0, userId, groups);
-        if (typeof dentryResult === 'string') return dentryResult;
-        
-        const inode = this.inodeTable.getInodeRef(dentryResult.inodeId);
-        if (inode?.type !== 'directory') return 'Not a directory';
+    public listChildren(path: string, userId: string = 'root', groups: string[] = []): { name: string, type: FileType, inodeId: string }[] | string {
+        const dentry = this.resolveDentry(path, this.rootDentryId, true, 0, userId, groups);
+        if (typeof dentry === 'string') return dentry;
 
-        if (!this.hasPermission(inode, userId, 'read', groups)) {
-            return 'Permission denied';
+        const inode = this.inodeTable.getInodeRef(dentry.inodeId);
+        if (!inode || inode.type !== 'directory') return formatError('NOT_A_DIRECTORY');
+
+        // Dynamic ProcFS Handling
+        if (this.procDentryId && dentry.id === this.procDentryId) {
+            const procs = this.processProvider();
+            const procEntries = procs.map(p => ({
+                name: p.pid.toString(),
+                type: 'directory' as FileType,
+                inodeId: `proc-${p.pid}`
+            }));
+            const staticEntries = [
+                { name: 'uptime', type: 'file' as FileType, inodeId: 'proc-uptime' },
+                { name: 'version', type: 'file' as FileType, inodeId: 'proc-version' },
+                { name: 'meminfo', type: 'file' as FileType, inodeId: 'proc-meminfo' }
+            ];
+            return [...procEntries, ...staticEntries];
         }
 
-        return (dentryResult.children || [])
-            .map(id => {
-                const d = this.dentries[id];
-                const i = this.inodeTable.getInodeRef(d.inodeId);
-                return i ? { ...i, name: d.name } : null;
-            })
-            .filter((n): n is Inode & { name: string } => !!n);
+        // Standard VFS children
+        return (dentry.children || []).map(id => {
+            const child = this.dentries[id];
+            const childInode = this.inodeTable.getInodeRef(child.inodeId);
+            return {
+                name: child.name,
+                type: (childInode?.type || 'file') as FileType,
+                inodeId: child.inodeId
+            };
+        });
     }
     
     public getPath(dentryId: string): string {

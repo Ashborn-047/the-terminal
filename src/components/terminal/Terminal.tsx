@@ -12,6 +12,7 @@ import { ShellExecutor } from '../../features/command-engine/shell/executor';
 import { ShellEnvironment } from '../../features/command-engine/shell/environment';
 import { TabCompleter } from '../../features/command-engine/shell/completion';
 import { useTerminalStore } from '../../stores/terminalStore';
+import { useGamificationStore } from '../../stores/gamificationStore';
 import { Signal } from '../../features/command-engine/types';
 
 export const TerminalComponent: React.FC = () => {
@@ -84,7 +85,17 @@ export const TerminalComponent: React.FC = () => {
         term.writeln('Type \x1b[1;36mhelp\x1b[0m to see available commands.');
         term.writeln('');
         
-        const ps1 = `\x1b[1;37m[${userId}@the-terminal ${cwd === '/' ? '/' : cwd.split('/').pop()}]$\x1b[0m `;
+        // WAVE 3: Level Migration & Notice
+        const gamification = useGamificationStore.getState();
+        gamification.migrateUserLevels();
+        if (gamification.needsMigrationNotice) {
+            term.writeln('\x1b[1;33m[SYSTEM] Your progress has been migrated to the new Wave 3 XP formula.\x1b[0m');
+            term.writeln('\x1b[1;33m[SYSTEM] Levels are now harder to gain but more rewarding!\x1b[0m');
+            term.writeln('');
+            gamification.dismissMigrationNotice();
+        }
+
+        const ps1 = getPrompt();
         term.write(ps1);
 
         // Handle Input
@@ -139,16 +150,37 @@ export const TerminalComponent: React.FC = () => {
         const handleResize = () => fitAddon.fit();
         window.addEventListener('resize', handleResize);
 
+        // Phase 3.3: Respawn Timer
+        const respawnInterval = setInterval(() => {
+            const { hardcore } = useGamificationStore.getState();
+            if (hardcore.isDead && hardcore.respawnAt && Date.now() >= hardcore.respawnAt) {
+                // Time to respawn!
+                useGamificationStore.setState((state) => ({
+                    hardcore: { ...state.hardcore, isDead: false, respawnAt: null }
+                }));
+                term.write('\r\n\x1b[1;32m[SYSTEM] System restored. Welcome back, user.\x1b[0m\r\n');
+                term.write(getPrompt());
+            }
+        }, 1000);
+
         return () => {
             window.removeEventListener('resize', handleResize);
+            clearInterval(respawnInterval);
             term.dispose();
         };
     }, []);
 
     const getPrompt = () => {
+        const { streak, masteryBadge, hardcore } = useGamificationStore.getState();
+        if (hardcore.isDead) return ''; // No prompt while dead
+
+        const streakEmoji = streak.current >= 3 ? ' \x1b[1;31m🔥\x1b[0m' : '';
+        const badgeTitle = masteryBadge === 'kernel_master' ? 'KERNEL' : masteryBadge.toUpperCase();
+        const badgeText = masteryBadge !== 'novice' ? `\x1b[1;33m[${badgeTitle}]\x1b[0m ` : '';
+        
         const currentCwd = shellEnvRef.current?.get('PWD') || cwd;
         const displayCwd = currentCwd === '/' ? '/' : currentCwd.split('/').pop();
-        return `\x1b[1;37m[${userId}@the-terminal ${displayCwd}]$\x1b[0m `;
+        return `${badgeText}\x1b[1;37m[${userId}@the-terminal ${displayCwd}]${streakEmoji}$\x1b[0m `;
     };
 
     const handleExecute = async (input: string) => {
@@ -210,11 +242,26 @@ export const TerminalComponent: React.FC = () => {
 
     return (
         <div className="flex flex-col w-full h-full bg-brutal-black font-mono text-brutal-green p-4 border-3 border-brutal-white shadow-brutal-lg">
-            <div 
-                ref={terminalRef} 
-                className="w-full h-full overflow-hidden" 
-                data-testid="terminal-container" 
-            />
+            <div className="relative w-full h-full overflow-hidden">
+                {/* Mastery / Death Overlay */}
+                {useGamificationStore.getState().hardcore.isDead && (
+                    <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-brutal-dark/95 backdrop-blur-sm p-8 text-center border-4 border-brutal-red animate-pulse">
+                        <span className="text-6xl mb-4">💀</span>
+                        <h2 className="text-3xl font-heading text-brutal-red uppercase mb-2">SYSTEM CRITICAL FAILURE</h2>
+                        <p className="text-brutal-white mb-6 max-w-md">
+                            {useGamificationStore.getState().hardcore.lastDeathReason || "Kernel panic or unauthorized administrative action detected."}
+                        </p>
+                        <div className="flex flex-col gap-2 font-mono text-sm">
+                            <span className="text-brutal-red">XP PENALTY: -10% MASTERY</span>
+                            <span className="text-brutal-white">
+                                RESPAWNING IN: {Math.ceil((useGamificationStore.getState().hardcore.respawnAt! - Date.now()) / 1000)}s
+                            </span>
+                        </div>
+                    </div>
+                )}
+
+                <div ref={terminalRef} className="w-full h-full overflow-hidden" data-testid="terminal-container" />
+            </div>
         </div>
     );
 };

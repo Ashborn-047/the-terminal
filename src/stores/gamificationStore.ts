@@ -6,6 +6,7 @@ import { trackEvent } from '../utils/analytics';
 import { useUIStore } from './uiStore';
 import { spacetime } from '../lib/spacetime';
 import { logger } from '../utils/logger';
+import { HardcoreProfile, MasteryBadge } from '../features/lab-engine/hardcore';
 
 // ======================================================================
 //  Level Titles — per gamification_framework.md §2.2
@@ -40,11 +41,8 @@ export function getLevelTitle(level: number): string {
 // ======================================================================
 export function xpForLevel(level: number): number {
     if (level <= 1) return 0;
-    if (level <= 10) {
-        return 100 * ((level - 1) * level) / 2;
-    }
-    const base10 = 4500; // cumulative XP at level 10
-    return base10 + (level - 10) * 1000;
+    // WAVE 3 EXPONENTIAL FORMULA: XP = 100 * 1.15^(Level-1)
+    return Math.floor(100 * Math.pow(1.15, level - 1));
 }
 
 export function levelFromXP(totalXp: number): number {
@@ -134,7 +132,16 @@ interface GamificationState {
     hintsUsed: number;
     dailyQuests: DailyQuest[];
     lastQuestGenerationDate: string | null;
+    version: string;
+    needsMigrationNotice: boolean;
+    
+    // Phase 3.3: Hardcore & Mastery
+    hardcore: HardcoreProfile;
+    masteryBadge: MasteryBadge;
 
+    addXp: (amount: number) => void;
+    triggerDeath: (reason: string) => void;
+    setMigrationNotice: (val: boolean) => void;
     awardXP: (amount: number, silent?: boolean) => void;
     hintPenalty: () => void;
     processLabCompletion: (lab: Lab, progress: LabProgress) => void;
@@ -149,6 +156,8 @@ interface GamificationState {
     updateQuestProgress: (type: QuestType, amount: number) => void;
     claimQuestReward: (questId: string) => void;
     setActivityHistory: (history: Record<string, number>) => void;
+    migrateUserLevels: () => void;
+    dismissMigrationNotice: () => void;
 }
 
 export const useGamificationStore = create<GamificationState>()(
@@ -165,6 +174,67 @@ export const useGamificationStore = create<GamificationState>()(
             hintsUsed: 0,
             dailyQuests: [],
             lastQuestGenerationDate: null,
+            version: '3.0',
+            needsMigrationNotice: false,
+            hardcore: {
+                deathCount: 0,
+                lastDeathReason: null,
+                isDead: false,
+                respawnAt: null,
+                xpPenaltyTotal: 0
+            },
+            masteryBadge: 'novice',
+
+            addXp: (amount) => {
+                set((state) => {
+                    const newXp = state.xp + amount;
+                    let newLevel = state.level;
+                    
+                    while (newXp >= xpForLevel(newLevel + 1)) {
+                        newLevel++;
+                    }
+
+                    // Calculate badge
+                    let badge: MasteryBadge = 'novice';
+                    if (newLevel >= 40) badge = 'kernel_master';
+                    else if (newLevel >= 30) badge = 'sysad';
+                    else if (newLevel >= 20) badge = 'hacker';
+
+                    return { 
+                        xp: newXp, 
+                        level: newLevel,
+                        masteryBadge: badge
+                    };
+                });
+            },
+
+            triggerDeath: (reason) => {
+                set((state) => {
+                    const penalty = Math.floor(state.xp * 0.1); // 10% XP loss
+                    const newXp = Math.max(0, state.xp - penalty);
+                    
+                    // Recalculate level if XP falls below current level threshold
+                    let newLevel = state.level;
+                    while (newLevel > 1 && newXp < xpForLevel(newLevel)) {
+                        newLevel--;
+                    }
+
+                    return {
+                        xp: newXp,
+                        level: newLevel,
+                        hardcore: {
+                            ...state.hardcore,
+                            deathCount: state.hardcore.deathCount + 1,
+                            lastDeathReason: reason,
+                            xpPenaltyTotal: state.hardcore.xpPenaltyTotal + penalty,
+                            isDead: true,
+                            respawnAt: Date.now() + 60000 // 1 minute respawn
+                        }
+                    };
+                });
+            },
+
+            setMigrationNotice: (val) => set({ needsMigrationNotice: val }),
 
             awardXP: async (amount, silent) => {
                 const oldLevel = get().level;
@@ -183,10 +253,11 @@ export const useGamificationStore = create<GamificationState>()(
                 set((state) => {
                     const nextXp = state.totalXpEarned + boostedAmount;
                     const today = new Date().toISOString().split('T')[0];
+                    const nextLevel = levelFromXP(nextXp);
                     return {
                         xp: state.xp + boostedAmount,
                         totalXpEarned: nextXp,
-                        level: levelFromXP(nextXp),
+                        level: nextLevel,
                         activityHistory: {
                             ...state.activityHistory,
                             [today]: (state.activityHistory?.[today] || 0) + boostedAmount
@@ -509,6 +580,20 @@ export const useGamificationStore = create<GamificationState>()(
             setActivityHistory: (history: Record<string, number>) => {
                 set({ activityHistory: history });
             },
+
+            migrateUserLevels: () => {
+                const state = get();
+                if (state.version === '3.1') return;
+                
+                const newLevel = levelFromXP(state.totalXpEarned);
+                set({
+                    level: newLevel,
+                    needsMigrationNotice: true,
+                    version: '3.1'
+                });
+            },
+
+            dismissMigrationNotice: () => set({ needsMigrationNotice: false }),
         }),
         { name: 'the-terminal-gamification' }
     )
