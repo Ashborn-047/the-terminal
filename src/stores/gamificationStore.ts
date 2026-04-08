@@ -41,8 +41,8 @@ export function getLevelTitle(level: number): string {
 // ======================================================================
 export function xpForLevel(level: number): number {
     if (level <= 1) return 0;
-    // WAVE 3 EXPONENTIAL FORMULA: XP = 100 * 1.15^(Level-1)
-    return Math.floor(100 * Math.pow(1.15, level - 1));
+    // WAVE 3 EXPONENTIAL FORMULA: XP = 100 * 1.5^(Level-1)
+    return Math.floor(100 * Math.pow(1.5, level - 1));
 }
 
 export function levelFromXP(totalXp: number): number {
@@ -210,18 +210,12 @@ export const useGamificationStore = create<GamificationState>()(
 
             triggerDeath: (reason) => {
                 set((state) => {
-                    const penalty = Math.floor(state.xp * 0.1); // 10% XP loss
-                    const newXp = Math.max(0, state.xp - penalty);
+                    const penalty = state.xp; // 100% XP loss
                     
-                    // Recalculate level if XP falls below current level threshold
-                    let newLevel = state.level;
-                    while (newLevel > 1 && newXp < xpForLevel(newLevel)) {
-                        newLevel--;
-                    }
-
                     return {
-                        xp: newXp,
-                        level: newLevel,
+                        xp: 0,
+                        level: 1,
+                        masteryBadge: 'novice',
                         hardcore: {
                             ...state.hardcore,
                             deathCount: state.hardcore.deathCount + 1,

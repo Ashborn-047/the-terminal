@@ -12,42 +12,42 @@ export interface SystemError {
 export const ERROR_CODES: Record<string, SystemError> = {
     COMMAND_NOT_FOUND: {
         code: 'E_001',
-        message: 'Command not found.',
+        message: 'Command not found',
         description: 'The requested command does not exist in the current environment.'
     },
     PERMISSION_DENIED: {
         code: 'E_002',
-        message: 'Permission denied.',
+        message: 'Permission denied',
         description: 'You do not have the required permissions to perform this action.'
     },
     FILE_NOT_FOUND: {
         code: 'E_003',
-        message: 'No such file or directory.',
+        message: 'No such file or directory',
         description: 'The specified path does not exist.'
     },
     NO_SUCH_FILE_OR_DIRECTORY: {
         code: 'E_003',
-        message: 'No such file or directory.',
+        message: 'No such file or directory',
         description: 'The specified path does not exist.'
     },
     DIRECTORY_ALREADY_EXISTS: {
         code: 'E_004',
-        message: 'File exists.',
+        message: 'File exists',
         description: 'Cannot create directory: File already exists.'
     },
     IS_DIRECTORY: {
         code: 'E_005',
-        message: 'Is a directory.',
+        message: 'Is a directory',
         description: 'Operation not permitted on a directory.'
     },
     NOT_A_DIRECTORY: {
         code: 'E_006',
-        message: 'Not a directory.',
+        message: 'Not a directory',
         description: 'Specified path is not a directory.'
     },
     GENERIC_INTERNAL_ERROR: {
         code: 'E_999',
-        message: 'Internal system error.',
+        message: 'Internal system error',
         description: 'An unexpected error occurred during execution.'
     }
 };

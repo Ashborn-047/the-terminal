@@ -115,11 +115,15 @@ export class VFS {
     }
 
     private mountProc(): void {
-        const root = this.dentries[this.rootDentryId];
-        const procInode = this.mkdirSync('/', 'proc');
-        if (typeof procInode !== 'string') {
-            const dentry = Array.from(Object.values(this.dentries)).find(d => d.name === 'proc' && d.parentId === this.rootDentryId);
-            if (dentry) this.procDentryId = dentry.id;
+        const dentry = Array.from(Object.values(this.dentries)).find(d => d.name === 'proc' && d.parentId === this.rootDentryId);
+        if (dentry) {
+            this.procDentryId = dentry.id;
+        } else {
+            const procInode = this.mkdirSync('/', 'proc', 'root', '555');
+            if (typeof procInode !== 'string') {
+                const newDentry = Array.from(Object.values(this.dentries)).find(d => d.name === 'proc' && d.parentId === this.rootDentryId);
+                if (newDentry) this.procDentryId = newDentry.id;
+            }
         }
     }
 
@@ -247,7 +251,7 @@ export class VFS {
         this.rebuildIndices();
     }
 
-    private serialize(): string {
+    public serialize(): string {
         return JSON.stringify({ 
             rootDentryId: this.rootDentryId, 
             dentries: this.dentries,
@@ -467,6 +471,7 @@ export class VFS {
             const totalLoad = procs.length * 100;
             return `cpu  ${totalLoad} 0 492 10293 293 0 10 0 0 0\nprocesses ${procs.length + 42}\n`;
         });
+        this.createVirtualFile('/proc', 'meminfo', () => 'MemTotal: 16384000 kB\nMemFree: 8192000 kB\nMemAvailable: 12288000 kB\nBuffers: 204800 kB\nCached: 4096000 kB\n');
         this.createVirtualFile('/dev', 'null', () => '');
         this.createVirtualFile('/dev', 'zero', () => '\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0');
     }
@@ -877,6 +882,11 @@ export class VFS {
         const inode = this.inodeTable.getInodeRef(dentry.inodeId);
         if (!inode || inode.type !== 'directory') return formatError('NOT_A_DIRECTORY');
 
+        // Phase 3.3 Regression Fix: Enforce READ permission to list directory contents
+        if (!this.hasPermission(inode, userId, 'read', groups)) {
+            return formatError('PERMISSION_DENIED');
+        }
+
         // Dynamic ProcFS Handling
         if (this.procDentryId && dentry.id === this.procDentryId) {
             const procs = this.processProvider();
@@ -888,7 +898,8 @@ export class VFS {
             const staticEntries = [
                 { name: 'uptime', type: 'file' as FileType, inodeId: 'proc-uptime' },
                 { name: 'version', type: 'file' as FileType, inodeId: 'proc-version' },
-                { name: 'meminfo', type: 'file' as FileType, inodeId: 'proc-meminfo' }
+                { name: 'meminfo', type: 'file' as FileType, inodeId: 'proc-meminfo' },
+                { name: 'stat', type: 'file' as FileType, inodeId: 'proc-stat' }
             ];
             return [...procEntries, ...staticEntries];
         }

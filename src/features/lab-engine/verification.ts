@@ -5,17 +5,18 @@ import { permissionsToOctal } from '../vfs/vfs';
 export class VerificationEngine {
     constructor(private vfs: VFS) {}
 
-    public async verify(conditions: VerificationCondition[]): Promise<{ success: boolean; message?: string }> {
+    public verify(conditions: VerificationCondition[]): { success: boolean; failedMessages: string[] } {
+        const failedMessages: string[] = [];
         for (const condition of conditions) {
-            const isMet = await this.checkCondition(condition);
-            if (!isMet) {
-                return { success: false, message: condition.message };
+            const isMet = this.checkCondition(condition);
+            if (!isMet && condition.message) {
+                failedMessages.push(condition.message);
             }
         }
-        return { success: true };
+        return { success: failedMessages.length === 0, failedMessages };
     }
 
-    private async checkCondition(condition: VerificationCondition): Promise<boolean> {
+    private checkCondition(condition: VerificationCondition): boolean {
         const { type, path, content, mode, owner, mustHaveSuid } = condition;
         const inode = this.vfs.getMetadata(path);
 
@@ -74,19 +75,32 @@ export class VerificationEngine {
         return special * 512 + toDigit(perms.owner) * 64 + toDigit(perms.group) * 8 + toDigit(perms.others);
     }
 
-    // --- Static Utility Methods for Guided Labs ---
+    // --- Static Utility Methods for Labs ---
+
+    public static verifyDIYLab(lab: any, vfs: VFS, userId: string = 'guest', groups: string[] = []): { success: boolean; failedMessages: string[] } {
+        if (!lab.verification || !lab.verification.conditions) {
+            return { success: true, failedMessages: [] };
+        }
+        const engine = new VerificationEngine(vfs);
+        return engine.verify(lab.verification.conditions);
+    }
 
     public static verifyGuidedStep(lab: any, stepIndex: number, input: string): boolean {
         if (!lab.steps || stepIndex >= lab.steps.length) return false;
         const step = lab.steps[stepIndex];
-        const trimmedInput = input.trim();
 
         if (step.regexMatch) {
-            return new RegExp(step.expectedCommand).test(trimmedInput);
+            return new RegExp(step.expectedCommand).test(input.trim());
         }
 
-        if (step.alternativeCommands?.includes(trimmedInput)) return true;
-        return trimmedInput === step.expectedCommand;
+        if (!step.expectedCommand) return false;
+
+        // Normalize whitespace: trim and collapse internal spaces
+        const normalizedInput = input.trim().replace(/\s+/g, ' ');
+        const normalizedExpected = step.expectedCommand.trim().replace(/\s+/g, ' ');
+
+        if (step.alternativeCommands?.some((alt: string) => alt.trim().replace(/\s+/g, ' ') === normalizedInput)) return true;
+        return normalizedInput === normalizedExpected;
     }
 
     public static verifyGuidedSequenceStep(lab: any, stepIndex: number, input: string, sequenceIndex: number): number {
@@ -95,10 +109,12 @@ export class VerificationEngine {
         if (!step.requiredSequence) return -1;
 
         const expected = step.requiredSequence[sequenceIndex];
-        // Note: we could add more complex logic here if we wanted partial matches
-        if (input.trim() === expected) {
+        const normalizedInput = input.trim().replace(/\s+/g, ' ');
+        const normalizedExpected = expected.trim().replace(/\s+/g, ' ');
+
+        if (normalizedInput === normalizedExpected) {
             return sequenceIndex + 1;
         }
-        return sequenceIndex; // No progress, but no failure either (just ignore wrong commands)
+        return -1;
     }
 }
