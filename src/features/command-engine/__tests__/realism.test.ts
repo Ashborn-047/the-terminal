@@ -10,14 +10,14 @@ describe('High-Fidelity Realism Tests', () => {
     let executor: CommandExecutor;
     let context: CommandContext;
 
-    beforeEach(() => {
+    beforeEach(async () => {
         vfs = new VFS();
         executor = new CommandExecutor(vfs);
         const state = {
             cwd: '/home/guest',
             userId: 'guest',
             groups: ['guest'],
-            env: { HOME: '/home/guest', USER: 'guest' },
+            env: { HOME: '/home/guest', USER: 'guest' } as Record<string, string>,
             history: [] as string[],
             processes: [] as any[],
             jobs: [] as any[],
@@ -53,10 +53,10 @@ describe('High-Fidelity Realism Tests', () => {
             resolvePath: (p: string) => p.startsWith('/') ? p : (state.cwd === '/' ? `/${p}` : `${state.cwd}/${p}`),
         };
         // Setup standard dirs correctly
-        vfs.mkdir('/', 'bin', 'root', '755');
-        vfs.mkdir('/', 'root', 'root', '700');
-        vfs.mkdir('/', 'home', 'root', '755');
-        vfs.mkdir('/home', 'guest', 'guest', '755');
+        await vfs.mkdir('/', 'bin', 'root', '755');
+        await vfs.mkdir('/', 'root', 'root', '700');
+        await vfs.mkdir('/', 'home', 'root', '755');
+        await vfs.mkdir('/home', 'guest', 'guest', '755');
     });
 
     describe('Phase 5: Job Control', () => {
@@ -78,8 +78,8 @@ describe('High-Fidelity Realism Tests', () => {
 
     describe('Phase 6: POSIX Identity & SUID', () => {
         it('should respect SUID bit on executable files', async () => {
-            vfs.writeFile('/bin/suid_tool', 'echo UID: $(id -u)', 'root');
-            vfs.chmod('/bin/suid_tool', '4755', 'root');
+            await vfs.writeFile('/bin/suid_tool', 'echo UID: $(id -u)', 'root');
+            await vfs.chmod('/bin/suid_tool', '4755', 'root');
 
             const pipeline = CommandParser.parse('/bin/suid_tool');
             const result = await executor.execute(pipeline, context);
@@ -87,8 +87,8 @@ describe('High-Fidelity Realism Tests', () => {
         });
 
         it('should allow sudo command for privileged actions', async () => {
-            vfs.writeFile('/root/secret', 'shhh', 'root');
-            vfs.chmod('/root/secret', '700', 'root');
+            await vfs.writeFile('/root/secret', 'shhh', 'root');
+            await vfs.chmod('/root/secret', '700', 'root');
 
             const catFail = await executor.execute(CommandParser.parse('cat /root/secret'), context);
             expect(catFail.error || catFail.output).toMatch(/Permission denied|No such file/);
@@ -100,7 +100,7 @@ describe('High-Fidelity Realism Tests', () => {
 
     describe('Phase 7: Observability', () => {
         it('should trace syscalls with strace', async () => {
-            vfs.writeFile('/home/guest/test.txt', 'hello', 'guest');
+            await vfs.writeFile('/home/guest/test.txt', 'hello', 'guest');
             const pipeline = CommandParser.parse('strace cat test.txt');
             const result = await executor.execute(pipeline, context);
 
@@ -128,6 +128,47 @@ describe('High-Fidelity Realism Tests', () => {
             const pipeline = CommandParser.parse('history');
             const result = await executor.execute(pipeline, context);
             expect(result.output).toContain('echo "cmd1"');
+        });
+    });
+    describe('Phase 9: Engine Hardening (Advanced Redirections & Streaming)', () => {
+        it('should append output with >>', async () => {
+            await executor.execute(CommandParser.parse('echo line1 > test.txt'), context);
+            await executor.execute(CommandParser.parse('echo line2 >> test.txt'), context);
+            const result = await executor.execute(CommandParser.parse('cat test.txt'), context);
+            expect(result.output).toBe('line1\nline2');
+        });
+
+        it('should redirect stderr with 2>', async () => {
+            // cat a non-existent file should produce error on stderr
+            await executor.execute(CommandParser.parse('cat non_existent 2> error.log'), context);
+            const result = await executor.execute(CommandParser.parse('cat error.log'), context);
+            // vfs error format might vary, but it should be in error.log
+            expect(result.output).toMatch(/No such file or directory/i);
+        });
+
+        it('should redirect both stdout and stderr with &>', async () => {
+            await executor.execute(CommandParser.parse('echo hello &> out.log'), context);
+            const out1 = await executor.execute(CommandParser.parse('cat out.log'), context);
+            expect(out1.output).toBe('hello');
+
+            await executor.execute(CommandParser.parse('ls non_existent &> out.log'), context);
+            const out2 = await executor.execute(CommandParser.parse('cat out.log'), context);
+            expect(out2.output).toMatch(/No such file or directory/i);
+        });
+
+        it('should return a stream for curl command', async () => {
+            const pipeline = CommandParser.parse('curl http://test.com');
+            const result = await executor.execute(pipeline, context);
+            expect(result.stream).toBeDefined();
+            
+            // Consume first few chunks
+            const chunks = [];
+            let i = 0;
+            for await (const chunk of result.stream!) {
+                chunks.push(chunk);
+                if (i++ > 2) break;
+            }
+            expect(chunks.length).toBeGreaterThan(0);
         });
     });
 });

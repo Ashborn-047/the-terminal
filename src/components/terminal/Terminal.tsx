@@ -1,193 +1,220 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { Terminal } from '@xterm/xterm';
+import { FitAddon } from '@xterm/addon-fit';
+import { CanvasAddon } from '@xterm/addon-canvas';
+import { WebLinksAddon } from '@xterm/addon-web-links';
+import '@xterm/xterm/css/xterm.css';
+
 import { useTerminal } from '../../hooks/useTerminal';
+import { Lexer } from '../../features/command-engine/shell/lexer';
+import { Parser } from '../../features/command-engine/shell/parser';
+import { ShellExecutor } from '../../features/command-engine/shell/executor';
+import { ShellEnvironment } from '../../features/command-engine/shell/environment';
+import { TabCompleter } from '../../features/command-engine/shell/completion';
 import { useTerminalStore } from '../../stores/terminalStore';
 import { Signal } from '../../features/command-engine/types';
-import { TerminalEntry } from '../../types/terminal';
-
-const parseAnsi = (text: string) => {
-    // Basic regex for ANSI escape codes like \x1b[1;34m
-    const regex = /\x1b\[([\d;]+)m/g;
-    const parts = text.split(regex);
-    const result: React.ReactNode[] = [];
-
-    let currentClass = '';
-
-    for (let i = 0; i < parts.length; i++) {
-        if (i % 2 === 1) {
-            // These are the codes
-            const codes = parts[i];
-            if (codes === '0') currentClass = '';
-            else if (codes === '1;34') currentClass = 'text-brutal-blue font-bold';
-            else if (codes === '1;36') currentClass = 'text-brutal-cyan font-bold';
-            else if (codes === '1;32') currentClass = 'text-brutal-green font-bold';
-            else if (codes === '1;31') currentClass = 'text-brutal-red font-bold';
-        } else {
-            // This is the text
-            if (parts[i]) {
-                result.push(currentClass ? <span key={i} className={currentClass}>{parts[i]}</span> : parts[i]);
-            }
-        }
-    }
-    return result;
-};
-
-// ⚡ Bolt: Memoized history entry component to prevent expensive re-renders
-// By wrapping this in React.memo, we avoid re-rendering old terminal output
-// (and re-running parseAnsi) on every single keystroke.
-interface HistoryEntryProps {
-    entry: TerminalEntry;
-}
-
-const HistoryEntry: React.FC<HistoryEntryProps> = React.memo(({ entry }) => {
-    const isCd = entry.command.startsWith('cd ');
-    return (
-        <div key={entry.id} className="mb-2 animate-in fade-in duration-300">
-            <div className="flex gap-2 text-brutal-white font-bold">
-                <span>[{entry.userId}@the-terminal {entry.cwd === '/' ? '/' : entry.cwd.split('/').pop()}]$</span>
-                <span>{entry.command}</span>
-            </div>
-            {!isCd && entry.output && (
-                <pre
-                    data-testid="terminal-output"
-                    className="whitespace-pre-wrap mt-1 opacity-90"
-                >
-                    {parseAnsi(entry.output)}
-                </pre>
-            )}
-            {entry.error && (
-                <div className="text-brutal-red mt-1 font-bold">Error: {entry.error}</div>
-            )}
-        </div>
-    );
-});
 
 export const TerminalComponent: React.FC = () => {
-    const { history, cwd, userId, executeCommand, pendingPrompt, resolvePrompt, handleTabComplete } = useTerminal();
-    const [input, setInput] = useState('');
-    const [historyIndex, setHistoryIndex] = useState(-1);
-    const [flashClass, setFlashClass] = useState('');
-    const [isExecuting, setIsExecuting] = useState(false);
+    const terminalRef = useRef<HTMLDivElement>(null);
+    const xtermRef = useRef<Terminal | null>(null);
+    const fitAddonRef = useRef<FitAddon | null>(null);
+    const shellEnvRef = useRef<ShellEnvironment | null>(null);
+    
+    const { vfs, userId, cwd, executeCommand } = useTerminal();
     const foregroundProcess = useTerminalStore((state) => state.foregroundProcess);
     const sendSignal = useTerminalStore((state) => state.sendSignal);
-    const bottomRef = useRef<HTMLDivElement>(null);
-    const containerRef = useRef<HTMLDivElement>(null);
-    const inputRef = useRef<HTMLInputElement>(null);
-    const abortControllerRef = useRef<AbortController | null>(null);
+    
+    const [inputBuffer, setInputBuffer] = useState('');
+    const inputBufferRef = useRef('');
 
-    // Auto-scroll to bottom using scrollTop to avoid document-level shifts
     useEffect(() => {
-        if (containerRef.current) {
-            containerRef.current.scrollTop = containerRef.current.scrollHeight;
-        }
-    }, [history]);
+        if (!terminalRef.current) return;
 
-    // Focus input on click anywhere in terminal
-    const handleTerminalClick = () => {
-        inputRef.current?.focus();
+        // Initialize XTerm
+        const term = new Terminal({
+            cursorBlink: true,
+            fontFamily: 'JetBrains Mono, monospace',
+            fontSize: 14,
+            theme: {
+                background: '#0A0A0A',
+                foreground: '#00FF9D',
+                cursor: '#00FF9D',
+                selectionBackground: '#FFFFFF',
+                black: '#0A0A0A',
+                white: '#FFFFFF',
+                green: '#00FF9D',
+                red: '#FF4D4D',
+                blue: '#00CCFF',
+                yellow: '#FFE600',
+            },
+            allowProposedApi: true
+        });
+
+        const fitAddon = new FitAddon();
+        term.loadAddon(fitAddon);
+        term.loadAddon(new WebLinksAddon());
+        
+        // Try to load Canvas addon (falls back to DOM if hardware accel is missing)
+        try {
+            term.loadAddon(new CanvasAddon());
+        } catch (e) {
+            console.warn('Xterm Canvas addon failed to load, falling back to DOM renderer', e);
+        }
+
+        term.open(terminalRef.current);
+        fitAddon.fit();
+
+        xtermRef.current = term;
+        fitAddonRef.current = fitAddon;
+
+        // Initialize Shell Environment
+        if (!shellEnvRef.current) {
+            shellEnvRef.current = new ShellEnvironment({
+                USER: userId,
+                HOME: `/home/${userId}`,
+                PWD: cwd,
+                PATH: '/usr/bin:/bin',
+                TERM: 'xterm-256color',
+                PS1: `\\x1b[1;37m[\\u@the-terminal \\W]$\\x1b[0m `
+            });
+        }
+
+        // Welcome message
+        term.writeln('\x1b[1;32mWelcome to the Linux Simulator (Engine Wave 2)\x1b[0m');
+        term.writeln('Type \x1b[1;36mhelp\x1b[0m to see available commands.');
+        term.writeln('');
+        
+        const ps1 = `\x1b[1;37m[${userId}@the-terminal ${cwd === '/' ? '/' : cwd.split('/').pop()}]$\x1b[0m `;
+        term.write(ps1);
+
+        // Handle Input
+        term.onData(data => {
+            if (data === '\r') { // Enter
+                const cmd = inputBufferRef.current;
+                term.write('\r\n');
+                handleExecute(cmd);
+                inputBufferRef.current = '';
+                setInputBuffer('');
+            } else if (data === '\x7f') { // Backspace
+                if (inputBufferRef.current.length > 0) {
+                    inputBufferRef.current = inputBufferRef.current.slice(0, -1);
+                    setInputBuffer(inputBufferRef.current);
+                    term.write('\b \b');
+                }
+            } else if (data === '\x03') { // Ctrl+C
+                term.write('^C\r\n');
+                if (foregroundProcess) {
+                    sendSignal(foregroundProcess, Signal.SIGINT);
+                }
+                inputBufferRef.current = '';
+                setInputBuffer('');
+                term.write(getPrompt());
+            } else if (data === '\x1a') { // Ctrl+Z
+                term.write('^Z\r\n');
+                term.writeln('\x1b[1;33mJob control coming soon\x1b[0m');
+                term.write(getPrompt());
+            } else if (data === '\x09') { // Tab
+                const completer = new TabCompleter(vfs);
+                const results = completer.complete(inputBufferRef.current, shellEnvRef.current!, userId);
+                
+                if (results.length === 1) {
+                    const currentParts = inputBufferRef.current.split(/\s+/);
+                    const lastPart = currentParts[currentParts.length - 1];
+                    const completion = results[0].substring(lastPart.length);
+                    
+                    inputBufferRef.current += completion;
+                    setInputBuffer(inputBufferRef.current);
+                    term.write(completion);
+                } else if (results.length > 1) {
+                    term.write('\r\n' + results.join('  ') + '\r\n');
+                    term.write(getPrompt() + inputBufferRef.current);
+                }
+            } else {
+                inputBufferRef.current += data;
+                setInputBuffer(inputBufferRef.current);
+                term.write(data);
+            }
+        });
+
+        const handleResize = () => fitAddon.fit();
+        window.addEventListener('resize', handleResize);
+
+        return () => {
+            window.removeEventListener('resize', handleResize);
+            term.dispose();
+        };
+    }, []);
+
+    const getPrompt = () => {
+        const currentCwd = shellEnvRef.current?.get('PWD') || cwd;
+        const displayCwd = currentCwd === '/' ? '/' : currentCwd.split('/').pop();
+        return `\x1b[1;37m[${userId}@the-terminal ${displayCwd}]$\x1b[0m `;
     };
 
-    const handleKeyDown = async (e: React.KeyboardEvent) => {
-        if (e.key === 'Tab') {
-            e.preventDefault();
-            const completed = handleTabComplete(input);
-            setInput(completed);
-        } else if (e.key === 'Enter') {
-            if (pendingPrompt) {
-                const answer = input;
-                setInput('');
-                resolvePrompt(answer);
-                return;
-            }
-            const command = input;
-            setInput('');
-            setHistoryIndex(-1);
-            setIsExecuting(true);
-            const abortController = new AbortController();
-            abortControllerRef.current = abortController;
-            const result = await executeCommand(command, abortController);
-            setIsExecuting(false);
-            abortControllerRef.current = null;
+    const handleExecute = async (input: string) => {
+        const term = xtermRef.current;
+        if (!term || !shellEnvRef.current) return;
 
-            // Micro-interaction: success flash or error shake
-            if (result) {
-                if (result.exitCode === 0 && result.output) {
-                    setFlashClass('success-flash');
-                } else if (result.error || result.exitCode !== 0) {
-                    setFlashClass('error-shake');
+        const trimmed = input.trim();
+        if (!trimmed) {
+            term.write(getPrompt());
+            return;
+        }
+
+        try {
+            const lexer = new Lexer(trimmed);
+            const tokens = lexer.tokenize();
+            const parser = new Parser(tokens);
+            const ast = parser.parse();
+            
+            const executor = new ShellExecutor(vfs);
+            
+            // Current CommandContext (Simplified for now)
+            const context: any = {
+                cwd: shellEnvRef.current.get('PWD'),
+                userId,
+                groups: userId === 'root' ? ['root'] : [userId, 'users'],
+                resolvePath: (path: string) => {
+                    const base = shellEnvRef.current?.get('PWD') || '/';
+                    if (path.startsWith('/')) return path;
+                    if (path.startsWith('~/')) return `/home/${userId}${path.substring(1)}`;
+                    return base === '/' ? `/${path}` : `${base}/${path}`;
+                },
+                isInterrupted: () => false,
+            };
+
+            const result = await executor.execute(ast, context, shellEnvRef.current);
+            
+            if (result.stream) {
+                for await (const chunk of result.stream) {
+                    term.write(chunk);
                 }
-                setTimeout(() => setFlashClass(''), 800);
+            } else if (result.output) {
+                term.writeln(result.output);
             }
-        } else if (e.key === 'ArrowUp') {
-            console.log(`[Terminal] ArrowUp: historyLen=${history.length}, currentIndex=${historyIndex}`);
-            if (history.length > 0) {
-                const newIndex = Math.min(historyIndex + 1, history.length - 1);
-                setHistoryIndex(newIndex);
-                const cmd = history[history.length - 1 - newIndex].command;
-                console.log(`[Terminal] ArrowUp: setting input to "${cmd}" (index ${newIndex})`);
-                setInput(cmd);
+
+            if (result.error) {
+                term.writeln(`\x1b[1;31m${result.error}\x1b[0m`);
             }
-            e.preventDefault();
-        } else if (e.key === 'ArrowDown') {
-            if (historyIndex > 0) {
-                const newIndex = historyIndex - 1;
-                setHistoryIndex(newIndex);
-                setInput(history[history.length - 1 - newIndex].command);
-            } else {
-                setHistoryIndex(-1);
-                setInput('');
-            }
-            e.preventDefault();
-        } else if (e.key === 'c' && e.ctrlKey) {
-            if (foregroundProcess) {
-                sendSignal(foregroundProcess, Signal.SIGINT);
-            }
-            if (abortControllerRef.current) {
-                abortControllerRef.current.abort();
-            }
+
+            // Sync CWD if changed (special case for cd)
+            // In a better implementation, executor would update environment directly
+            // For now, let's assume cd was handled if result has something or executor updated it
+            
+            term.write(getPrompt());
+        } catch (e: any) {
+            term.writeln(`\x1b[1;31mbash: ${e.message}\x1b[0m`);
+            term.write(getPrompt());
         }
     };
 
     return (
-        <div
-            ref={containerRef}
-            className={`flex flex-col w-full h-full bg-brutal-black font-mono text-brutal-green p-4 overflow-y-auto cursor-text border-3 border-brutal-white shadow-brutal-lg ${flashClass}`}
-            onClick={handleTerminalClick}
-        >
-            {/* History */}
-            <div className="flex-1 overflow-y-auto no-scrollbar scroll-smooth" data-testid="terminal-history">
-                {history.map((entry: TerminalEntry) => (
-                    <HistoryEntry key={entry.id} entry={entry} />
-                ))}
-            </div>
-
-            {/* Current Input */}
-            <div className="flex gap-2 mt-2 items-center">
-                <span className="text-brutal-white">
-                    {pendingPrompt ? pendingPrompt.message : `[${userId}@the-terminal ${cwd === '/' ? '/' : cwd.split('/').pop()}]$`}
-                </span>
-                <input
-                    ref={inputRef}
-                    data-testid="terminal-input"
-                    type="text"
-                    aria-label="Terminal Input"
-                    className="flex-1 bg-transparent border-none outline-none text-brutal-white caret-transparent"
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    autoFocus
-                    spellCheck={false}
-                    autoComplete="off"
-                    disabled={isExecuting}
-                />
-                {/* Block cursor blink or loading underscore */}
-                {isExecuting ? (
-                    <span className="loading-underscore" />
-                ) : (
-                    <span className="terminal-cursor" />
-                )}
-            </div>
-
-            <div ref={bottomRef} className="h-4" />
+        <div className="flex flex-col w-full h-full bg-brutal-black font-mono text-brutal-green p-4 border-3 border-brutal-white shadow-brutal-lg">
+            <div 
+                ref={terminalRef} 
+                className="w-full h-full overflow-hidden" 
+                data-testid="terminal-container" 
+            />
         </div>
     );
 };

@@ -8,11 +8,11 @@ describe('SUID Root Bypass Prevention', () => {
         vfs = new VFS();
     });
 
-    it('should not grant global bypass via SUID-root binary to a normal user', () => {
+    it('should not grant global bypass via SUID-root binary to a normal user', async () => {
         // Create a root-owned file with mode 600
-        vfs.touch('/', 'root_only.txt', 'root');
-        vfs.writeFile('/root_only.txt', 'top secret', 'root');
-        vfs.chmod('/root_only.txt', '600', 'root');
+        await vfs.touch('/', 'root_only.txt', 'root');
+        await vfs.writeFile('/root_only.txt', 'top secret', 'root');
+        await vfs.chmod('/root_only.txt', '600', 'root');
 
         // Simulate a SUID-root binary: the effective userId becomes 'root'
         // In our VFS, when SUID is applied, executor.ts sets effectiveUserId = file.ownerId
@@ -26,18 +26,18 @@ describe('SUID Root Bypass Prevention', () => {
         expect(resultAsGuest).toEqual({ error: 'Permission denied' });
     });
 
-    it('should not allow chown by non-root user even with root group', () => {
-        vfs.touch('/', 'target.txt', 'root');
+    it('should not allow chown by non-root user even with root group', async () => {
+        await vfs.touch('/', 'target.txt', 'root');
 
         // A user in root group should NOT be able to chown
-        const result = vfs.chown('/target.txt', 'attacker', 'guest', ['root']);
+        const result = await vfs.chown('/target.txt', 'attacker', 'guest', ['root']);
         expect(result).toBe('Permission denied');
     });
 
-    it('should allow chown only for UID 0 (root user)', () => {
-        vfs.touch('/', 'target.txt', 'root');
+    it('should allow chown only for UID 0 (root user)', async () => {
+        await vfs.touch('/', 'target.txt', 'root');
 
-        const result = vfs.chown('/target.txt', 'newowner', 'root');
+        const result = await vfs.chown('/target.txt', 'newowner', 'root');
         expect(result).toBe(true);
 
         const inode = vfs.resolve('/target.txt', 'root') as any;

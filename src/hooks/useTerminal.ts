@@ -6,10 +6,12 @@ import { useUIStore } from '../stores/uiStore';
 import { useTerminalStore } from '../stores/terminalStore';
 import { useGamificationStore } from '../stores/gamificationStore';
 import { VFS } from '../features/vfs/vfs';
-import { CommandParser } from '../features/command-engine/parser';
-import { CommandExecutor } from '../features/command-engine/executor';
+import { Lexer } from '../features/command-engine/shell/lexer';
+import { Parser } from '../features/command-engine/shell/parser';
+import { ShellExecutor } from '../features/command-engine/shell/executor';
+import { ShellEnvironment } from '../features/command-engine/shell/environment';
 import { CommandRegistry } from '../features/command-engine/registry';
-import { CommandContext, CommandResult } from '../features/command-engine/types';
+import { CommandContext, CommandResult, Signal } from '../features/command-engine/types';
 import { VerificationEngine } from '../features/lab-engine/verification';
 import { TerminalEntry } from '../types/terminal';
 import '../features/command-engine/commands';
@@ -55,9 +57,11 @@ export function useTerminal() {
 
     // Ensure home directory exists whenever username is set — per doc 2 §3.3
     // We do this here (idempotently) to ensure it exists before any command executes
-    if (uiUsername) {
-        vfsRef.current.ensureUserHome(uiUsername);
-    }
+    useEffect(() => {
+        if (uiUsername) {
+            vfsRef.current.ensureUserHome(uiUsername);
+        }
+    }, [uiUsername]);
 
     // Seed processes from snapshot - per advanced-scenarios requirements
     useEffect(() => {
@@ -92,7 +96,8 @@ export function useTerminal() {
         }
     }, [processes]);
 
-    const executorRef = useRef<CommandExecutor>(new CommandExecutor(vfsRef.current));
+    const executorRef = useRef<ShellExecutor>(new ShellExecutor(vfsRef.current));
+    const shellEnvRef = useRef<ShellEnvironment>(new ShellEnvironment(env));
 
     useEffect(() => {
         if (processes.length === 0) {
@@ -167,7 +172,11 @@ export function useTerminal() {
         const outputs: string[] = [];
         let result: CommandResult = { output: '', exitCode: 0 };
 
-        const segments = CommandParser.parseCompound(trimmedInput);
+        const lexer = new Lexer(trimmedInput);
+        const tokens = lexer.tokenize();
+        const parser = new Parser(tokens);
+        const ast = parser.parse();
+
         const context: CommandContext = {
             cwd: currentCwd,
             userId: currentUserId,
@@ -178,35 +187,27 @@ export function useTerminal() {
             processes,
             jobs,
             aliases: {}, 
-            updateEnv: (newEnv) => setEnv(newEnv),
+            updateEnv: (newEnv) => {
+                setEnv(newEnv);
+                // Synchronize shell environment with React state
+                Object.entries(newEnv).forEach(([k, v]) => shellEnvRef.current.set(k, v));
+            },
             updateProcesses: (newProcesses) => setProcesses(newProcesses),
             updateJobs: (newJobs) => setJobs(newJobs),
             updateAliases: () => {}, 
             prompt: async (message: string) => new Promise(resolve => setPendingPrompt({ message, resolve })),
             onSignal: () => () => {},
             removeSignalHandler: () => {},
-            isInterrupted: () => false,
+            isInterrupted: () => abortController?.signal.aborted || false,
+            resolvePath: (path: string) => {
+                if (path.startsWith('/')) return path;
+                const base = currentCwd === '/' ? '/' : currentCwd + '/';
+                return base + path;
+            }
         };
 
-        // Execute compound commands (;, &&, ||)
-
-        for (const segment of segments) {
-            const pipeline = segment.pipeline;
-            if (pipeline.actions.length === 0) continue;
-
-            result = await executorRef.current.execute(pipeline, context, abortController);
-            if (result.output) outputs.push(result.output);
-            if (result.error) outputs.push(result.error);
-            console.log(`[Terminal] Result: exitCode=${result.exitCode}, outputLen=${result.output.length}, error=${result.error}`);
-
-            // Handle && (continue only on success) and || (continue only on failure)
-            if (segment.operator === '&&' && result.exitCode !== 0) break;
-            if (segment.operator === '||' && result.exitCode === 0) break;
-            // ; always continues
-        }
-
-        // Merge outputs
-        result = { ...result, output: outputs.join('\n') };
+        result = await executorRef.current.execute(ast, context, shellEnvRef.current);
+        console.log(`[Terminal] Result: exitCode=${result.exitCode}, outputLen=${result.output?.length}, error=${result.error}`);
 
         // Lab Verification Logic
         const { currentLabId, labs, progress, updateProgress } = useLabStore.getState();
@@ -253,8 +254,16 @@ export function useTerminal() {
         // Achievement Counter Tracking — per gamification_framework.md §2.4
         incrementCounter('commands-executed');
         updateQuestProgress('execute_commands', 1);
-        const firstPipeline = segments[0]?.pipeline;
-        const cmdName = firstPipeline?.actions[0]?.name;
+        
+        // Use AST for command detection
+        const getFirstCmdName = (node: any): string | null => {
+            if (node.type === 0) return node.name; // NodeType.COMMAND
+            if (node.type === 1) return getFirstCmdName(node.commands[0]); // NodeType.PIPELINE
+            if (node.type === 2 || node.type === 3) return getFirstCmdName(node.left); // LOGICAL
+            if (node.type === 7) return getFirstCmdName(node.nodes[0]); // SEQUENCE
+            return null;
+        };
+        const cmdName = getFirstCmdName(ast);
         if (cmdName === 'chmod') incrementCounter('chmod-count');
         if (cmdName === 'grep') incrementCounter('grep-count');
         if (cmdName === 'kill') incrementCounter('kill-count');
@@ -263,7 +272,7 @@ export function useTerminal() {
         if (cmdName === 'touch' || cmdName === 'tee') incrementCounter('files-created');
 
         // Track pipe usage for Pipe Wizard achievement
-        if (firstPipeline && firstPipeline.actions.length > 1) incrementCounter('pipe-count');
+        if (ast.type === 1) incrementCounter('pipe-count'); // NodeType.PIPELINE
 
         // Track unique commands for Command Master achievement
         const uniqueKey = `__unique_cmd_${cmdName}`;
@@ -296,20 +305,19 @@ export function useTerminal() {
         checkAchievements();
 
         // Handle special case: cd updates CWD
-        if (firstPipeline && firstPipeline.actions.length === 1 && firstPipeline.actions[0].name === 'cd' && result.exitCode === 0) {
+        if (cmdName === 'cd' && result.exitCode === 0) {
             const nextCwd = result.output || '/';
             cwdRef.current = nextCwd; // Update ref immediately for next potential commands
             setCwd(nextCwd);
         }
 
         // Add to history
-        const isCd = firstPipeline?.actions[0].name === 'cd' && result.exitCode === 0;
 
         const entry: TerminalEntry = {
             id: uuidv4(),
             userId: userId,
             command: trimmedInput + (result.exitCode === 130 ? '^C' : ''),
-            output: isCd ? '' : result.output,
+            output: cmdName === 'cd' ? '' : result.output,
             error: result.error,
             cwd: currentCwd, // record the CWD where it was executed
             timestamp: Date.now(),

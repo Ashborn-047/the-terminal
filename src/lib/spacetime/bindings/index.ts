@@ -48,6 +48,11 @@ import UpdateStreakReducer from "./update_streak_reducer";
 import PinMessageReducer from "./pin_message_reducer";
 import CompleteQuestReducer from "./complete_quest_reducer";
 import UpvoteMessageReducer from "./upvote_message_reducer";
+import CreateFileReducer from "./create_file_reducer";
+import WriteFileReducer from "./write_file_reducer";
+import DeleteFileReducer from "./delete_file_reducer";
+import MoveFileReducer from "./move_file_reducer";
+import ChmodReducer from "./chmod_reducer";
 
 // Import all procedure arg schemas
 
@@ -221,6 +226,11 @@ const reducersSchema = __reducers(
   __reducerSchema("pin_message", PinMessageReducer),
   __reducerSchema("complete_quest", CompleteQuestReducer),
   __reducerSchema("upvote_message", UpvoteMessageReducer),
+  __reducerSchema("create_file", CreateFileReducer),
+  __reducerSchema("write_file", WriteFileReducer),
+  __reducerSchema("delete_file", DeleteFileReducer),
+  __reducerSchema("move_file", MoveFileReducer),
+  __reducerSchema("chmod", ChmodReducer),
 );
 
 /** The schema information for all procedures in this module. This is defined the same way as the procedures would have been defined in the server. */

@@ -1,4 +1,5 @@
 import { DbConnection } from "./bindings";
+import { CreateFileArgs, WriteFileArgs, DeleteFileArgs, MoveFileArgs, ChmodArgs } from "./bindings/vfs_reducer_args";
 
 class SpacetimeService {
     private conn: DbConnection | null = null;
@@ -8,8 +9,12 @@ class SpacetimeService {
     private isConnected: boolean = false;
 
     constructor() {
-        // Default to mock mode if not explicitly disabled
-        this.isMock = import.meta.env.VITE_MOCK_SPACETIME !== 'false';
+        // Default to mock mode if not explicitly disabled. Force mock in test environments.
+        this.isMock = 
+            (import.meta as any).env.MODE === 'test' || 
+            process.env.NODE_ENV === 'test' || 
+            (import.meta as any).env.VITE_MOCK_SPACETIME !== 'false';
+        
         if (!this.isMock) {
             try {
                 this.connect();
@@ -23,8 +28,8 @@ class SpacetimeService {
     }
 
     public connect() {
-        const uri = import.meta.env.VITE_SPACETIME_URI || "https://maincloud.spacetimedb.com";
-        const databaseName = import.meta.env.VITE_SPACETIME_DB_NAME || "terminal-backend";
+        const uri = (import.meta as any).env.VITE_SPACETIME_URI || "https://maincloud.spacetimedb.com";
+        const databaseName = (import.meta as any).env.VITE_SPACETIME_DB_NAME || "terminal-backend";
 
         this.conn = DbConnection.builder()
             .withUri(uri)
@@ -128,6 +133,38 @@ class SpacetimeService {
     public async heartbeat(currentLab: string | undefined) {
         if (!this.conn) throw new Error("Not connected");
         return this.conn.reducers.heartbeat({ currentLab });
+    }
+
+    // --- VFS Reducers ---
+    
+    public async createFile(args: CreateFileArgs) {
+        if (this.isMock) return;
+        if (!this.conn) throw new Error("Not connected");
+        return this.conn.reducers.createFile(args);
+    }
+
+    public async writeFile(args: WriteFileArgs) {
+        if (this.isMock) return;
+        if (!this.conn) throw new Error("Not connected");
+        return this.conn.reducers.writeFile(args);
+    }
+
+    public async deleteFile(args: DeleteFileArgs) {
+        if (this.isMock) return;
+        if (!this.conn) throw new Error("Not connected");
+        return this.conn.reducers.deleteFile(args);
+    }
+
+    public async moveFile(args: MoveFileArgs) {
+        if (this.isMock) return;
+        if (!this.conn) throw new Error("Not connected");
+        return this.conn.reducers.moveFile(args);
+    }
+
+    public async chmod(args: ChmodArgs) {
+        if (this.isMock) return;
+        if (!this.conn) throw new Error("Not connected");
+        return this.conn.reducers.chmod(args);
     }
 
     public getIsConnected() {
