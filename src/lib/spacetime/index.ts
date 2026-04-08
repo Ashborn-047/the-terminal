@@ -9,8 +9,12 @@ class SpacetimeService {
     private isConnected: boolean = false;
 
     constructor() {
-        // Default to mock mode if not explicitly disabled
-        this.isMock = import.meta.env.VITE_MOCK_SPACETIME !== 'false';
+        // Default to mock mode if not explicitly disabled. Force mock in test environments.
+        this.isMock = 
+            (import.meta as any).env.MODE === 'test' || 
+            process.env.NODE_ENV === 'test' || 
+            (import.meta as any).env.VITE_MOCK_SPACETIME !== 'false';
+        
         if (!this.isMock) {
             try {
                 this.connect();
@@ -24,8 +28,8 @@ class SpacetimeService {
     }
 
     public connect() {
-        const uri = import.meta.env.VITE_SPACETIME_URI || "https://maincloud.spacetimedb.com";
-        const databaseName = import.meta.env.VITE_SPACETIME_DB_NAME || "terminal-backend";
+        const uri = (import.meta as any).env.VITE_SPACETIME_URI || "https://maincloud.spacetimedb.com";
+        const databaseName = (import.meta as any).env.VITE_SPACETIME_DB_NAME || "terminal-backend";
 
         this.conn = DbConnection.builder()
             .withUri(uri)

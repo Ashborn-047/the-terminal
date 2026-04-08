@@ -73,7 +73,6 @@ export class VFS {
     private umask: string = '0022';
     private processProvider: () => any[] = () => [];
     private syscallListeners: ((syscall: string, args: any[], result: any) => void)[] = [];
-    private shadowStack: ShadowState[] = [];
 
     constructor(snapshot?: VFSSnapshot) {
         if (snapshot && snapshot.dentries && snapshot.inodeTable) {
@@ -108,10 +107,87 @@ export class VFS {
             this.rootDentryId = rootDentry.id;
             this.dentries[this.rootDentryId] = rootDentry;
             this.inodeTable = new InodeTable({ [rootInodeId]: rootInode });
-            
             this.rebuildIndices();
             this.initializeDefaultFS();
         }
+    }
+
+    /**
+     * Internal synchronous version of touch for bootstrap/internal use.
+     * Guaranteed to update local memory states immediately.
+     */
+    private touchSync(parentPath: string, name: string, ownerId: string = 'root', groups: string[] = []): Inode | string {
+        const parentResult = this.resolveDentry(parentPath, this.rootDentryId, true, 0, ownerId, groups);
+        if (typeof parentResult === 'string') return parentResult;
+
+        const parentInode = this.inodeTable.getInodeRef(parentResult.inodeId);
+        if (!parentInode || parentInode.type !== 'directory') return 'Not a directory';
+
+        const existingDentryId = this.dentryIndex.get(`${parentResult.id}:${name}`);
+        if (existingDentryId) {
+            const existingInodeId = this.dentries[existingDentryId].inodeId;
+            this.inodeTable.updateInode(existingInodeId, { mtime: Date.now() });
+            return this.inodeTable.getInodeRef(existingInodeId)!;
+        }
+
+        const newId = uuidv4();
+        const now = Date.now();
+        const newInode: Inode = {
+            id: newId,
+            type: 'file',
+            permissions: { ...DEFAULT_FILE_PERMISSIONS },
+            ownerId,
+            groupId: ownerId,
+            nlink: 1,
+            size: 0,
+            atime: now,
+            mtime: now,
+            ctime: now,
+        };
+
+        this.inodeTable.setInode(newInode);
+        this.addDentry(parentResult.id, name, newId);
+        this.inodeTable.updateInode(parentInode.id, { mtime: now, ctime: now });
+        return newInode;
+    }
+
+    private mkdirSync(parentPath: string, name: string, ownerId: string = 'root', mode?: string, groups: string[] = []): Inode | string {
+        const parentResult = this.resolveDentry(parentPath, this.rootDentryId, true, 0, ownerId, groups);
+        if (typeof parentResult === 'string') return parentResult;
+
+        const parentInode = this.inodeTable.getInodeRef(parentResult.inodeId);
+        if (!parentInode || parentInode.type !== 'directory') return 'Not a directory';
+
+        if (this.dentryIndex.has(`${parentResult.id}:${name}`)) return formatError('DIRECTORY_ALREADY_EXISTS');
+
+        const newId = uuidv4();
+        const now = Date.now();
+        const newInode: Inode = {
+            id: newId,
+            type: 'directory',
+            permissions: mode ? this.parseMode(mode) : { ...DEFAULT_DIR_PERMISSIONS },
+            ownerId,
+            groupId: ownerId,
+            nlink: 2,
+            size: 4096,
+            atime: now,
+            mtime: now,
+            ctime: now,
+        };
+
+        this.inodeTable.setInode(newInode);
+        this.addDentry(parentResult.id, name, newId);
+        this.inodeTable.updateInode(parentInode.id, { mtime: now, ctime: now });
+        return newInode;
+    }
+
+    private parseMode(mode: string): InodePermissions {
+        const m = parseInt(mode, 8);
+        return {
+            owner: { read: !!(m & 0o400), write: !!(m & 0o200), execute: !!(m & 0o100) },
+            group: { read: !!(m & 0o040), write: !!(m & 0o020), execute: !!(m & 0o010) },
+            others: { read: !!(m & 0o004), write: !!(m & 0o002), execute: !!(m & 0o001) },
+        };
     }
 
     private rebuildIndices(): void {
@@ -307,33 +383,29 @@ export class VFS {
     }
 
     private initializeDefaultFS() {
-        this.mkdir('/', 'bin', 'root', undefined, [], true);
-        this.mkdir('/', 'etc', 'root', undefined, [], true);
-        this.mkdir('/', 'home', 'root', undefined, [], true);
-        this.mkdir('/home', 'guest', 'guest', undefined, [], true);
-        this.mkdir('/', 'tmp', 'root', undefined, [], true);
-        this.mkdir('/', 'var', 'root', undefined, [], true);
-        this.mkdir('/var', 'log', 'root', undefined, [], true);
-        this.mkdir('/', 'proc', 'root', undefined, [], true);
-        this.mkdir('/', 'dev', 'root', undefined, [], true);
-        this.mkdir('/', 'usr', 'root', undefined, [], true);
-        this.mkdir('/usr', 'bin', 'root', undefined, [], true);
-        this.mkdir('/usr', 'local', 'root', undefined, [], true);
+        this.mkdirSync('/', 'bin', 'root', '755', []);
+        this.mkdirSync('/', 'etc', 'root', '755', []);
+        this.mkdirSync('/', 'home', 'root', '755', []);
+        this.mkdirSync('/home', 'guest', 'guest', '755', []);
+        this.mkdirSync('/', 'tmp', 'root', '777', []);
+        this.mkdirSync('/', 'var', 'root', '755', []);
+        this.mkdirSync('/var', 'log', 'root', '755', []);
+        this.mkdirSync('/', 'proc', 'root', '555', []);
+        this.mkdirSync('/', 'dev', 'root', '755', []);
+        this.mkdirSync('/', 'usr', 'root', '755', []);
+        this.mkdirSync('/usr', 'bin', 'root', '755', []);
+        this.mkdirSync('/usr', 'local', 'root', '755', []);
 
-        this.touch('/etc', 'hostname', 'root', [], true);
-        this.writeFile('/etc/hostname', 'the-terminal', 'root', [], false, true);
-        this.touch('/etc', 'passwd', 'root', [], true);
-        this.writeFile('/etc/passwd',
-            'root:x:0:0:root:/root:/bin/bash\nguest:x:1000:1000:Guest:/home/guest:/bin/bash',
-            'root', [], false, true
-        );
-        this.touch('/etc', 'group', 'root', [], true);
+        this.touchSync('/etc', 'hostname', 'root');
+        this.touchSync('/etc', 'passwd', 'root');
+        this.touchSync('/etc', 'group', 'root');
+        this.touchSync('/var/log', 'syslog', 'root');
+
+        // Note: writeFile still async but we only need the directory structure sync for memory safety
+        this.writeFile('/etc/hostname', 'the-terminal\n', 'root', [], false, true);
+        this.writeFile('/etc/passwd', 'root:x:0:0:root:/root:/bin/bash\nguest:x:1000:1000:Guest:/home/guest:/bin/bash', 'root', [], false, true);
         this.writeFile('/etc/group', 'root:x:0:\nusers:x:100:\nguest:x:1000:', 'root', [], false, true);
-        this.touch('/var/log', 'syslog', 'root', [], true);
-        this.writeFile('/var/log/syslog',
-            'Feb 28 10:00:01 the-terminal systemd[1]: Started The Terminal.\nFeb 28 10:00:02 the-terminal kernel: Linux version 6.1.0',
-            'root', [], false, true
-        );
+        this.writeFile('/var/log/syslog', 'Feb 28 10:00:01 systemd[1]: Started The Terminal.\n', 'root', [], false, true);
 
         const bootTime = Date.now();
         this.createVirtualFile('/proc', 'version', () => 'Linux version 6.1.0-the-terminal (gcc version 12.2.0) #1 SMP PREEMPT_DYNAMIC Mon Mar 30 15:00:00 UTC 2026\n');
@@ -374,10 +446,17 @@ export class VFS {
         groups: string[] = []
     ): Dentry | string {
         if (_depth > MAX_SYMLINK_DEPTH) return 'Too many levels of symbolic links';
-        if (path === '/') return this.dentries[this.rootDentryId];
+        if (path === '/' || path === '' || path === '.') return this.dentries[this.rootDentryId];
 
         const parts = path.split('/').filter(p => p.length > 0);
-        let currentDentry = path.startsWith('/') ? this.dentries[this.rootDentryId] : this.dentries[startDentryId];
+        let currentDentry = (path.startsWith('/') || !startDentryId) 
+            ? this.dentries[this.rootDentryId] 
+            : (this.dentries[startDentryId] || this.dentries[this.rootDentryId]);
+
+        if (!currentDentry) {
+            console.error(`VFS CRITICAL: Root dentry ${this.rootDentryId} missing from index.`);
+            return formatError('FILE_NOT_FOUND');
+        }
 
         for (let i = 0; i < parts.length; i++) {
             const part = parts[i];
@@ -442,9 +521,6 @@ export class VFS {
     }
 
     public async writeFile(path: string, content: string, userId: string = 'root', groups: string[] = [], append: boolean = false, isBootstrap: boolean = false): Promise<boolean | { error: string }> {
-        // 1. Capture state for rollback (only if not bootstrapping)
-        if (!isBootstrap) this.pushShadow();
-
         try {
             let result = this.resolveDentry(path, this.rootDentryId, true, 0, userId, groups);
 
@@ -454,33 +530,29 @@ export class VFS {
                     const name = parts.pop() || '';
                     const parentPath = path.startsWith('/') ? '/' + parts.join('/') : parts.join('/') || '/';
 
-                    const touchResult = await this.touch(parentPath, name, userId, groups, isBootstrap);
+                    // Internal touch: Always use isBootstrap=true to avoid internal deadlocks/over-accounting
+                    const touchResult = await this.touch(parentPath, name, userId, groups, true);
                     if (typeof touchResult === 'string') {
-                        if (!isBootstrap) this.popShadow(true);
                         return { error: touchResult };
                     }
                     
                     const dentryResult = this.resolveDentry(path, this.rootDentryId, true, 0, userId, groups);
                     if (typeof dentryResult === 'string') {
-                        if (!isBootstrap) this.popShadow(true);
                         return { error: dentryResult };
                     }
                     result = dentryResult;
                 } else {
-                    if (!isBootstrap) this.popShadow(true);
                     return { error: result };
                 }
             }
 
             const inode = this.inodeTable.getInodeRef((result as Dentry).inodeId);
             if (inode?.type !== 'file') {
-                if (!isBootstrap) this.popShadow(true);
                 return { error: 'Not a file' };
             }
 
             if (!this.hasPermission(inode, userId, 'write', groups)) {
                 logger.security('PERMISSION_DENIED', { path, userId, action: 'write' });
-                if (!isBootstrap) this.popShadow(true);
                 return { error: formatError('PERMISSION_DENIED') };
             }
 
@@ -488,60 +560,27 @@ export class VFS {
             this.inodeTable.updateInode(inode.id, { content: newContent, size: newContent.length });
 
             if (!isBootstrap) {
-                // 2. Authoritative call
                 await spacetime.writeFile({ path, content, append });
-                this.popShadow(false); // Success, confirm the shadow
             }
             return true;
         } catch (err) {
-            if (!isBootstrap) this.popShadow(true); // Revert on failure
             return { error: 'SpacetimeDB conflict: write reverted' };
         }
     }
 
-    private pushShadow() {
-        // Deep copy of relevant state
-        this.shadowStack.push({
-            dentries: JSON.parse(JSON.stringify(this.dentries)),
-            inodeTable: JSON.parse(this.inodeTable.serialize())
-        });
-    }
-
-    private popShadow(revert: boolean) {
-        const state = this.shadowStack.pop();
-        if (revert && state) {
-            this.dentries = state.dentries;
-            this.inodeTable = new InodeTable(state.inodeTable);
-            this.rebuildIndices();
-        }
-    }
-
     public async mkdir(parentPath: string, name: string, ownerId: string = 'root', mode?: string, groups: string[] = [], isBootstrap: boolean = false): Promise<Inode | string> {
-        if (!isBootstrap) this.pushShadow();
         try {
             const parentResult = this.resolveDentry(parentPath, this.rootDentryId, true, 0, ownerId, groups);
-            if (typeof parentResult === 'string') {
-                if (!isBootstrap) this.popShadow(true);
-                return parentResult;
-            }
+            if (typeof parentResult === 'string') return parentResult;
 
             const parentInode = this.inodeTable.getInodeRef(parentResult.inodeId);
-            if (parentInode?.type !== 'directory') {
-                if (!isBootstrap) this.popShadow(true);
-                return 'Not a directory';
-            }
+            if (!parentInode || parentInode.type !== 'directory') return 'Not a directory';
 
-            if (this.dentryIndex.has(`${parentResult.id}:${name}`)) {
-                if (!isBootstrap) this.popShadow(true);
-                return formatError('DIRECTORY_ALREADY_EXISTS');
-            }
+            if (this.dentryIndex.has(`${parentResult.id}:${name}`)) return formatError('DIRECTORY_ALREADY_EXISTS');
 
             const newId = uuidv4();
-            const initialPerms = mode ? octalToPermissions(mode) : DEFAULT_DIR_PERMISSIONS;
-            if (!initialPerms) {
-                if (!isBootstrap) this.popShadow(true);
-                return 'Invalid mode';
-            }
+            const initialPerms = mode ? this.parseMode(mode) : DEFAULT_DIR_PERMISSIONS;
+            if (!initialPerms) return 'Invalid mode';
 
             const now = Date.now();
             const newInode: Inode = {
@@ -562,28 +601,23 @@ export class VFS {
             this.inodeTable.updateInode(parentInode.id, { mtime: now, ctime: now });
 
             if (!isBootstrap) {
-                await spacetime.createFile({ path: (parentPath === '/' ? '' : parentPath) + '/' + name, content: '' }); // Simplified create_folder use createFile
-                this.popShadow(false);
+                await spacetime.createFile({ path: (parentPath === '/' ? '' : parentPath) + '/' + name, content: '' });
             }
             return newInode;
         } catch (err) {
-            if (!isBootstrap) this.popShadow(true);
             return 'SpacetimeDB conflict: mkdir reverted';
         }
     }
 
     public async touch(parentPath: string, name: string, ownerId: string = 'root', groups: string[] = [], isBootstrap: boolean = false): Promise<Inode | string> {
-        if (!isBootstrap) this.pushShadow();
         try {
             const parentResult = this.resolveDentry(parentPath, this.rootDentryId, true, 0, ownerId, groups);
             if (typeof parentResult === 'string') {
-                if (!isBootstrap) this.popShadow(true);
                 return parentResult;
             }
 
             const parentInode = this.inodeTable.getInodeRef(parentResult.inodeId);
-            if (parentInode?.type !== 'directory') {
-                if (!isBootstrap) this.popShadow(true);
+            if (!parentInode || parentInode.type !== 'directory') {
                 return 'Not a directory';
             }
 
@@ -591,7 +625,6 @@ export class VFS {
             if (existingDentryId) {
                 const existingInodeId = this.dentries[existingDentryId].inodeId;
                 this.inodeTable.updateInode(existingInodeId, { mtime: Date.now() });
-                if (!isBootstrap) this.popShadow(false);
                 return this.inodeTable.getInodeRef(existingInodeId)!;
             }
 
@@ -617,11 +650,9 @@ export class VFS {
 
             if (!isBootstrap) {
                 await spacetime.createFile({ path: (parentPath === '/' ? '' : parentPath) + '/' + name, content: '' });
-                this.popShadow(false);
             }
             return newInode;
         } catch (err) {
-            if (!isBootstrap) this.popShadow(true);
             return 'SpacetimeDB conflict: touch reverted';
         }
     }
@@ -671,48 +702,28 @@ export class VFS {
     }
 
     public async rm(path: string, recursive: boolean = false, userId: string = 'root', groups: string[] = []): Promise<boolean | string> {
-        this.pushShadow();
         try {
             const dentryResult = this.resolveDentry(path, this.rootDentryId, false, 0, userId, groups);
-            if (typeof dentryResult === 'string') {
-                this.popShadow(true);
-                return dentryResult;
-            }
+            if (typeof dentryResult === 'string') return dentryResult;
 
-            if (dentryResult.id === this.rootDentryId) {
-                this.popShadow(true);
-                return 'Cannot remove root directory';
-            }
+            if (dentryResult.id === this.rootDentryId) return 'Cannot remove root directory';
 
             const inode = this.inodeTable.getInodeRef(dentryResult.inodeId);
-            if (!inode) {
-                this.popShadow(true);
-                return 'Internal error: inode missing';
-            }
+            if (!inode) return 'Internal error: inode missing';
 
             if (inode.type === 'directory' && !recursive && (dentryResult.children?.length || 0) > 0) {
-                this.popShadow(true);
                 return 'Directory not empty';
             }
 
             const parentDentry = this.dentries[dentryResult.parentId!];
             const parentInode = this.inodeTable.getInodeRef(parentDentry.inodeId);
-            if (!parentInode) {
-                this.popShadow(true);
-                return 'Internal error: parent inode missing';
-            }
+            if (!parentInode) return 'Internal error: parent inode missing';
 
             if (parentInode.permissions.sticky && userId !== 'root') {
-                if (inode.ownerId !== userId && parentInode.ownerId !== userId) {
-                    this.popShadow(true);
-                    return 'Operation not permitted (Sticky bit set)';
-                }
+                if (inode.ownerId !== userId && parentInode.ownerId !== userId) return 'Operation not permitted (Sticky bit set)';
             }
 
-            if (!this.hasPermission(parentInode, userId, 'write', groups)) {
-                this.popShadow(true);
-                return 'Permission denied';
-            }
+            if (!this.hasPermission(parentInode, userId, 'write', groups)) return 'Permission denied';
 
             if (inode.type === 'directory' && recursive && dentryResult.children) {
                 const children = [...dentryResult.children];
@@ -731,48 +742,30 @@ export class VFS {
             this.dentryIndex.delete(`${parentDentry.id}:${dentryResult.name}`);
             delete this.dentries[dentryResult.id];
 
-            // Clean up Inode tracking
             this.inodeTable.decrementLink(inode.id);
-
             await spacetime.deleteFile({ path });
             
-            this.popShadow(false);
             return true;
         } catch (err) {
-            this.popShadow(true);
             return 'SpacetimeDB conflict: rm reverted';
         }
     }
 
     public async chmod(path: string, mode: string, userId: string = 'root', groups: string[] = []): Promise<boolean | string> {
-        this.pushShadow();
         try {
             const result = this.resolve(path, userId, this.rootDentryId, true, 0, groups);
-            if (typeof result === 'string') {
-                this.popShadow(true);
-                return result;
-            }
+            if (typeof result === 'string') return result;
 
             const inode = result as Inode;
-            if (inode.ownerId !== userId && userId !== 'root') {
-                this.popShadow(true);
-                return 'Permission denied';
-            }
+            if (inode.ownerId !== userId && userId !== 'root') return 'Permission denied';
 
             const perms = octalToPermissions(mode);
-            if (!perms) {
-                this.popShadow(true);
-                return 'Invalid mode';
-            }
+            if (!perms) return 'Invalid mode';
 
             this.inodeTable.updateInode(inode.id, { permissions: perms, ctime: Date.now() });
-
             await spacetime.chmod({ path, mode });
-            
-            this.popShadow(false);
             return true;
         } catch (err) {
-            this.popShadow(true);
             return 'SpacetimeDB conflict: chmod reverted';
         }
     }
@@ -780,25 +773,15 @@ export class VFS {
     public async chown(path: string, newOwner: string, userId: string = 'root', groups: string[] = []): Promise<boolean | string> {
         if (userId !== 'root') return 'Permission denied';
 
-        this.pushShadow();
         try {
             const result = this.resolve(path, userId, this.rootDentryId, true, 0, groups);
-            if (typeof result === 'string') {
-                this.popShadow(true);
-                return result;
-            }
+            if (typeof result === 'string') return result;
 
             const inode = result as Inode;
             this.inodeTable.updateInode(inode.id, { ownerId: newOwner, ctime: Date.now() });
-
-            // Note: chown reducer not explicitly defined in Wave 2 plan but good to have for consistency
-            // For now, let's just assume success or add it if needed. 
-            // The plan said "chmod", I'll stick to that if chown is not in bindings.
             
-            this.popShadow(false);
             return true;
         } catch (err) {
-            this.popShadow(true);
             return 'SpacetimeDB conflict: chown reverted';
         }
     }
@@ -853,29 +836,19 @@ export class VFS {
     }
 
     public async cp(srcPath: string, destPath: string, recursive: boolean = false, userId: string = 'root', groups: string[] = []): Promise<boolean | string> {
-        this.pushShadow();
         try {
             const srcResult = this.resolveDentry(srcPath, this.rootDentryId, true, 0, userId, groups);
-            if (typeof srcResult === 'string') {
-                this.popShadow(true);
-                return srcResult;
-            }
+            if (typeof srcResult === 'string') return srcResult;
             const srcInode = this.inodeTable.getInodeRef(srcResult.inodeId)!;
 
-            if (srcInode.type === 'directory' && !recursive) {
-                this.popShadow(true);
-                return 'omitting directory';
-            }
+            if (srcInode.type === 'directory' && !recursive) return 'omitting directory';
 
             const destParts = destPath.split('/').filter(p => p.length > 0);
             const destName = destParts.pop() || '';
             const destParentPath = destPath.startsWith('/') ? '/' + destParts.join('/') : destParts.join('/');
 
             const destParentResult = this.resolveDentry(destParentPath || '/', this.rootDentryId, true, 0, userId, groups);
-            if (typeof destParentResult === 'string') {
-                this.popShadow(true);
-                return destParentResult;
-            }
+            if (typeof destParentResult === 'string') return destParentResult;
 
             const copyRecursive = (inode: Inode, parentDentryId: string, newName: string): void => {
                 const newId = uuidv4();
@@ -903,40 +876,25 @@ export class VFS {
             copyRecursive(srcInode, destParentResult.id, destName);
             this.inodeTable.updateInode(destParentResult.inodeId, { mtime: Date.now() });
 
-            // Authoritative call: copy often implemented as create + write multiple times,
-            // but for Wave 2 we'll assume a high-level reducer or local consistency.
-            
-            this.popShadow(false);
             return true;
         } catch (err) {
-            this.popShadow(true);
             return 'SpacetimeDB conflict: cp reverted';
         }
     }
 
     public async mv(srcPath: string, destPath: string, userId: string = 'root', groups: string[] = []): Promise<boolean | string> {
-        this.pushShadow();
         try {
             const srcResult = this.resolveDentry(srcPath, this.rootDentryId, true, 0, userId, groups);
-            if (typeof srcResult === 'string') {
-                this.popShadow(true);
-                return srcResult;
-            }
+            if (typeof srcResult === 'string') return srcResult;
 
             const destParts = destPath.split('/').filter(p => p.length > 0);
             const destName = destParts.pop() || '';
             const destParentPath = destPath.startsWith('/') ? '/' + destParts.join('/') : destParts.join('/');
 
             const destParentResult = this.resolveDentry(destParentPath || '/', this.rootDentryId, true, 0, userId, groups);
-            if (typeof destParentResult === 'string') {
-                this.popShadow(true);
-                return destParentResult;
-            }
+            if (typeof destParentResult === 'string') return destParentResult;
 
-            if (this.dentryIndex.has(`${destParentResult.id}:${destName}`)) {
-                this.popShadow(true);
-                return 'Destination already exists';
-            }
+            if (this.dentryIndex.has(`${destParentResult.id}:${destName}`)) return 'Destination already exists';
 
             const oldParentDentry = this.dentries[srcResult.parentId!];
             if (oldParentDentry) {
@@ -955,10 +913,8 @@ export class VFS {
 
             await spacetime.moveFile({ src: srcPath, dst: destPath });
             
-            this.popShadow(false);
             return true;
         } catch (err) {
-            this.popShadow(true);
             return 'SpacetimeDB conflict: mv reverted';
         }
     }

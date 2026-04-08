@@ -12,17 +12,15 @@ describe('VerificationEngine', () => {
             module: 1,
             type: 'guided',
             xpReward: 10,
-            difficulty: 'beginner',
-            estimatedTime: 5,
             prerequisites: [],
-            objectives: [],
             steps: [
-                { instruction: 'Run pwd', expectedCommand: 'pwd', successMessage: 'Done' },
-                { instruction: 'Run ls -a', expectedCommand: 'ls -a', successMessage: 'Done' },
-                { instruction: 'Run any cd', expectedCommand: '^cd\\s+.*$', successMessage: 'Done', regexMatch: true },
+                { id: '1', instruction: 'Run pwd', expectedCommand: 'pwd' },
+                { id: '2', instruction: 'Run ls -a', expectedCommand: 'ls -a' },
+                { id: '3', instruction: 'Run any cd', expectedCommand: '^cd\\s+.*$', regexMatch: true },
             ],
             tags: [],
-            author: 'Test'
+            author: 'Test',
+            completionMessage: 'Done'
         };
 
         it('should return true for an exact command match', () => {
@@ -54,7 +52,7 @@ describe('VerificationEngine', () => {
             const labWithAlts: Lab = {
                 ...mockLab,
                 steps: [
-                    { instruction: 'List files', expectedCommand: 'ls -la', alternativeCommands: ['ls -al', 'ls -la --color'], successMessage: 'Done' },
+                    { id: 'alt-1', instruction: 'List files', expectedCommand: 'ls -la', alternativeCommands: ['ls -al', 'ls -la --color'] },
                 ],
             };
             expect(VerificationEngine.verifyGuidedStep(labWithAlts, 0, 'ls -la')).toBe(true);
@@ -67,7 +65,7 @@ describe('VerificationEngine', () => {
             const seqLab: Lab = {
                 ...mockLab,
                 steps: [
-                    { instruction: 'Do sequence', requiredSequence: ['mkdir test', 'cd test'], successMessage: 'Done' },
+                    { id: 'seq-1', instruction: 'Do sequence', requiredSequence: ['mkdir test', 'cd test'] },
                 ],
             };
             expect(VerificationEngine.verifyGuidedStep(seqLab, 0, 'mkdir test')).toBe(false);
@@ -82,15 +80,13 @@ describe('VerificationEngine', () => {
             module: 1,
             type: 'guided',
             xpReward: 10,
-            difficulty: 'beginner',
-            estimatedTime: 5,
             prerequisites: [],
-            objectives: [],
             steps: [
-                { instruction: 'Create and enter dir', requiredSequence: ['mkdir mydir', 'cd mydir', 'pwd'], successMessage: 'Done' },
+                { id: 'seq-2', instruction: 'Create and enter dir', requiredSequence: ['mkdir mydir', 'cd mydir', 'pwd'] },
             ],
             tags: [],
             author: 'Test',
+            completionMessage: 'Done'
         };
 
         it('should advance sequence index on correct command', () => {
@@ -114,7 +110,7 @@ describe('VerificationEngine', () => {
         it('should return -1 on a non-sequence step', () => {
             const normalLab: Lab = {
                 ...seqLab,
-                steps: [{ instruction: 'Run pwd', expectedCommand: 'pwd', successMessage: 'Done' }],
+                steps: [{ id: 'normal-1', instruction: 'Run pwd', expectedCommand: 'pwd' }],
             };
             expect(VerificationEngine.verifyGuidedSequenceStep(normalLab, 0, 'pwd', 0)).toBe(-1);
         });
@@ -128,16 +124,16 @@ describe('VerificationEngine', () => {
             vfs = new VFS(); // Assuming default VFS state has /home/guest
         });
 
-        it('should verify directory_exists successfully', () => {
-            vfs.mkdir('/home/guest', 'testdir', userId);
+        it('should verify directory_exists successfully', async () => {
+            await vfs.mkdir('/home/guest', 'testdir', userId);
             const lab: Lab = {
                 id: 'test-diy', title: 'Test', description: '', module: 1, type: 'diy',
-                xpReward: 10, difficulty: 'beginner', estimatedTime: 5, prerequisites: [], objectives: [], tags: [], author: '',
+                xpReward: 10, prerequisites: [], completionMessage: 'Done',
                 verification: {
                     conditions: [{ type: 'directory_exists', path: '/home/guest/testdir', message: 'Create testdir' }]
                 }
             };
-            const result = VerificationEngine.verifyDIYLab(lab, vfs, userId);
+            const result = VerificationEngine.verifyDIYLab(lab, vfs, userId, []);
             expect(result.success).toBe(true);
             expect(result.failedMessages.length).toBe(0);
         });
@@ -145,117 +141,117 @@ describe('VerificationEngine', () => {
         it('should fail directory_exists if not present', () => {
             const lab: Lab = {
                 id: 'test-diy', title: 'Test', description: '', module: 1, type: 'diy',
-                xpReward: 10, difficulty: 'beginner', estimatedTime: 5, prerequisites: [], objectives: [], tags: [], author: '',
+                xpReward: 10, prerequisites: [], completionMessage: 'Done',
                 verification: {
                     conditions: [{ type: 'directory_exists', path: '/home/guest/missingdir', message: 'Create missingdir' }]
                 }
             };
-            const result = VerificationEngine.verifyDIYLab(lab, vfs, userId);
+            const result = VerificationEngine.verifyDIYLab(lab, vfs, userId, []);
             expect(result.success).toBe(false);
             expect(result.failedMessages).toContain('Create missingdir');
         });
 
-        it('should verify file_exists successfully', () => {
-            vfs.writeFile('/home/guest/testfile.txt', 'content', userId);
+        it('should verify file_exists successfully', async () => {
+            await vfs.writeFile('/home/guest/testfile.txt', 'content', userId);
             const lab: Lab = {
                 id: 'test-diy', title: 'Test', description: '', module: 1, type: 'diy',
-                xpReward: 10, difficulty: 'beginner', estimatedTime: 5, prerequisites: [], objectives: [], tags: [], author: '',
+                xpReward: 10, prerequisites: [], completionMessage: 'Done',
                 verification: {
                     conditions: [{ type: 'file_exists', path: '/home/guest/testfile.txt', message: 'Create testfile.txt' }]
                 }
             };
-            const result = VerificationEngine.verifyDIYLab(lab, vfs, userId);
+            const result = VerificationEngine.verifyDIYLab(lab, vfs, userId, []);
             expect(result.success).toBe(true);
         });
 
         it('should verify file_not_exists successfully', () => {
             const lab: Lab = {
                 id: 'test-diy', title: 'Test', description: '', module: 1, type: 'diy',
-                xpReward: 10, difficulty: 'beginner', estimatedTime: 5, prerequisites: [], objectives: [], tags: [], author: '',
+                xpReward: 10, prerequisites: [], completionMessage: 'Done',
                 verification: {
                     conditions: [{ type: 'file_not_exists', path: '/home/guest/deletedfile.txt', message: 'Delete the file' }]
                 }
             };
-            const result = VerificationEngine.verifyDIYLab(lab, vfs, userId);
+            const result = VerificationEngine.verifyDIYLab(lab, vfs, userId, []);
             expect(result.success).toBe(true);
         });
 
-        it('should fail file_not_exists if file is present', () => {
-            vfs.writeFile('/home/guest/existing.txt', '', userId);
+        it('should fail file_not_exists if file is present', async () => {
+            await vfs.writeFile('/home/guest/existing.txt', '', userId);
             const lab: Lab = {
                 id: 'test-diy', title: 'Test', description: '', module: 1, type: 'diy',
-                xpReward: 10, difficulty: 'beginner', estimatedTime: 5, prerequisites: [], objectives: [], tags: [], author: '',
+                xpReward: 10, prerequisites: [], completionMessage: 'Done',
                 verification: {
                     conditions: [{ type: 'file_not_exists', path: '/home/guest/existing.txt', message: 'Delete existing.txt' }]
                 }
             };
-            const result = VerificationEngine.verifyDIYLab(lab, vfs, userId);
+            const result = VerificationEngine.verifyDIYLab(lab, vfs, userId, []);
             expect(result.success).toBe(false);
         });
 
-        it('should verify file_contains successfully', () => {
-            vfs.writeFile('/home/guest/hello.txt', 'hello world', userId);
+        it('should verify file_contains successfully', async () => {
+            await vfs.writeFile('/home/guest/hello.txt', 'hello world', userId);
             const lab: Lab = {
                 id: 'test-diy', title: 'Test', description: '', module: 1, type: 'diy',
-                xpReward: 10, difficulty: 'beginner', estimatedTime: 5, prerequisites: [], objectives: [], tags: [], author: '',
+                xpReward: 10, prerequisites: [], completionMessage: 'Done',
                 verification: {
                     conditions: [{ type: 'file_contains', path: '/home/guest/hello.txt', content: 'world', message: 'File must contain world' }]
                 }
             };
-            const result = VerificationEngine.verifyDIYLab(lab, vfs, userId);
+            const result = VerificationEngine.verifyDIYLab(lab, vfs, userId, []);
             expect(result.success).toBe(true);
         });
 
-        it('should fail file_contains if missing substring', () => {
-            vfs.writeFile('/home/guest/hello.txt', 'hello universe', userId);
+        it('should fail file_contains if missing substring', async () => {
+            await vfs.writeFile('/home/guest/hello.txt', 'hello universe', userId);
             const lab: Lab = {
                 id: 'test-diy', title: 'Test', description: '', module: 1, type: 'diy',
-                xpReward: 10, difficulty: 'beginner', estimatedTime: 5, prerequisites: [], objectives: [], tags: [], author: '',
+                xpReward: 10, prerequisites: [], completionMessage: 'Done',
                 verification: {
                     conditions: [{ type: 'file_contains', path: '/home/guest/hello.txt', content: 'world', message: 'File must contain world' }]
                 }
             };
-            const result = VerificationEngine.verifyDIYLab(lab, vfs, userId);
+            const result = VerificationEngine.verifyDIYLab(lab, vfs, userId, []);
             expect(result.success).toBe(false);
         });
 
-        it('should verify file_matches_regex successfully', () => {
-            vfs.writeFile('/home/guest/data.txt', 'IP: 192.168.1.1', userId);
+        it('should verify file_matches_regex successfully', async () => {
+            await vfs.writeFile('/home/guest/data.txt', 'IP: 192.168.1.1', userId);
             const lab: Lab = {
                 id: 'test-diy', title: 'Test', description: '', module: 1, type: 'diy',
-                xpReward: 10, difficulty: 'beginner', estimatedTime: 5, prerequisites: [], objectives: [], tags: [], author: '',
+                xpReward: 10, prerequisites: [], completionMessage: 'Done',
                 verification: {
                     conditions: [{ type: 'file_matches_regex', path: '/home/guest/data.txt', content: '\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}', message: 'Must contain IP' }]
                 }
             };
-            const result = VerificationEngine.verifyDIYLab(lab, vfs, userId);
+            const result = VerificationEngine.verifyDIYLab(lab, vfs, userId, []);
             expect(result.success).toBe(true);
         });
 
-        it('should verify permission_equals successfully', () => {
-            vfs.writeFile('/home/guest/script.sh', 'echo "hi"', userId);
-            vfs.chmod('/home/guest/script.sh', '755', userId);
+        it('should verify permission_equals successfully', async () => {
+            await vfs.writeFile('/home/guest/script.sh', 'echo "hi"', userId);
+            await vfs.chmod('/home/guest/script.sh', '755', userId);
             const lab: Lab = {
                 id: 'test-diy', title: 'Test', description: '', module: 1, type: 'diy',
-                xpReward: 10, difficulty: 'beginner', estimatedTime: 5, prerequisites: [], objectives: [], tags: [], author: '',
+                xpReward: 10, prerequisites: [], completionMessage: 'Done',
                 verification: {
                     conditions: [{ type: 'permission_equals', path: '/home/guest/script.sh', mode: '755', message: 'Must be 755' }]
                 }
             };
-            const result = VerificationEngine.verifyDIYLab(lab, vfs, userId);
+            const result = VerificationEngine.verifyDIYLab(lab, vfs, userId, []);
             expect(result.success).toBe(true);
         });
 
-        it('should verify owner_equals successfully', () => {
-            vfs.writeFile('/home/guest/rootfile.txt', 'root data', 'root');
+        it('should verify owner_equals successfully', async () => {
+            await vfs.writeFile('/home/guest/rootfile.txt', 'root data', 'root');
             const lab: Lab = {
                 id: 'test-diy', title: 'Test', description: '', module: 1, type: 'diy',
-                xpReward: 10, difficulty: 'beginner', estimatedTime: 5, prerequisites: [], objectives: [], tags: [], author: '',
+                xpReward: 10, prerequisites: [], completionMessage: 'Done',
                 verification: {
                     conditions: [{ type: 'owner_equals', path: '/home/guest/rootfile.txt', owner: 'root', message: 'Must be root' }]
                 }
             };
-            const result = VerificationEngine.verifyDIYLab(lab, vfs, userId);
+            const result = VerificationEngine.verifyDIYLab(lab, vfs, userId, []);
             expect(result.success).toBe(true);
         });
     });
