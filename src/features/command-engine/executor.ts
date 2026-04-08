@@ -185,11 +185,18 @@ export class CommandExecutor {
                     return { output: `[${jid}] ${bgPid}\n`, exitCode: 0 };
                 }
 
+                // Add foreground process to context list for visibility
+                const fgProcess = { pid: executionPid, name: action.name, user: context.userId, startTime: Date.now() };
+                context.updateProcesses([...context.processes, fgProcess]);
+
                 // Foreground execution with signal handler cleanup
                 try {
                     const result = await commandFn(expandedArgs, enrichedContext, input);
                     lastResult = result;
                 } finally {
+                    // Remove from process list
+                    context.updateProcesses(context.processes.filter(p => p.pid !== executionPid));
+                    
                     // Clean up signal handler after command finishes (success, error, or kill)
                     if (signalCleanup) {
                         (signalCleanup as () => void)();

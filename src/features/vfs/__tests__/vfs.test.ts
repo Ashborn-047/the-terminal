@@ -10,10 +10,11 @@ describe('VFS Core Operations', () => {
     });
 
     it('should initialize with root directory', () => {
-        const root = vfs.getInode(vfs.getRootId());
-        expect(root).toBeDefined();
-        expect(root?.name).toBe('/');
-        expect(root?.type).toBe('directory');
+        const root = vfs.resolve('/', 'root');
+        expect(typeof root).not.toBe('string');
+        const rootInode = root as (Inode & { name: string });
+        expect(rootInode.name).toBe('/');
+        expect(rootInode.type).toBe('directory');
     });
 
     it('should create and read a file', () => {
@@ -30,7 +31,7 @@ describe('VFS Core Operations', () => {
 
         const result = vfs.resolve('/home/user/profile.txt', 'root');
         expect(typeof result).not.toBe('string');
-        expect((result as Inode).name).toBe('profile.txt');
+        expect((result as any).name).toBe('profile.txt');
     });
 
     it('should respect permissions', () => {
@@ -65,6 +66,6 @@ describe('VFS Core Operations', () => {
         vfs.loadSnapshot('hpc-base');
         const homeNode = vfs.resolve('/home', 'root');
         expect(typeof homeNode).not.toBe('string');
-        expect((homeNode as Inode).name).toBe('home');
+        expect((homeNode as any).name).toBe('home');
     });
 });

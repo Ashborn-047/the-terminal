@@ -7,6 +7,7 @@ export const ls = async (args: string[], context: CommandContext): Promise<Comma
     let longFormat = false;
     let recursive = false;
     let humanReadable = false;
+    let showInodes = false;
     const paths: string[] = [];
 
     for (const arg of args) {
@@ -15,6 +16,7 @@ export const ls = async (args: string[], context: CommandContext): Promise<Comma
             if (arg.includes('l')) longFormat = true;
             if (arg.includes('R')) recursive = true;
             if (arg.includes('h')) humanReadable = true;
+            if (arg.includes('i')) showInodes = true;
         } else {
             paths.push(arg);
         }
@@ -39,8 +41,8 @@ export const ls = async (args: string[], context: CommandContext): Promise<Comma
             return;
         }
 
-        const inode = result as Inode;
-        if (inode.type !== 'directory' || !inode.children) {
+        const inode = result as (Inode & { name: string });
+        if (inode.type !== 'directory') {
             outputLines.push(inode.name);
             return;
         }
@@ -61,21 +63,23 @@ export const ls = async (args: string[], context: CommandContext): Promise<Comma
 
         if (longFormat) {
             for (const child of children) {
+                const inodePrefix = showInodes ? `${child.id} ` : '';
                 const typeChar = child.type === 'directory' ? 'd' : (child.type === 'symlink' ? 'l' : '-');
                 const permStr = formatPermissions(child.permissions);
                 const rawSize = child.type === 'file' ? (child.size || 0) : 0;
                 const sizeStr = humanReadable ? formatHumanSize(rawSize) : String(rawSize).padStart(5);
-                const date = new Date(child.modifiedAt).toLocaleDateString('en-US', {
+                const date = new Date(child.mtime).toLocaleDateString('en-US', {
                     month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
                 });
                 const color = child.type === 'directory' ? colorRoot : (child.type === 'symlink' ? colorLink : colorFile);
                 const suffix = child.type === 'symlink' ? ` -> ${child.target || ''}` : '';
-                outputLines.push(`${typeChar}${permStr} 1 ${child.ownerId} ${child.groupId} ${sizeStr} ${date} ${color}${child.name}${colorReset}${suffix}`);
+                outputLines.push(`${inodePrefix}${typeChar}${permStr} ${child.nlink} ${child.ownerId} ${child.groupId} ${sizeStr} ${date} ${color}${child.name}${colorReset}${suffix}`);
             }
         } else {
             const list = children.map(n => {
+                const inodePrefix = showInodes ? `${n.id} ` : '';
                 const color = n.type === 'directory' ? colorRoot : (n.type === 'symlink' ? colorLink : colorFile);
-                return `${color}${n.name}${colorReset}${n.type === 'directory' ? '/' : ''}`;
+                return `${inodePrefix}${color}${n.name}${colorReset}${n.type === 'directory' ? '/' : ''}`;
             });
             outputLines.push(list.join('  '));
         }

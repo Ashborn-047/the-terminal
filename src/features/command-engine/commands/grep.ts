@@ -64,11 +64,11 @@ export const grep = async (args: string[], context: CommandContext, input: strin
                 const matchCount = searchContent(content, prefix);
                 if (countOnly) outputLines.push(`${prefix}${matchCount}`);
             }
-        } else if (inode.type === 'directory' && recursive && inode.children) {
-            for (const childId of inode.children) {
-                if (context.isInterrupted()) return;
-                const child = context.vfs.getInode(childId);
-                if (child) {
+        } else if (inode.type === 'directory' && recursive) {
+            const childrenResult = context.vfs.listChildren(path, context.userId, context.groups);
+            if (Array.isArray(childrenResult)) {
+                for (const child of childrenResult) {
+                    if (context.isInterrupted()) return;
                     const childPath = path === '/' ? `/${child.name}` : `${path}/${child.name}`;
                     await processPath(childPath);
                 }

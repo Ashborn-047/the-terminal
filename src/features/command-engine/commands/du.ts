@@ -18,27 +18,30 @@ export const du = async (args: string[], context: CommandContext): Promise<Comma
         return `${size.toFixed(1)}${units[unitIndex]}`;
     };
 
-    const calculateSize = (inode: Inode): number => {
+    const calculateSize = (inode: Inode, path: string): number => {
         if (inode.type === 'file') return inode.size || 0;
-        if (inode.type === 'directory' && inode.children) {
-            return (inode.children as string[]).reduce((acc: number, childId: string) => {
-                const child = context.vfs.getInode(childId);
-                return acc + (child ? calculateSize(child) : 0);
-            }, 4096); // Directories have a base size of 4K in Linux
+        if (inode.type === 'directory') {
+            const childrenResult = context.vfs.listChildren(path, context.userId, context.groups);
+            if (Array.isArray(childrenResult)) {
+                return childrenResult.reduce((acc: number, child) => {
+                    const childPath = path === '/' ? `/${child.name}` : `${path}/${child.name}`;
+                    return acc + calculateSize(child, childPath);
+                }, 4096); // Directories have a base size of 4K in Linux
+            }
         }
         return 0;
     };
 
     for (const target of targets) {
-        const fullPath = target.startsWith('/') ? target : (context.cwd === '/' ? '/' + target : context.cwd + '/' + target);
-        const result = context.vfs.resolve(fullPath, context.userId, context.groups);
+        const fullPath = context.resolvePath(target);
+        const result = context.vfs.resolve(fullPath, context.userId, undefined, true, 0, context.groups);
         
         if (typeof result === 'string') {
             output += `du: cannot access '${target}': No such file or directory\n`;
             continue;
         }
 
-        const size = calculateSize(result as Inode);
+        const size = calculateSize(result as Inode, fullPath);
         output += `${formatSize(size)}\t${target}\n`;
     }
 

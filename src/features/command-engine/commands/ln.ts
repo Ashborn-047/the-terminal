@@ -4,7 +4,6 @@ export const ln = async (args: string[], context: CommandContext): Promise<Comma
     const symbolic = args.includes('-s');
     const paths = args.filter(a => !a.startsWith('-'));
     if (paths.length < 2) return { output: '', error: 'ln: missing operand', exitCode: 1 };
-    if (!symbolic) return { output: '', error: 'ln: hard links not supported, use -s', exitCode: 1 };
 
     const target = paths[0], linkName = paths[1];
     const fullLinkPath = context.resolvePath(linkName);
@@ -12,7 +11,8 @@ export const ln = async (args: string[], context: CommandContext): Promise<Comma
     const name = parts.pop() || '';
     const parentDir = '/' + parts.join('/') || '/';
     
-    const result = context.vfs.ln(parentDir, name, target, context.userId, true, context.groups);
+    // Pass symbolic flag to VFS
+    const result = context.vfs.ln(parentDir, name, target, context.userId, symbolic, context.groups);
     if (typeof result === 'string') return { output: '', error: `ln: ${result}`, exitCode: 1 };
     return { output: '', exitCode: 0 };
 };
