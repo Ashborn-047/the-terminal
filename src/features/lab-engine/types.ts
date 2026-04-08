@@ -23,12 +23,24 @@ export interface LabStep {
     regexMatch?: boolean; // If true, expectedCommand is treated as a regex
 }
 
+export interface OutcomeCheck extends VerificationCondition {}
+
+export interface BonusObjective {
+    id: string;
+    description: string;
+    xpReward: number;
+    verification: OutcomeCheck[];
+}
+
+export type LabDifficulty = 'NOVICE' | 'ADEPT' | 'EXPERT' | 'MASTER';
+
 export interface Lab {
     id: string;
     module: number;
     title: string;
     description: string;
     type: LabType;
+    difficulty: LabDifficulty;
     xpReward: number;
     prerequisites: string[];
     initialVFS?: string; // name of snapshot or 'default'
@@ -37,6 +49,7 @@ export interface Lab {
     verification?: {
         conditions: VerificationCondition[];
     }; // for diy
+    bonusObjectives?: BonusObjective[];
     hints?: string[];
     solution?: string; // For DIY labs, the overall solution
     completionMessage: string;
@@ -57,4 +70,5 @@ export interface LabProgress {
     solutionRevealed?: boolean; // True if the user revealed the solution
     startTime?: number;   // UNIX timestamp when lab started/resumed
     totalTimeSpent?: number; // Cumulative seconds spent
+    bonusObjectivesCompleted?: string[]; // IDs of bonus objectives completed
 }

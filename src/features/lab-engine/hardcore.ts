@@ -1,9 +1,8 @@
 export interface HardcoreProfile {
+    isActive: boolean;
     deathCount: number;
-    lastDeathReason: string | null;
-    isDead: boolean;
-    respawnAt: number | null; // ISO timestamp
-    xpPenaltyTotal: number;
+    currentSessionStarted: number; // timestamp
+    protectedPaths: string[]; // e.g. ['/bin', '/boot', '/etc']
 }
 
 export type MasteryBadge = 'novice' | 'hacker' | 'sysad' | 'kernel_master';

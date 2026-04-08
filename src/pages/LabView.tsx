@@ -113,8 +113,10 @@ const LabView: React.FC = () => {
         // Re-fetch latest progress state for processing rewards
         const finalProgress = useLabStore.getState().progress[lab.id];
 
-        // Process rewards and achievements
-        processLabCompletion(lab, finalProgress);
+        // Process rewards and achievements using the new exponential economy
+        if (vfsForVerification) {
+            processLabCompletion(lab.id, lab, vfsForVerification);
+        }
 
         const newLabsCompleted = prevLabsCompleted + 1;
         console.log('LAB_DEBUG: handleComplete', { prevLabsCompleted, newLabsCompleted, labId: lab.id });

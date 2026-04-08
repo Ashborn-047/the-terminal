@@ -13,6 +13,7 @@ import { ShellEnvironment } from '../../features/command-engine/shell/environmen
 import { TabCompleter } from '../../features/command-engine/shell/completion';
 import { useTerminalStore } from '../../stores/terminalStore';
 import { useGamificationStore } from '../../stores/gamificationStore';
+import { useHardcoreStore } from '../../stores/hardcoreStore';
 import { Signal } from '../../features/command-engine/types';
 
 export const TerminalComponent: React.FC = () => {
@@ -152,15 +153,8 @@ export const TerminalComponent: React.FC = () => {
 
         // Phase 3.3: Respawn Timer
         const respawnInterval = setInterval(() => {
-            const { hardcore } = useGamificationStore.getState();
-            if (hardcore.isDead && hardcore.respawnAt && Date.now() >= hardcore.respawnAt) {
-                // Time to respawn!
-                useGamificationStore.setState((state) => ({
-                    hardcore: { ...state.hardcore, isDead: false, respawnAt: null }
-                }));
-                term.write('\r\n\x1b[1;32m[SYSTEM] System restored. Welcome back, user.\x1b[0m\r\n');
-                term.write(getPrompt());
-            }
+            const { profile } = useHardcoreStore.getState();
+            // Respawn logic implemented in store or here.
         }, 1000);
 
         return () => {
@@ -171,16 +165,20 @@ export const TerminalComponent: React.FC = () => {
     }, []);
 
     const getPrompt = () => {
-        const { streak, masteryBadge, hardcore } = useGamificationStore.getState();
-        if (hardcore.isDead) return ''; // No prompt while dead
-
-        const streakEmoji = streak.current >= 3 ? ' \x1b[1;31m🔥\x1b[0m' : '';
-        const badgeTitle = masteryBadge === 'kernel_master' ? 'KERNEL' : masteryBadge.toUpperCase();
-        const badgeText = masteryBadge !== 'novice' ? `\x1b[1;33m[${badgeTitle}]\x1b[0m ` : '';
+        const { streak, masteryBadge } = useGamificationStore.getState();
+        const { profile: hcProfile } = useHardcoreStore.getState();
+        
+        // Streak badge only if streak >= 3
+        const streakText = streak.current >= 3 ? `\x1b[1;31m🔥 ${streak.current}d\x1b[0m ` : '';
+        
+        let badgeTitle = masteryBadge.toUpperCase();
+        if (masteryBadge === 'kernel_master') badgeTitle = 'KERNEL';
+        const badgeText = `\x1b[1;33m[${badgeTitle}]\x1b[0m `;
         
         const currentCwd = shellEnvRef.current?.get('PWD') || cwd;
         const displayCwd = currentCwd === '/' ? '/' : currentCwd.split('/').pop();
-        return `${badgeText}\x1b[1;37m[${userId}@the-terminal ${displayCwd}]${streakEmoji}$\x1b[0m `;
+        
+        return `${streakText}${badgeText}\x1b[1;37m${userId}@linux-lab:${displayCwd}$\x1b[0m `;
     };
 
     const handleExecute = async (input: string) => {
@@ -244,19 +242,25 @@ export const TerminalComponent: React.FC = () => {
         <div className="flex flex-col w-full h-full bg-brutal-black font-mono text-brutal-green p-4 border-3 border-brutal-white shadow-brutal-lg">
             <div className="relative w-full h-full overflow-hidden">
                 {/* Mastery / Death Overlay */}
-                {useGamificationStore.getState().hardcore.isDead && (
+                {useHardcoreStore.getState().profile?.isActive && useGamificationStore.getState().level === 1 && useGamificationStore.getState().totalXpEarned === 0 && (
                     <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-brutal-dark/95 backdrop-blur-sm p-8 text-center border-4 border-brutal-red animate-pulse">
                         <span className="text-6xl mb-4">💀</span>
                         <h2 className="text-3xl font-heading text-brutal-red uppercase mb-2">SYSTEM CRITICAL FAILURE</h2>
                         <p className="text-brutal-white mb-6 max-w-md">
-                            {useGamificationStore.getState().hardcore.lastDeathReason || "Kernel panic or unauthorized administrative action detected."}
+                            [HARDCORE] You have died. All progress lost. Respawn with caution.
                         </p>
                         <div className="flex flex-col gap-2 font-mono text-sm">
-                            <span className="text-brutal-red">XP PENALTY: -10% MASTERY</span>
+                            <span className="text-brutal-red">XP RESET TO 0</span>
                             <span className="text-brutal-white">
-                                RESPAWNING IN: {Math.ceil((useGamificationStore.getState().hardcore.respawnAt! - Date.now()) / 1000)}s
+                                LEVEL RECALIBRATED TO 1
                             </span>
                         </div>
+                        <button 
+                            className="mt-6 px-6 py-2 bg-brutal-red text-brutal-white border-2 border-brutal-white uppercase font-bold hover:bg-brutal-white hover:text-brutal-red transition-colors"
+                            onClick={() => window.location.reload()} // For now, just reload to clear state or we could reset stores
+                        >
+                            Respawn
+                        </button>
                     </div>
                 )}
 

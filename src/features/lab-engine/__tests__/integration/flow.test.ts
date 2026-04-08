@@ -20,6 +20,7 @@ import { renderHook, act } from '@testing-library/react';
 import { useTerminal } from '../../../../hooks/useTerminal';
 import { Lab } from '../../types';
 import { VerificationEngine } from '../../verification';
+import { VFS } from '../../../vfs/vfs';
 
 // Create a mock guided lab
 const mockGuidedLab: Lab = {
@@ -28,6 +29,7 @@ const mockGuidedLab: Lab = {
     description: 'Test lab',
     type: 'guided',
     module: 1,
+    difficulty: 'NOVICE',
     prerequisites: [],
     xpReward: 50,
     tags: [],
@@ -54,6 +56,7 @@ const mockDIYLab: Lab = {
     description: 'Test lab',
     type: 'diy',
     module: 1,
+    difficulty: 'ADEPT',
     prerequisites: [],
     xpReward: 100,
     tags: [],
@@ -102,7 +105,9 @@ describe('Lab + VFS + SpacetimeDB Integration', () => {
             dailyQuests: [],
             unlockedAchievements: [],
             hintsUsed: 0,
-            lastQuestGenerationDate: null
+            lastQuestGenerationDate: null,
+            labCompletionHistory: {},
+            masteryBadge: 'novice'
         });
     });
 
@@ -149,7 +154,7 @@ describe('Lab + VFS + SpacetimeDB Integration', () => {
 
         // Simulate UI reward granting
         await act(async () => {
-            await useGamificationStore.getState().processLabCompletion(mockGuidedLab, progress);
+            useGamificationStore.getState().processLabCompletion('guided-test-1', mockGuidedLab, result.current.vfs);
         });
 
         // 7. Verify Gamification Store updated
@@ -193,7 +198,7 @@ describe('Lab + VFS + SpacetimeDB Integration', () => {
 
         // Simulate UI reward granting
         await act(async () => {
-            await useGamificationStore.getState().processLabCompletion(mockDIYLab, progress);
+            useGamificationStore.getState().processLabCompletion('diy-test-1', mockDIYLab, result.current.vfs);
         });
 
         const gamification = useGamificationStore.getState();

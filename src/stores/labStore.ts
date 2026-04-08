@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Lab, LabProgress } from '../features/lab-engine/types';
+import { applyScenario } from '../features/lab-engine/scenarios';
 
 /**
  * Lab Store — per lab_engine_documentation.md

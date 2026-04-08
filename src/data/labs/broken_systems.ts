@@ -7,6 +7,7 @@ export const brokenSystemLabs: Lab[] = [
         title: 'The Broken Passwd',
         description: 'The "passwd" command is failing for normal users. Investigate the binary permissions and restore its functionality.',
         type: 'diy',
+        difficulty: 'ADEPT',
         xpReward: 150,
         prerequisites: [],
         scenarioId: 'permissions_nightmare',
@@ -21,6 +22,16 @@ export const brokenSystemLabs: Lab[] = [
                 }
             ]
         },
+        bonusObjectives: [
+            {
+                id: 'bs-01-bonus',
+                description: 'Ensure /etc/shadow is also correctly secured (640).',
+                xpReward: 50,
+                verification: [
+                    { type: 'permission_equals', path: '/etc/shadow', mode: 0o640, message: 'Secure /etc/shadow' }
+                ]
+            }
+        ],
         completionMessage: 'Great job! You restored the SUID bit, allowing passwd to modify /etc/shadow on behalf of users.',
         tags: ['permissions', 'suid']
     },
@@ -30,6 +41,7 @@ export const brokenSystemLabs: Lab[] = [
         title: 'Secrets Exposed',
         description: 'An intern made /etc/shadow world-readable! This is a massive security risk. Fix it immediately.',
         type: 'diy',
+        difficulty: 'NOVICE',
         xpReward: 100,
         prerequisites: ['bs-01'],
         scenarioId: 'permissions_nightmare',
@@ -52,6 +64,7 @@ export const brokenSystemLabs: Lab[] = [
         title: 'Circular Backup',
         description: 'The backup system is looping infinitely. Find the circular symlink in the user home and remove it.',
         type: 'diy',
+        difficulty: 'EXPERT',
         xpReward: 200,
         prerequisites: [],
         scenarioId: 'circular_link',
@@ -73,6 +86,7 @@ export const brokenSystemLabs: Lab[] = [
         title: 'The Ghost Log',
         description: 'A process log at /var/log/apache2.log was "corrupted" with 000 permissions. Restore access so the web server can start.',
         type: 'diy',
+        difficulty: 'NOVICE',
         xpReward: 120,
         prerequisites: [],
         scenarioId: 'ghost_log',
@@ -95,6 +109,7 @@ export const brokenSystemLabs: Lab[] = [
         title: 'SUID Backdoor',
         description: 'A security audit flagged an unusual SUID binary in /usr/local/bin. Find it and remove the SUID bit or delete the file.',
         type: 'diy',
+        difficulty: 'EXPERT',
         xpReward: 250,
         prerequisites: ['bs-02'],
         scenarioId: 'suid_shell_leak',
@@ -117,6 +132,7 @@ export const brokenSystemLabs: Lab[] = [
         title: 'Open Sandbox',
         description: 'The /tmp directory is currently insecure. Users can delete each others files! Fix the permissions.',
         type: 'diy',
+        difficulty: 'ADEPT',
         xpReward: 150,
         prerequisites: [],
         scenarioId: 'sticky_bit_missing',
@@ -139,6 +155,7 @@ export const brokenSystemLabs: Lab[] = [
         title: 'Corrupt Account',
         description: 'The "user" account is missing its home directory field in /etc/passwd. Repair the file format.',
         type: 'diy',
+        difficulty: 'ADEPT',
         xpReward: 180,
         prerequisites: [],
         scenarioId: 'corrupt_passwd_format',
@@ -161,6 +178,7 @@ export const brokenSystemLabs: Lab[] = [
         title: 'Dead End',
         description: 'A critical config link at /etc/config/final is broken. Trace the chain and fix the missing target.',
         type: 'diy',
+        difficulty: 'MASTER',
         xpReward: 220,
         prerequisites: ['bs-03'],
         scenarioId: 'broken_symlink_chain',
@@ -182,6 +200,7 @@ export const brokenSystemLabs: Lab[] = [
         title: 'Path Hijack',
         description: 'Someone put a malicious "ls" command in /usr/local/bin. It is being executed instead of the real one. Fix the path priority or remove the fake.',
         type: 'diy',
+        difficulty: 'EXPERT',
         xpReward: 200,
         prerequisites: [],
         scenarioId: 'path_hijack',
@@ -203,6 +222,7 @@ export const brokenSystemLabs: Lab[] = [
         title: 'SSH Privacy',
         description: 'Your private SSH key has permissions that are too open (644). Secure it correctly so it can be used.',
         type: 'diy',
+        difficulty: 'ADEPT',
         xpReward: 150,
         prerequisites: [],
         scenarioId: 'ssh_key_security',
@@ -216,6 +236,16 @@ export const brokenSystemLabs: Lab[] = [
                 }
             ]
         },
+        bonusObjectives: [
+            {
+                id: 'bs-10-bonus',
+                description: 'Also secure the .ssh directory itself (700).',
+                xpReward: 50,
+                verification: [
+                    { type: 'permission_equals', path: '/home/user/.ssh', mode: 0o700, message: 'Secure ~/.ssh directory' }
+                ]
+            }
+        ],
         completionMessage: 'Key secured. SSH will no longer complain about insecure permissions.',
         tags: ['security', 'ssh']
     }

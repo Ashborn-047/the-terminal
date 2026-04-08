@@ -3,6 +3,19 @@ import type { Logger } from '../../types/logger';
 
 export type ScenarioInitializer = (vfs: VFS, logger: Logger) => Promise<void>;
 
+/**
+ * Apply a scenario or a composite of scenarios by ID.
+ * Supports chaining multiple scenarios via the 'mastery_composite' pattern.
+ */
+export async function applyScenario(vfs: VFS, scenarioId: string, logger: Logger = console as any): Promise<void> {
+    const initializer = ScenarioRegistry[scenarioId];
+    if (!initializer) {
+        logger.warn(`Scenario "${scenarioId}" not found in registry.`);
+        return;
+    }
+    await initializer(vfs, logger);
+}
+
 export const ScenarioRegistry: Record<string, ScenarioInitializer> = {
     'permissions_nightmare': async (vfs, logger) => {
         const binaryPath = '/usr/bin/passwd';
@@ -106,5 +119,13 @@ export const ScenarioRegistry: Record<string, ScenarioInitializer> = {
             await vfs.writeFile(`/var/log/huge/spam.${i}.log`, 'ERROR '.repeat(5000), 'root');
         }
         logger.info('Scenario "Too Many Logs" applied: Created 5 large spam logs in /var/log/huge.');
+    },
+
+    'mastery_admin_challenge': async (vfs, logger) => {
+        // Chaining multiple corruptions for an endgame mastery challenge
+        await applyScenario(vfs, 'permissions_nightmare', logger);
+        await applyScenario(vfs, 'path_hijack', logger);
+        await applyScenario(vfs, 'ghost_log', logger);
+        logger.info('Mastery Challenge "Admin Nightmare" applied: Composite of Permissions, Hijack, and Ghost Logs.');
     }
 };
