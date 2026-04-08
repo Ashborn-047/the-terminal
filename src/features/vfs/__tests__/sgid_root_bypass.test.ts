@@ -17,7 +17,7 @@ describe('SGID Root Bypass Prevention', () => {
         // A normal user whose groups include 'root' (simulating SGID-root binary)
         // should NOT be able to read this file — only UID 0 bypasses.
         const result = vfs.readFile('/root_secret.txt', 'guest', ['root']);
-        expect(result).toEqual({ error: 'Permission denied' });
+        expect(result).toEqual({ error: 'Permission denied.' });
     });
 
     it('should allow root group access only via group permissions', async () => {
@@ -52,6 +52,6 @@ describe('SGID Root Bypass Prevention', () => {
 
         // Root group member: no group read permission (mode 600 = rw-------)
         const result = vfs.readFile('/private.txt', 'attacker', ['root']);
-        expect(result).toEqual({ error: 'Permission denied' });
+        expect(result).toEqual({ error: 'Permission denied.' });
     });
 });

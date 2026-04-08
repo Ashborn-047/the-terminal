@@ -23,7 +23,7 @@ describe('SUID Root Bypass Prevention', () => {
 
         // Without SUID (normal user), access should be denied
         const resultAsGuest = vfs.readFile('/root_only.txt', 'guest', ['users']);
-        expect(resultAsGuest).toEqual({ error: 'Permission denied' });
+        expect(resultAsGuest).toEqual({ error: 'Permission denied.' });
     });
 
     it('should not allow chown by non-root user even with root group', async () => {
@@ -31,7 +31,7 @@ describe('SUID Root Bypass Prevention', () => {
 
         // A user in root group should NOT be able to chown
         const result = await vfs.chown('/target.txt', 'attacker', 'guest', ['root']);
-        expect(result).toBe('Permission denied');
+        expect(result).toBe('Permission denied.');
     });
 
     it('should allow chown only for UID 0 (root user)', async () => {

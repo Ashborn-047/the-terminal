@@ -480,7 +480,7 @@ export class VFS {
         return this.dentries[this.rootDentryId].inodeId; 
     }
 
-    private hasPermission(inode: Inode, userId: string, type: keyof VFSPermissions, groups: string[] = []): boolean {
+    public hasPermission(inode: Inode, userId: string, type: keyof VFSPermissions, groups: string[] = []): boolean {
         if (userId === 'root') return true;
         
         // Fallback for missing permissions (migration / legacy snapshots)
@@ -794,7 +794,7 @@ export class VFS {
                 if (inode.ownerId !== userId && parentInode.ownerId !== userId) return 'Operation not permitted (Sticky bit set)';
             }
 
-            if (!this.hasPermission(parentInode, userId, 'write', groups)) return 'Permission denied';
+            if (!this.hasPermission(parentInode, userId, 'write', groups)) return 'Permission denied.';
 
             if (inode.type === 'directory' && recursive && dentryResult.children) {
                 const children = [...dentryResult.children];
@@ -841,7 +841,7 @@ export class VFS {
     }
 
     public async chown(path: string, newOwner: string, userId: string = 'root', groups: string[] = []): Promise<boolean | string> {
-        if (userId !== 'root') return 'Permission denied';
+        if (userId !== 'root') return 'Permission denied.';
 
         try {
             const result = this.resolve(path, userId, this.rootDentryId, true, 0, groups);
@@ -865,7 +865,7 @@ export class VFS {
         
         if (!this.hasPermission(resolved, userId, 'read', groups)) {
             this.notifySyscall('openat', [path, 'O_RDONLY'], -13);
-            return { error: 'Permission denied' };
+            return { error: 'Permission denied.' };
         }
 
         this.notifySyscall('openat', [path, 'O_RDONLY'], 3);

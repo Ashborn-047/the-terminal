@@ -50,7 +50,7 @@ describe('VFS Core Operations', () => {
         await vfs.chmod('/private', '700', 'root'); // root-only
 
         const result = vfs.listChildren('/private', 'guest');
-        expect(result).toBe('Permission denied');
+        expect(result).toBe('Permission denied.');
     });
 
     it('should NOT list children of a directory without READ permission', async () => {
@@ -59,7 +59,7 @@ describe('VFS Core Operations', () => {
         
         // guest should fail
         const result = vfs.listChildren('/secret', 'guest');
-        expect(result).toBe('Permission denied');
+        expect(result).toBe('Permission denied.');
     });
 
     it('should restrict /proc listing based on user permissions', async () => {

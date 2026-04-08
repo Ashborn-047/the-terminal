@@ -321,6 +321,11 @@ export const useGamificationStore = create<GamificationState>()(
 
                 // Sync level and titles
                 get().addXp(0); 
+                
+                // SpacetimeDB Sync
+                import('../lib/spacetime/index').then(({ spacetime }) => {
+                    spacetime.completeLab(labId, BigInt(finalXpGain));
+                }).catch(err => console.error('[SPACETIME] Sync failed:', err));
 
                 // Achievement & Quests
                 get().updateQuestProgress('complete_labs', 1);

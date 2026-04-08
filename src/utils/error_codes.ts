@@ -17,7 +17,7 @@ export const ERROR_CODES: Record<string, SystemError> = {
     },
     PERMISSION_DENIED: {
         code: 'E_002',
-        message: 'Permission denied',
+        message: 'Permission denied.',
         description: 'You do not have the required permissions to perform this action.'
     },
     FILE_NOT_FOUND: {
