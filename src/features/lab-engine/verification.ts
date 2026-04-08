@@ -1,144 +1,120 @@
 import { VFS } from '../vfs/vfs';
-import { Lab, VerificationCondition } from './types';
+import { VerificationCondition } from './types';
+import { permissionsToOctal } from '../vfs/vfs';
 
 export class VerificationEngine {
-    /**
-     * Check if a single command matches an expected command string.
-     * Supports regexMatch mode for flexible matching.
-     */
-    private static matchesCommand(input: string, expected: string, regexMatch?: boolean): boolean {
-        const normalizedInput = input.trim().replace(/\s+/g, ' ');
-        const normalizedExpected = expected.trim().replace(/\s+/g, ' ');
+    constructor(private vfs: VFS) {}
 
-        if (regexMatch) {
-            try {
-                const regex = new RegExp(`^${normalizedExpected}$`, 'i');
-                return regex.test(normalizedInput);
-            } catch (e) {
-                console.error('Invalid regex in lab step:', e);
-                return normalizedInput === normalizedExpected;
-            }
-        }
-        return normalizedInput === normalizedExpected;
-    }
-
-    /**
-     * Verify a guided step against a single command input.
-     * Checks expectedCommand first, then alternativeCommands.
-     * Returns true if the command matches any accepted variant.
-     */
-    public static verifyGuidedStep(lab: Lab, stepIndex: number, command: string): boolean {
-        if (!lab.steps || stepIndex >= lab.steps.length) return false;
-        const step = lab.steps[stepIndex];
-
-        // If this step has a requiredSequence, use verifyGuidedSequenceStep instead
-        if (step.requiredSequence && step.requiredSequence.length > 0) return false;
-
-        const expected = step.expectedCommand;
-        if (!expected) return false;
-
-        // Check primary expected command
-        if (this.matchesCommand(command, expected, step.regexMatch)) return true;
-
-        // Check alternative commands
-        if (step.alternativeCommands) {
-            return step.alternativeCommands.some(alt =>
-                this.matchesCommand(command, alt, step.regexMatch)
-            );
-        }
-
-        return false;
-    }
-
-    /**
-     * Verify a sequence step: the user must enter each command in requiredSequence in order.
-     * Returns the new sequenceIndex (incremented if matched), or -1 if the command is wrong.
-     */
-    public static verifyGuidedSequenceStep(
-        lab: Lab, stepIndex: number, command: string, currentSeqIndex: number
-    ): number {
-        if (!lab.steps || stepIndex >= lab.steps.length) return -1;
-        const step = lab.steps[stepIndex];
-        if (!step.requiredSequence || step.requiredSequence.length === 0) return -1;
-
-        const expected = step.requiredSequence[currentSeqIndex];
-        if (!expected) return -1;
-
-        if (this.matchesCommand(command, expected, step.regexMatch)) {
-            return currentSeqIndex + 1;
-        }
-        return -1;
-    }
-
-    public static verifyDIYLab(lab: Lab, vfs: VFS, userId: string, processes: { pid: number; name: string; user: string; startTime: number }[]): { success: boolean; failedMessages: string[] } {
-        if (!lab.verification) return { success: true, failedMessages: [] };
-
+    public verify(conditions: VerificationCondition[]): { success: boolean; failedMessages: string[] } {
         const failedMessages: string[] = [];
-        for (const condition of lab.verification.conditions) {
-            const passed = this.checkCondition(condition, vfs, userId, processes);
-            if (!passed) {
+        for (const condition of conditions) {
+            const isMet = this.checkCondition(condition);
+            if (!isMet && condition.message) {
                 failedMessages.push(condition.message);
             }
         }
-
-        return {
-            success: failedMessages.length === 0,
-            failedMessages,
-        };
+        return { success: failedMessages.length === 0, failedMessages };
     }
 
-    private static checkCondition(
-        condition: VerificationCondition,
-        vfs: VFS,
-        userId: string,
-        processes: { pid: number; name: string; user: string; startTime: number }[]
-    ): boolean {
-        const normalizedPath = condition.path.replace('/home/guest', '/home/' + userId);
-        const result = vfs.resolve(normalizedPath, userId);
-        const exists = typeof result !== 'string';
-        const inode = exists ? result as any : null;
+    private checkCondition(condition: VerificationCondition): boolean {
+        const { type, path, content, mode, owner, mustHaveSuid } = condition;
+        const inode = this.vfs.getMetadata(path);
 
-        switch (condition.type) {
+        // All checks below (except file_not_exists) require the inode to exist
+        if (typeof inode === 'string') {
+            if (type === 'file_not_exists') return true;
+            return false;
+        }
+
+        switch (type) {
             case 'directory_exists':
-                return exists && inode.type === 'directory';
+                return inode.type === 'directory';
             case 'file_exists':
-                return exists && inode.type === 'file';
+                return inode.type === 'file';
             case 'file_not_exists':
-                return !exists;
+                return false; // Path exists, so file_not_exists is false
             case 'file_contains':
-                if (!exists || inode.type !== 'file') return false;
-                return inode.content?.includes(condition.content || '') || false;
+                return inode.content?.includes(content || '') ?? false;
             case 'file_matches_regex':
-                if (!exists || inode.type !== 'file') return false;
-                try {
-                    const regex = new RegExp(condition.content || '');
-                    return regex.test(inode.content || '');
-                } catch {
-                    return false;
-                }
-            case 'permission_equals': {
-                if (!exists || !condition.mode) return false;
-                const perms = inode.permissions;
-                if (!perms) return false;
-                const toDigit = (p: { read: boolean; write: boolean; execute: boolean }) =>
-                    (p.read ? 4 : 0) + (p.write ? 2 : 0) + (p.execute ? 1 : 0);
-                const octal = `${toDigit(perms.owner)}${toDigit(perms.group)}${toDigit(perms.others)}`;
-                return octal === condition.mode;
-            }
+                return new RegExp(content || '').test(inode.content || '');
             case 'owner_equals':
-                return exists && inode.ownerId === condition.owner;
-            case 'symlink_target_equals': {
-                // Resolve WITHOUT following symlinks to get the symlink inode itself
-                const symlinkResult = vfs.resolve(condition.path, userId, undefined, false);
-                if (typeof symlinkResult === 'string') return false;
-                const symlinkInode = symlinkResult as any;
-                return symlinkInode.type === 'symlink' && symlinkInode.target === condition.content;
+                return inode.ownerId === owner;
+            case 'symlink_target_equals':
+                return inode.type === 'symlink' && inode.target === content;
+            case 'permission_equals': {
+                const currentOctal = permissionsToOctal(inode.permissions).slice(-3);
+                const targetOctal = mode?.toString().padStart(3, '0').slice(-3);
+                return currentOctal === targetOctal;
             }
-            case 'process_not_running':
-                // path in this case is the process name
-                return !processes.some(p => p.name === condition.path);
+            case 'file_permissions_bitwise': {
+                // AUTHORITATIVE SUID CHECK (0o4000)
+                const perms = inode.permissions;
+                let bitwiseMatch = true;
+                
+                if (mustHaveSuid) {
+                    bitwiseMatch = !!perms.setuid;
+                }
+                
+                if (mode !== undefined) {
+                    const modeNum = typeof mode === 'string' ? parseInt(mode, 8) : mode;
+                    // Check against octal bits if provided
+                    const currentMode = this.permissionsToModeNumber(perms);
+                    bitwiseMatch = bitwiseMatch && ((currentMode & modeNum) === modeNum);
+                }
+                
+                return bitwiseMatch;
+            }
             default:
                 return false;
         }
+    }
+
+    private permissionsToModeNumber(perms: any): number {
+        const toDigit = (p: any) => (p.read ? 4 : 0) + (p.write ? 2 : 0) + (p.execute ? 1 : 0);
+        const special = (perms.setuid ? 4 : 0) + (perms.setgid ? 2 : 0) + (perms.sticky ? 1 : 0);
+        return special * 512 + toDigit(perms.owner) * 64 + toDigit(perms.group) * 8 + toDigit(perms.others);
+    }
+
+    // --- Static Utility Methods for Labs ---
+
+    public static verifyDIYLab(lab: any, vfs: VFS, userId: string = 'guest', groups: string[] = []): { success: boolean; failedMessages: string[] } {
+        if (!lab.verification || !lab.verification.conditions) {
+            return { success: true, failedMessages: [] };
+        }
+        const engine = new VerificationEngine(vfs);
+        return engine.verify(lab.verification.conditions);
+    }
+
+    public static verifyGuidedStep(lab: any, stepIndex: number, input: string): boolean {
+        if (!lab.steps || stepIndex >= lab.steps.length) return false;
+        const step = lab.steps[stepIndex];
+
+        if (step.regexMatch) {
+            return new RegExp(step.expectedCommand).test(input.trim());
+        }
+
+        if (!step.expectedCommand) return false;
+
+        // Normalize whitespace: trim and collapse internal spaces
+        const normalizedInput = input.trim().replace(/\s+/g, ' ');
+        const normalizedExpected = step.expectedCommand.trim().replace(/\s+/g, ' ');
+
+        if (step.alternativeCommands?.some((alt: string) => alt.trim().replace(/\s+/g, ' ') === normalizedInput)) return true;
+        return normalizedInput === normalizedExpected;
+    }
+
+    public static verifyGuidedSequenceStep(lab: any, stepIndex: number, input: string, sequenceIndex: number): number {
+        if (!lab.steps || stepIndex >= lab.steps.length) return -1;
+        const step = lab.steps[stepIndex];
+        if (!step.requiredSequence) return -1;
+
+        const expected = step.requiredSequence[sequenceIndex];
+        const normalizedInput = input.trim().replace(/\s+/g, ' ');
+        const normalizedExpected = expected.trim().replace(/\s+/g, ' ');
+
+        if (normalizedInput === normalizedExpected) {
+            return sequenceIndex + 1;
+        }
+        return -1;
     }
 }

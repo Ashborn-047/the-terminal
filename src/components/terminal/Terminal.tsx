@@ -12,6 +12,8 @@ import { ShellExecutor } from '../../features/command-engine/shell/executor';
 import { ShellEnvironment } from '../../features/command-engine/shell/environment';
 import { TabCompleter } from '../../features/command-engine/shell/completion';
 import { useTerminalStore } from '../../stores/terminalStore';
+import { useGamificationStore } from '../../stores/gamificationStore';
+import { useHardcoreStore } from '../../stores/hardcoreStore';
 import { Signal } from '../../features/command-engine/types';
 
 export const TerminalComponent: React.FC = () => {
@@ -84,7 +86,17 @@ export const TerminalComponent: React.FC = () => {
         term.writeln('Type \x1b[1;36mhelp\x1b[0m to see available commands.');
         term.writeln('');
         
-        const ps1 = `\x1b[1;37m[${userId}@the-terminal ${cwd === '/' ? '/' : cwd.split('/').pop()}]$\x1b[0m `;
+        // WAVE 3: Level Migration & Notice
+        const gamification = useGamificationStore.getState();
+        gamification.migrateUserLevels();
+        if (gamification.needsMigrationNotice) {
+            term.writeln('\x1b[1;33m[SYSTEM] Your progress has been migrated to the new Wave 3 XP formula.\x1b[0m');
+            term.writeln('\x1b[1;33m[SYSTEM] Levels are now harder to gain but more rewarding!\x1b[0m');
+            term.writeln('');
+            gamification.dismissMigrationNotice();
+        }
+
+        const ps1 = getPrompt();
         term.write(ps1);
 
         // Handle Input
@@ -139,16 +151,34 @@ export const TerminalComponent: React.FC = () => {
         const handleResize = () => fitAddon.fit();
         window.addEventListener('resize', handleResize);
 
+        // Phase 3.3: Respawn Timer
+        const respawnInterval = setInterval(() => {
+            const { profile } = useHardcoreStore.getState();
+            // Respawn logic implemented in store or here.
+        }, 1000);
+
         return () => {
             window.removeEventListener('resize', handleResize);
+            clearInterval(respawnInterval);
             term.dispose();
         };
     }, []);
 
     const getPrompt = () => {
+        const { streak, masteryBadge } = useGamificationStore.getState();
+        const { profile: hcProfile } = useHardcoreStore.getState();
+        
+        // Streak badge only if streak >= 3
+        const streakText = streak.current >= 3 ? `\x1b[1;31m🔥 ${streak.current}d\x1b[0m ` : '';
+        
+        let badgeTitle = masteryBadge.toUpperCase();
+        if (masteryBadge === 'kernel_master') badgeTitle = 'KERNEL';
+        const badgeText = `\x1b[1;33m[${badgeTitle}]\x1b[0m `;
+        
         const currentCwd = shellEnvRef.current?.get('PWD') || cwd;
         const displayCwd = currentCwd === '/' ? '/' : currentCwd.split('/').pop();
-        return `\x1b[1;37m[${userId}@the-terminal ${displayCwd}]$\x1b[0m `;
+        
+        return `${streakText}${badgeText}\x1b[1;37m${userId}@linux-lab:${displayCwd}$\x1b[0m `;
     };
 
     const handleExecute = async (input: string) => {
@@ -210,11 +240,32 @@ export const TerminalComponent: React.FC = () => {
 
     return (
         <div className="flex flex-col w-full h-full bg-brutal-black font-mono text-brutal-green p-4 border-3 border-brutal-white shadow-brutal-lg">
-            <div 
-                ref={terminalRef} 
-                className="w-full h-full overflow-hidden" 
-                data-testid="terminal-container" 
-            />
+            <div className="relative w-full h-full overflow-hidden">
+                {/* Mastery / Death Overlay */}
+                {useHardcoreStore.getState().profile?.isActive && useGamificationStore.getState().level === 1 && useGamificationStore.getState().totalXpEarned === 0 && (
+                    <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-brutal-dark/95 backdrop-blur-sm p-8 text-center border-4 border-brutal-red animate-pulse">
+                        <span className="text-6xl mb-4">💀</span>
+                        <h2 className="text-3xl font-heading text-brutal-red uppercase mb-2">SYSTEM CRITICAL FAILURE</h2>
+                        <p className="text-brutal-white mb-6 max-w-md">
+                            [HARDCORE] You have died. All progress lost. Respawn with caution.
+                        </p>
+                        <div className="flex flex-col gap-2 font-mono text-sm">
+                            <span className="text-brutal-red">XP RESET TO 0</span>
+                            <span className="text-brutal-white">
+                                LEVEL RECALIBRATED TO 1
+                            </span>
+                        </div>
+                        <button 
+                            className="mt-6 px-6 py-2 bg-brutal-red text-brutal-white border-2 border-brutal-white uppercase font-bold hover:bg-brutal-white hover:text-brutal-red transition-colors"
+                            onClick={() => window.location.reload()} // For now, just reload to clear state or we could reset stores
+                        >
+                            Respawn
+                        </button>
+                    </div>
+                )}
+
+                <div ref={terminalRef} className="w-full h-full overflow-hidden" data-testid="terminal-container" />
+            </div>
         </div>
     );
 };

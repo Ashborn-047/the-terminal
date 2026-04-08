@@ -3,11 +3,12 @@ import { VFSSnapshot } from '../vfs/types';
 export type LabType = 'guided' | 'diy' | 'boss';
 
 export interface VerificationCondition {
-    type: 'directory_exists' | 'file_exists' | 'file_contains' | 'file_matches_regex' | 'file_not_exists' | 'permission_equals' | 'owner_equals' | 'symlink_target_equals' | 'process_not_running';
+    type: 'directory_exists' | 'file_exists' | 'file_contains' | 'file_matches_regex' | 'file_not_exists' | 'permission_equals' | 'owner_equals' | 'symlink_target_equals' | 'process_not_running' | 'file_permissions_bitwise';
     path: string;
     content?: string;
-    mode?: string;
+    mode?: string | number;
     owner?: string;
+    mustHaveSuid?: boolean;
     message: string;
 }
 
@@ -22,19 +23,33 @@ export interface LabStep {
     regexMatch?: boolean; // If true, expectedCommand is treated as a regex
 }
 
+export interface OutcomeCheck extends VerificationCondition {}
+
+export interface BonusObjective {
+    id: string;
+    description: string;
+    xpReward: number;
+    verification: OutcomeCheck[];
+}
+
+export type LabDifficulty = 'NOVICE' | 'ADEPT' | 'EXPERT' | 'MASTER';
+
 export interface Lab {
     id: string;
     module: number;
     title: string;
     description: string;
     type: LabType;
+    difficulty: LabDifficulty;
     xpReward: number;
     prerequisites: string[];
     initialVFS?: string; // name of snapshot or 'default'
+    scenarioId?: string; // ID of the scenario to apply after snapshot restoration
     steps?: LabStep[]; // for guided
     verification?: {
         conditions: VerificationCondition[];
     }; // for diy
+    bonusObjectives?: BonusObjective[];
     hints?: string[];
     solution?: string; // For DIY labs, the overall solution
     completionMessage: string;
@@ -55,4 +70,5 @@ export interface LabProgress {
     solutionRevealed?: boolean; // True if the user revealed the solution
     startTime?: number;   // UNIX timestamp when lab started/resumed
     totalTimeSpent?: number; // Cumulative seconds spent
+    bonusObjectivesCompleted?: string[]; // IDs of bonus objectives completed
 }

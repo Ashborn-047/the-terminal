@@ -264,6 +264,20 @@ export function useTerminal() {
             return null;
         };
         const cmdName = getFirstCmdName(ast);
+
+        // Phase 3.3: Sudden Death (Hardcore Mode)
+        if (cmdName === 'kill' && trimmedInput.match(/-9|-KILL/)) {
+            const targets = trimmedInput.split(' ').slice(1).filter(a => !a.startsWith('-'));
+            // If killing init (1), current shell (501), or any job (%)
+            const isEssentialKill = targets.some(t => t === '1' || t === '501' || t.startsWith('%'));
+            
+            if (isEssentialKill) {
+                const { triggerDeath } = useGamificationStore.getState();
+                triggerDeath("Kernel panic: Essential system process terminated with SIGKILL.");
+                return result; // Stop further processing for this command
+            }
+        }
+
         if (cmdName === 'chmod') incrementCounter('chmod-count');
         if (cmdName === 'grep') incrementCounter('grep-count');
         if (cmdName === 'kill') incrementCounter('kill-count');

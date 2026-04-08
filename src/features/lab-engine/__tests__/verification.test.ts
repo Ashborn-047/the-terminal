@@ -254,5 +254,26 @@ describe('VerificationEngine', () => {
             const result = VerificationEngine.verifyDIYLab(lab, vfs, userId, []);
             expect(result.success).toBe(true);
         });
+
+        it('should verify file_permissions_bitwise (SUID) successfully', async () => {
+            await vfs.writeFile('/home/guest/sudo_mock', 'content', 'root');
+            // 0o4111 = setuid + --x--x--x
+            await vfs.chmod('/home/guest/sudo_mock', 0o4111, 'root');
+            
+            const lab: Lab = {
+                id: 'test-suid', title: 'Security Test', description: '', module: 1, type: 'diy',
+                xpReward: 10, prerequisites: [], completionMessage: 'Done',
+                verification: {
+                    conditions: [{ 
+                        type: 'file_permissions_bitwise', 
+                        path: '/home/guest/sudo_mock', 
+                        mustHaveSuid: true, 
+                        message: 'File must have SUID bit' 
+                    }]
+                }
+            };
+            const result = VerificationEngine.verifyDIYLab(lab, vfs, userId, []);
+            expect(result.success).toBe(true);
+        });
     });
 });

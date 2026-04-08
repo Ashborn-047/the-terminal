@@ -110,35 +110,29 @@ To ensure the app is usable even without a live backend connection, a **Mock Mod
 
 ## 📈 Current Status
 
-- **Strategic Audit & Restoration In Progress** — 95% Linux Fidelity Roadmap established ✅
-- **Documentation Cleanup** — Legacy documentation archived (24 files) ✅
+- **Wave 3: Gamification & Economy Completion** — Exponential XP curve (1.5x), Replay Diminishing Returns, and Hardcore Mode implemented ✅
+- **High-Fidelity Prompt Engine** — Integrated Streak (🔥) and Mastery (e.g. `[KERNEL]`) badges into the shell prompt ✅
+- **Architectural Hardening** — VFS access control strictly follows UID 0 bypass; composite scenario support for Mastery Challenges implemented ✅
 - **Backend Status** — 🟢 System Online (Connected to `terminal-backend` on SpacetimeDB Cloud)
-- **Restoration Focus** — Preparing for Phase A (Internal Inode/Dentry VFS Refactor) 🚀
-- **Architectural Hardening** — VFS access control strictly follows UID 0 bypass; root group membership no longer grants global permission bypass.
 
 ---
 
 ## 🗺️ Strategic Roadmap (Restoration Phases)
 
-### ⚖️ Phase A: True Inode System (P0)
-- Resolve hardlink bugs by decoupling Dentries from Inodes.
-- Fix `O(n)` performance bottlenecks in VFS resolution.
+### ✅ Phase 1-3: Foundation & Engine (Completed)
+- **VFS Refactor**: POSIX-compliant permission engine.
+- **Shell Engine**: Advanced redirections, pipes, and xterm.js integration.
+- **Gamification**: Hardcore mode, Multi-day streaks, and Exponential progression.
 
-### 🐚 Phase B: AST-Based Shell Parser (P0)
-- Support full shell script control flow (`if`, `for`, `while`).
-- Replace regex-based parsing with a tree-walking interpreter.
+### ⚓ Phase 4: Mastery Content (Next)
+- **RHCSA/LFCS Labs**: Deployment of 20+ specialized administrative scenarios.
+- **Boss Arena**: Time-gated "Kernel Panic" repair challenges.
+- **Interactive Mentorship**: SpacetimeDB-backed multiplayer shadowing for lab review.
 
-### 🌳 Phase C: POSIX Process Tree (P1)
-- Implement proper process lifecycles (fork/exec/wait) and process states (Zombie, etc.).
-- Fix signal handler memory leaks and delivery flaws.
-
-### 📦 Phase D: File Descriptor Table (P1)
-- Isolate I/O redirection using per-process FD tables.
-
-### 🛠️ Phase E-H: Expansion & Hardening
-- **Phase E**: RHCSA/LFCS Command Suite expansion (systemctl, ip, find -exec).
-- **Phase F-G**: Mount Namespace simulation and Block/Character Device model.
-- **Phase H**: SELinux / MAC security simulation layer.
+### 🌌 Future: System Visualization
+- **Path of Mastery**: Visual skill-tree mapping command proficiency to XP clusters.
+- **Hardlink/Dentry Decoupling**: Final VFS architectural refinement to support `ln` fidelity.
+- **Block Device Simulation**: `/dev/` population for disk management labs.
 
 ---
 

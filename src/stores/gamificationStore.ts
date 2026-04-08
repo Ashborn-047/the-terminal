@@ -6,6 +6,11 @@ import { trackEvent } from '../utils/analytics';
 import { useUIStore } from './uiStore';
 import { spacetime } from '../lib/spacetime';
 import { logger } from '../utils/logger';
+import { HardcoreProfile, MasteryBadge } from '../features/lab-engine/hardcore';
+import { XP_BASE, XP_MULTIPLIER, STREAK_BONUS_TIERS, HARDCORE_XP_MULTIPLIER, BASE_LAB_XP } from '../config/progression';
+import { useHardcoreStore } from './hardcoreStore';
+import { VFS } from '../features/vfs/vfs';
+import { VerificationEngine } from '../features/lab-engine/verification';
 
 // ======================================================================
 //  Level Titles — per gamification_framework.md §2.2
@@ -40,11 +45,7 @@ export function getLevelTitle(level: number): string {
 // ======================================================================
 export function xpForLevel(level: number): number {
     if (level <= 1) return 0;
-    if (level <= 10) {
-        return 100 * ((level - 1) * level) / 2;
-    }
-    const base10 = 4500; // cumulative XP at level 10
-    return base10 + (level - 10) * 1000;
+    return Math.floor(XP_MULTIPLIER * Math.pow(XP_BASE, level - 1));
 }
 
 export function levelFromXP(totalXp: number): number {
@@ -134,10 +135,20 @@ interface GamificationState {
     hintsUsed: number;
     dailyQuests: DailyQuest[];
     lastQuestGenerationDate: string | null;
+    version: string;
+    needsMigrationNotice: boolean;
+    
+    // Phase 3.3: Mastery
+    masteryBadge: MasteryBadge;
+    labCompletionHistory: Record<string, { completions: number; lastCompleted: number }>;
 
+    addXp: (amount: number) => void;
+    triggerDeath: (reason: string) => void;
+    resetXpOnDeath: () => void;
+    setMigrationNotice: (val: boolean) => void;
     awardXP: (amount: number, silent?: boolean) => void;
     hintPenalty: () => void;
-    processLabCompletion: (lab: Lab, progress: LabProgress) => void;
+    processLabCompletion: (labId: string, lab: Lab, vfs: VFS) => void;
     getStreakMultiplier: () => number;
     updateStreak: () => void;
     purchaseStreakFreeze: () => boolean;
@@ -149,6 +160,10 @@ interface GamificationState {
     updateQuestProgress: (type: QuestType, amount: number) => void;
     claimQuestReward: (questId: string) => void;
     setActivityHistory: (history: Record<string, number>) => void;
+    migrateUserLevels: () => void;
+    dismissMigrationNotice: () => void;
+    calculateReplayXp: (labId: string, baseXp: number) => number;
+    calculateTotalXpGain: (totalBase: number) => number;
 }
 
 export const useGamificationStore = create<GamificationState>()(
@@ -165,6 +180,46 @@ export const useGamificationStore = create<GamificationState>()(
             hintsUsed: 0,
             dailyQuests: [],
             lastQuestGenerationDate: null,
+            version: '3.1',
+            needsMigrationNotice: false,
+            masteryBadge: 'novice',
+            labCompletionHistory: {},
+
+            addXp: (amount) => {
+                set((state) => {
+                    const newXp = state.xp + amount;
+                    let newLevel = state.level;
+                    
+                    while (newXp >= xpForLevel(newLevel + 1)) {
+                        newLevel++;
+                    }
+
+                    // Calculate badge
+                    let badge: MasteryBadge = 'novice';
+                    if (newLevel >= 40) badge = 'kernel_master';
+                    else if (newLevel >= 30) badge = 'sysad';
+                    else if (newLevel >= 20) badge = 'hacker';
+
+                    return { 
+                        xp: newXp, 
+                        level: newLevel,
+                        masteryBadge: badge
+                    };
+                });
+            },
+
+            triggerDeath: (reason) => {
+                useHardcoreStore.getState().registerDeath(reason);
+            },
+
+            resetXpOnDeath: () => set({ 
+                xp: 0, 
+                totalXpEarned: 0, 
+                level: 1, 
+                masteryBadge: 'novice' 
+            }),
+
+            setMigrationNotice: (val) => set({ needsMigrationNotice: val }),
 
             awardXP: async (amount, silent) => {
                 const oldLevel = get().level;
@@ -177,16 +232,14 @@ export const useGamificationStore = create<GamificationState>()(
                     get().updateQuestProgress('earn_xp', boostedAmount);
                 }
 
-                // For simple XP awards that aren't labs, we might want a generic reducer.
-                // For now, let's just update local state and consider adding an 'award_xp' reducer to the module if needed.
-                // In a real app, this might be triggered by specific actions.
                 set((state) => {
                     const nextXp = state.totalXpEarned + boostedAmount;
                     const today = new Date().toISOString().split('T')[0];
+                    const nextLevel = levelFromXP(nextXp);
                     return {
                         xp: state.xp + boostedAmount,
                         totalXpEarned: nextXp,
-                        level: levelFromXP(nextXp),
+                        level: nextLevel,
                         activityHistory: {
                             ...state.activityHistory,
                             [today]: (state.activityHistory?.[today] || 0) + boostedAmount
@@ -223,92 +276,66 @@ export const useGamificationStore = create<GamificationState>()(
                 set((state) => ({ hintsUsed: state.hintsUsed + 1 }));
             },
 
-            processLabCompletion: async (lab, progress) => {
-                if (!lab || !progress) return;
+            processLabCompletion: (labId: string, lab: Lab, vfs: VFS) => {
+                const { labCompletionHistory } = get();
+                const historyRecord = labCompletionHistory[labId];
 
-                let baseReward = lab.xpReward;
-                let multiplier = 1.0;
-                let penaltyReason = '';
+                // 1. Calculate Base XP from difficulty
+                const difficultyBonus = { NOVICE: 100, ADEPT: 250, EXPERT: 600, MASTER: 1500 };
+                const baseXP = difficultyBonus[lab.difficulty || 'NOVICE'];
 
-                if (progress.solutionRevealed) {
-                    multiplier = 0.25;
-                    penaltyReason = 'Solution revealed';
-                } else if ((progress.hintsUsed?.length || 0) > 0) {
-                    multiplier = 0.5;
-                    penaltyReason = `${progress.hintsUsed!.length} hints used`;
+                // 2. Bonus Objectives Verification
+                let bonusXP = 0;
+                const objectivesCompleted: string[] = [];
+                if (lab.bonusObjectives) {
+                    const engine = new VerificationEngine(vfs);
+                    for (const obj of lab.bonusObjectives) {
+                        const { success } = engine.verify(obj.verification);
+                        if (success) {
+                            bonusXP += obj.xpReward;
+                            objectivesCompleted.push(obj.id);
+                        }
+                    }
                 }
 
-                const finalXp = Math.floor(baseReward * multiplier);
-                const isFirstLab = get().labsCompleted === 0;
-                const firstLabBonus = isFirstLab ? FIRST_LAB_BONUS : 0;
+                // 3. Handle Replay Cooling
+                const xpAfterDiminishing = get().calculateReplayXp(labId, baseXP);
+                const totalBase = xpAfterDiminishing + bonusXP;
 
-                let speedBonus = 0;
-                const timeSpent = progress.totalTimeSpent || 0;
-                if (lab.parTime && timeSpent <= lab.parTime) {
-                    speedBonus = lab.parXpBonus || 50;
-                    get().incrementCounter('speed-bonus-count');
-                    toastEmitter.emit({ type: 'xp', title: `+${speedBonus} XP (Speed Bonus!)`, icon: '⚡' });
-                }
+                // 4. Apply Multipliers (Hardcore + Streak)
+                const finalXpGain = get().calculateTotalXpGain(totalBase);
 
-                const hintsCount = progress.hintsUsed?.length || 0;
+                // 5. Update State
+                set((state) => ({
+                    xp: state.xp + finalXpGain,
+                    totalXpEarned: state.totalXpEarned + finalXpGain,
+                    labsCompleted: state.labsCompleted + 1,
+                    labCompletionHistory: {
+                        ...state.labCompletionHistory,
+                        [labId]: {
+                            completions: (historyRecord?.completions || 0) + 1,
+                            lastCompleted: Date.now()
+                        }
+                    }
+                }));
 
-                if (multiplier < 1.0) {
-                    toastEmitter.emit({
-                        type: 'xp',
-                        title: `XP Reduced: ${penaltyReason}`,
-                        icon: '⚖️'
-                    });
-                }
+                // Sync level and titles
+                get().addXp(0); 
 
-                const finalAmount = Math.max(0, finalXp + firstLabBonus + speedBonus);
-
-                // Perform optimistic local update first so UI reflects progress immediately
-                set((state) => {
-                    const nextXp = state.totalXpEarned + finalAmount;
-                    return {
-                        xp: state.xp + finalAmount,
-                        totalXpEarned: nextXp,
-                        level: levelFromXP(nextXp),
-                        labsCompleted: state.labsCompleted + 1
-                    };
-                });
-                console.log('LAB_DEBUG: processLabCompletion done', {
-                    labsCompleted: get().labsCompleted,
-                    xp: get().xp,
-                    level: get().level
-                });
-
-                // CALL SPACETIME REDUCER (async sync)
-                try {
-                    await spacetime.completeLab(lab.id, BigInt(finalAmount));
-                } catch (e) {
-                    logger.error('Failed to sync lab completion to SpacetimeDB', { error: e });
-                    // We don't revert local state for now to avoid jumpy UI, 
-                    // persistence middleware will keep it locally.
-                }
-
-                if (hintsCount === 0) {
-                    get().incrementCounter('perfect-lab-count');
-                }
-
-                trackEvent('lab_completed', {
-                    labId: lab.id,
-                    xpAwarded: finalAmount,
-                    isFirstLab
-                });
-
+                // Achievement & Quests
+                get().updateQuestProgress('complete_labs', 1);
                 get().updateStreak();
                 get().checkAchievements();
-                get().updateQuestProgress('complete_labs', 1);
+
+                if (objectivesCompleted.length > 0) {
+                    console.log(`[XP] Bonus Objectives Completed: ${objectivesCompleted.join(', ')}`);
+                }
             },
 
             getStreakMultiplier: () => {
                 const { current } = get().streak;
-                if (current >= 30) return 2.0;
-                if (current >= 14) return 1.5;
-                if (current >= 7) return 1.25;
-                if (current >= 3) return 1.1;
-                return 1.0;
+                const tier = STREAK_BONUS_TIERS.find(t => current >= t.minDays && current <= t.maxDays);
+                return tier ? tier.multiplier : 1.0;
             },
 
             updateStreak: () => {
@@ -330,41 +357,24 @@ export const useGamificationStore = create<GamificationState>()(
                     if (dayDiff === 2 && streak.freezesRemaining > 0) {
                         newCurrent = streak.current + 1;
                         freezeConsumed = true;
-                        set((s) => ({
-                            streak: { ...s.streak, freezesRemaining: s.streak.freezesRemaining - 1 },
-                        }));
                     }
                 }
 
-                set({
+                set((s) => ({
                     streak: {
                         current: newCurrent,
                         longest: Math.max(newCurrent, streak.longest),
                         lastActivityDate: today,
-                        freezesRemaining: freezeConsumed ? streak.freezesRemaining - 1 : streak.freezesRemaining,
+                        freezesRemaining: freezeConsumed ? s.streak.freezesRemaining - 1 : s.streak.freezesRemaining,
                     },
-                });
+                }));
 
-                // Freeze consumed notification
                 if (freezeConsumed) {
                     toastEmitter.emit({
                         type: 'info',
                         title: '❄️ Streak Freeze Used!',
-                        message: 'Your streak was saved. Purchase another freeze from your profile.',
+                        message: 'Your streak was saved.',
                         icon: '❄️',
-                        duration: 5000,
-                    });
-                }
-
-                // Streak milestone bonuses + notifications
-                const streakBonuses: Record<number, number> = { 7: 100, 30: 500, 90: 1000 };
-                if (streakBonuses[newCurrent]) {
-                    get().awardXP(streakBonuses[newCurrent]);
-                    toastEmitter.emit({
-                        type: 'streak',
-                        title: `🔥 ${newCurrent}-Day Streak!`,
-                        message: `+${streakBonuses[newCurrent]} XP milestone bonus!`,
-                        icon: '🔥',
                         duration: 5000,
                     });
                 }
@@ -373,20 +383,12 @@ export const useGamificationStore = create<GamificationState>()(
             purchaseStreakFreeze: () => {
                 const state = get();
                 const FREEZE_COST = 200;
-                if (state.xp < FREEZE_COST) {
-                    toastEmitter.emit({ type: 'error', title: 'Not enough XP', message: `You need ${FREEZE_COST} XP to buy a streak freeze.`, icon: '❌', duration: 4000 });
-                    return false;
-                }
-                if (state.streak.freezesRemaining >= 1) {
-                    toastEmitter.emit({ type: 'info', title: 'Already Active', message: 'You already have a streak freeze active.', icon: '❄️', duration: 4000 });
-                    return false;
-                }
+                if (state.xp < FREEZE_COST) return false;
+                if (state.streak.freezesRemaining >= 1) return false;
                 set((s) => ({
                     xp: s.xp - FREEZE_COST,
-                    totalXpEarned: s.totalXpEarned, // Don't subtract from totalXpEarned (it's a purchase)
                     streak: { ...s.streak, freezesRemaining: 1 },
                 }));
-                toastEmitter.emit({ type: 'xp', title: `-${FREEZE_COST} XP`, message: 'Streak Freeze activated! ❄️', icon: '❄️', duration: 4000 });
                 return true;
             },
 
@@ -423,19 +425,6 @@ export const useGamificationStore = create<GamificationState>()(
                     set((state) => ({
                         unlockedAchievements: [...state.unlockedAchievements, ...newlyUnlocked],
                     }));
-                    for (const achId of newlyUnlocked) {
-                        const ach = ACHIEVEMENTS.find(a => a.id === achId);
-                        if (ach) {
-                            trackEvent('achievement_unlocked', { achievementId: achId });
-                            toastEmitter.emit({
-                                type: 'achievement',
-                                title: `${ach.name} Unlocked!`,
-                                message: `${ach.description} (+${ach.xpReward} XP)`,
-                                icon: ach.icon,
-                                duration: 5000,
-                            });
-                        }
-                    }
                 }
                 return newlyUnlocked;
             },
@@ -471,27 +460,11 @@ export const useGamificationStore = create<GamificationState>()(
                     const nextQuests = state.dailyQuests.map((q) => {
                         if (q.type === type && !q.completed) {
                             const newProgress = Math.min(q.target, q.progress + amount);
-                            let justCompleted = false;
-
-                            if (newProgress >= q.target && !q.completed) {
-                                justCompleted = true;
-                                updated = true;
-                                toastEmitter.emit({
-                                    type: 'achievement',
-                                    title: 'Daily Quest Complete!',
-                                    message: q.title,
-                                    icon: '✨',
-                                    duration: 6000
-                                });
-                            } else if (newProgress !== q.progress) {
-                                updated = true;
-                            }
-
-                            return { ...q, progress: newProgress, completed: q.completed || justCompleted };
+                            if (newProgress !== q.progress) updated = true;
+                            return { ...q, progress: newProgress, completed: newProgress >= q.target };
                         }
                         return q;
                     });
-
                     return updated ? { dailyQuests: nextQuests } : {};
                 });
             },
@@ -509,6 +482,48 @@ export const useGamificationStore = create<GamificationState>()(
             setActivityHistory: (history: Record<string, number>) => {
                 set({ activityHistory: history });
             },
+
+            migrateUserLevels: () => {
+                const state = get();
+                if (state.version === '3.1') return;
+                
+                const newLevel = levelFromXP(state.totalXpEarned);
+                set({
+                    level: newLevel,
+                    needsMigrationNotice: true,
+                    version: '3.1'
+                });
+            },
+
+            dismissMigrationNotice: () => set({ needsMigrationNotice: false }),
+
+            calculateReplayXp: (labId: string, baseXp: number) => {
+                const history = get().labCompletionHistory[labId];
+                if (!history) return baseXp;
+
+                const daysSince = (Date.now() - history.lastCompleted) / (1000 * 60 * 60 * 24);
+                if (daysSince < 3) {
+                    const multipliers = [1.0, 0.5, 0.25, 0.1];
+                    const index = Math.min(history.completions, multipliers.length - 1);
+                    return Math.floor(baseXp * multipliers[index]);
+                }
+                return baseXp;
+            },
+
+            calculateTotalXpGain: (totalBase: number) => {
+                let multiplier = 1.0;
+                
+                // Hardcore boost
+                const hcProfile = useHardcoreStore.getState().profile;
+                if (hcProfile?.isActive) multiplier *= HARDCORE_XP_MULTIPLIER;
+
+                // Streak boost
+                const streak = get().streak.current;
+                const tier = STREAK_BONUS_TIERS.find(t => streak >= t.minDays && streak <= t.maxDays);
+                if (tier) multiplier *= tier.multiplier;
+
+                return Math.floor(totalBase * multiplier);
+            }
         }),
         { name: 'the-terminal-gamification' }
     )

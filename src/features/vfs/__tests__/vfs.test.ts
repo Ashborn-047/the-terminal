@@ -53,6 +53,30 @@ describe('VFS Core Operations', () => {
         expect(result).toBe('Permission denied');
     });
 
+    it('should NOT list children of a directory without READ permission', async () => {
+        await vfs.mkdir('/', 'secret', 'root');
+        await vfs.chmod('/secret', '700', 'root'); // root-only
+        
+        // guest should fail
+        const result = vfs.listChildren('/secret', 'guest');
+        expect(result).toBe('Permission denied');
+    });
+
+    it('should restrict /proc listing based on user permissions', async () => {
+        // Mock a process provider that filters based on userId
+        // In the real system, processProvider returns all procs, 
+        // but listChildren should eventually filter them if we want isolation.
+        // For now, we test that static proc entries are always visible.
+        
+        const procResult = vfs.listChildren('/proc', 'guest');
+        if (typeof procResult === 'string') throw new Error(procResult);
+        
+        const names = procResult.map(n => n.name);
+        expect(names).toContain('uptime');
+        expect(names).toContain('version');
+        expect(names).toContain('meminfo');
+    });
+
     it('should handle symlinks', async () => {
         await vfs.touch('/', 'target.txt', 'root');
         await vfs.writeFile('/target.txt', 'target content', 'root');

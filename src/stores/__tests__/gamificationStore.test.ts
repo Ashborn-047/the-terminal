@@ -22,20 +22,21 @@ describe('Gamification Store — Pure Functions', () => {
             expect(xpForLevel(1)).toBe(0);
         });
 
-        it('should return 100 for level 2', () => {
-            expect(xpForLevel(2)).toBe(100);
+        it('should return 150 for level 2', () => {
+            // 100 * 1.5^(2-1) = 150
+            expect(xpForLevel(2)).toBe(150);
         });
 
-        it('should return 4500 for level 10', () => {
-            // Cumulative: 100 * (9 * 10) / 2 = 4500
-            expect(xpForLevel(10)).toBe(4500);
+        it('should return 3844 for level 10', () => {
+            // 100 * 1.5^(10-1) = 3844
+            expect(xpForLevel(10)).toBe(3844);
         });
 
-        it('should handle levels above 10 with 1000 XP per level', () => {
-            // Level 11 = 4500 + 1000 = 5500
-            expect(xpForLevel(11)).toBe(5500);
-            // Level 12 = 4500 + 2000 = 6500
-            expect(xpForLevel(12)).toBe(6500);
+        it('should handle levels above 10 with exponential growth', () => {
+            // Level 11 = 100 * 1.5^10 = 5766
+            expect(xpForLevel(11)).toBe(5766);
+            // Level 12 = 100 * 1.5^11 = 8649
+            expect(xpForLevel(12)).toBe(8649);
         });
 
         it('should return 0 for level 0 or negative', () => {
@@ -49,21 +50,22 @@ describe('Gamification Store — Pure Functions', () => {
             expect(levelFromXP(0)).toBe(1);
         });
 
-        it('should return level 2 at 100 XP', () => {
-            expect(levelFromXP(100)).toBe(2);
+        it('should return level 2 at 150 XP', () => {
+            expect(levelFromXP(150)).toBe(2);
         });
 
-        it('should return level 1 at 99 XP', () => {
-            expect(levelFromXP(99)).toBe(1);
+        it('should return level 1 at 149 XP', () => {
+            expect(levelFromXP(149)).toBe(1);
         });
 
         it('should return level 10 at 4500 XP', () => {
+            // L10 is 3844, L11 is 5766, so 4500 is L10
             expect(levelFromXP(4500)).toBe(10);
         });
 
         it('should handle XP above level 10', () => {
-            expect(levelFromXP(5500)).toBe(11);
-            expect(levelFromXP(6500)).toBe(12);
+            expect(levelFromXP(5800)).toBe(11);
+            expect(levelFromXP(9000)).toBe(12);
         });
 
         it('should return correct level for large XP values', () => {
@@ -138,6 +140,40 @@ describe('Gamification Store — Pure Functions', () => {
 
         it('should have at least 25 achievements total', () => {
             expect(ACHIEVEMENTS.length).toBeGreaterThanOrEqual(25);
+        });
+    });
+
+    describe('Sudden Death Mode', () => {
+        let store: any;
+        beforeEach(() => {
+            store = {
+                xp: 1000,
+                level: 5,
+                hardcore: { deathCount: 0, xpPenaltyTotal: 0, isDead: false },
+                masteryBadge: 'hacker'
+            };
+        });
+
+        it('should reset XP and level on death', () => {
+            const penalty = store.xp;
+            store.xp = 0;
+            store.level = 1;
+            store.masteryBadge = 'novice';
+            store.hardcore.deathCount++;
+            store.hardcore.isDead = true;
+
+            expect(store.xp).toBe(0);
+            expect(store.level).toBe(1);
+            expect(store.masteryBadge).toBe('novice');
+            expect(store.hardcore.isDead).toBe(true);
+        });
+    });
+
+    describe('XP Migration', () => {
+        it('should recalculate level correctly for existing users', () => {
+            const oldUser = { totalXpEarned: 5500, level: 11, version: '3.0' };
+            const newLevel = levelFromXP(oldUser.totalXpEarned);
+            expect(newLevel).toBe(10);
         });
     });
 });
