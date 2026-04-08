@@ -110,35 +110,28 @@ To ensure the app is usable even without a live backend connection, a **Mock Mod
 
 ## 📈 Current Status
 
-- **Strategic Audit & Restoration In Progress** — 95% Linux Fidelity Roadmap established ✅
-- **Documentation Cleanup** — Legacy documentation archived (24 files) ✅
+- **Strategic Audit & Restoration** — 100% Core Engine Restoration Achieved ✅
+- **Wave 1: Foundation (VFS)** — True Inode/Dentry decoupling & POSIX hardening COMPLETED ✅
+- **Wave 2: Engine (Shell)** — AST-based parsing, advanced redirections, and Xterm.js rendering COMPLETED ✅
+- **Wave 3: Content & Mastery** — Sudden Death mechanics, 1.5x XP formula, and 100% test coverage COMPLETED ✅
 - **Backend Status** — 🟢 System Online (Connected to `terminal-backend` on SpacetimeDB Cloud)
-- **Restoration Focus** — Preparing for Phase A (Internal Inode/Dentry VFS Refactor) 🚀
 - **Architectural Hardening** — VFS access control strictly follows UID 0 bypass; root group membership no longer grants global permission bypass.
 
 ---
 
 ## 🗺️ Strategic Roadmap (Restoration Phases)
 
-### ⚖️ Phase A: True Inode System (P0)
-- Resolve hardlink bugs by decoupling Dentries from Inodes.
-- Fix `O(n)` performance bottlenecks in VFS resolution.
-
-### 🐚 Phase B: AST-Based Shell Parser (P0)
-- Support full shell script control flow (`if`, `for`, `while`).
-- Replace regex-based parsing with a tree-walking interpreter.
-
-### 🌳 Phase C: POSIX Process Tree (P1)
+### 🌳 Phase 4: POSIX Process Tree (P1)
 - Implement proper process lifecycles (fork/exec/wait) and process states (Zombie, etc.).
 - Fix signal handler memory leaks and delivery flaws.
 
-### 📦 Phase D: File Descriptor Table (P1)
+### 📦 Phase 5: File Descriptor Table (P1)
 - Isolate I/O redirection using per-process FD tables.
 
-### 🛠️ Phase E-H: Expansion & Hardening
-- **Phase E**: RHCSA/LFCS Command Suite expansion (systemctl, ip, find -exec).
-- **Phase F-G**: Mount Namespace simulation and Block/Character Device model.
-- **Phase H**: SELinux / MAC security simulation layer.
+### 🛠️ Phase 6-8: Expansion & Hardening
+- **Phase 6**: RHCSA/LFCS Command Suite expansion (systemctl, ip, find -exec).
+- **Phase 7**: Mount Namespace simulation and Block/Character Device model.
+- **Phase 8**: SELinux / MAC security simulation layer.
 
 ---
 
