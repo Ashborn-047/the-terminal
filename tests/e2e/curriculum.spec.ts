@@ -3,16 +3,14 @@ import { typeCommand, expectTerminalOutput } from './test-utils';
 
 test.describe('Curriculum and Lab Flow', () => {
     test.beforeEach(async ({ page }) => {
-        // Skip onboarding for these tests by setting the flag in localStorage
-        await page.goto('');
-        await page.evaluate(() => localStorage.clear());
-        await page.reload();
-        await page.evaluate(() => {
+        // Inject state upstream of navigation to ensure stores hydrate with the completed onboarding flag
+        await page.addInitScript(() => {
+            localStorage.clear();
             localStorage.setItem('the-terminal-ui', JSON.stringify({
                 state: {
                     onboardingComplete: true,
                     username: 'guest',
-                    onboardingStep: 4, // Restored onboardingStep
+                    onboardingStep: 4,
                     labsCompleted: 0,
                 },
                 version: 0
@@ -21,7 +19,7 @@ test.describe('Curriculum and Lab Flow', () => {
                 state: {
                     xp: 0,
                     level: 1,
-                    labsCompleted: 0, // labsCompleted is correctly located here
+                    labsCompleted: 0,
                     totalXpEarned: 0,
                     streak: { current: 0, longest: 0, lastActivityDate: null, freezesRemaining: 1 },
                     counters: {},
@@ -34,7 +32,9 @@ test.describe('Curriculum and Lab Flow', () => {
                 version: 0
             }));
         });
-        await page.reload();
+
+        await page.goto('');
+        await page.waitForLoadState('networkidle');
     });
 
     test('should navigate through curriculum and complete a guided lab', async ({ page }) => {

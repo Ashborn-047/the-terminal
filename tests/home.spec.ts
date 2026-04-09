@@ -1,11 +1,8 @@
 import { test, expect } from '@playwright/test';
 
 test('homepage has correct title and renders terminal', async ({ page }) => {
-    // 1. Visit page to establish origin
-    await page.goto('');
-    
-    // 2. Clear state and bypass onboarding
-    await page.evaluate(() => {
+    // 1. Inject state BEFORE navigation to ensure hydration picks it up
+    await page.addInitScript(() => {
         localStorage.clear();
         localStorage.setItem('the-terminal-ui', JSON.stringify({
             state: {
@@ -17,8 +14,8 @@ test('homepage has correct title and renders terminal', async ({ page }) => {
         }));
     });
     
-    // 3. Reload and check
-    await page.reload();
+    // 2. Navigate and wait
+    await page.goto('');
     await page.waitForLoadState('networkidle');
 
     // Expect a title "to contain" a substring.

@@ -3,10 +3,9 @@ import { typeCommand, expectTerminalOutput } from './test-utils';
 
 test.describe('Gamification and Social Flow', () => {
     test.beforeEach(async ({ page }) => {
-        await page.goto('');
-        await page.evaluate(() => localStorage.clear());
-        await page.reload();
-        await page.evaluate(() => {
+        // Inject state BEFORE navigation to ensure stores hydrate with the mock data
+        await page.addInitScript(() => {
+            localStorage.clear();
             localStorage.setItem('the-terminal-ui', JSON.stringify({
                 state: {
                     onboardingComplete: true,
@@ -33,7 +32,9 @@ test.describe('Gamification and Social Flow', () => {
                 version: 0
             }));
         });
-        await page.reload();
+
+        await page.goto('');
+        await page.waitForLoadState('networkidle');
     });
 
     test('should trigger level-up modal on XP threshold', async ({ page }) => {
