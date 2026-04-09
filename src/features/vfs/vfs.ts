@@ -916,15 +916,6 @@ export class VFS {
         });
     }
     
-    public getPath(dentryId: string): string {
-        const dentry = this.dentries[dentryId];
-        if (!dentry) return '';
-        if (dentryId === this.rootDentryId) return '/';
-        const parentId = dentry.parentId;
-        if (!parentId) return '';
-        const parentPath = this.getPath(parentId);
-        return parentPath === '/' ? `/${dentry.name}` : `${parentPath}/${dentry.name}`;
-    }
 
     public async cp(srcPath: string, destPath: string, recursive: boolean = false, userId: string = 'root', groups: string[] = []): Promise<boolean | string> {
         try {
