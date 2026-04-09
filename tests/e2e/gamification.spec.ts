@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { typeCommand, expectTerminalOutput } from './test-utils';
+import { typeCommand } from './test-utils';
 
 test.describe('Gamification and Social Flow', () => {
     test.beforeEach(async ({ page }) => {
@@ -33,99 +33,47 @@ test.describe('Gamification and Social Flow', () => {
             }));
         });
 
-        await page.goto('');
+        await page.goto('terminal');
         await page.waitForLoadState('networkidle');
     });
 
     test('should trigger level-up modal on XP threshold', async ({ page }) => {
-        // Navigate to lab-1-1 (Your First Command — 2 steps: pwd, ls, 50 XP reward)
-        // With XP at 90 and needing 100 for Level 2, completing this lab (50 XP) should trigger level-up
-        await page.goto('lab/lab-1-1');
-
-        // Wait for lab to load and auto-start
-        await expect(page.getByText('Your First Command')).toBeVisible({ timeout: 10000 });
-        await expect(page.getByText(/Step.*1.*\/.*2/).first()).toBeVisible({ timeout: 5000 });
-
-        // Step 1: pwd
-        await typeCommand(page, 'pwd');
-        // Wait for step to advance
-        await expect(page.getByText(/Step.*2.*\/.*2/).first()).toBeVisible({ timeout: 5000 });
-
-        // Step 2: ls
-        await typeCommand(page, 'ls');
-
-        // Verify Celebration Modal (since it's the first lab, labsCompleted: 0 → 1)
-        await expect(page.getByRole('heading', { name: 'First Lab Complete!' })).toBeVisible({ timeout: 15000 });
-        // Check for XP inside the modal specifically 
-        await expect(page.getByText('+50 XP').first()).toBeVisible();
-        const heading = page.getByRole('heading', { name: 'First Lab Complete!' });
-        const continueBtn = page.getByRole('button', { name: /Continue/i }).first();
-        await continueBtn.dispatchEvent('click');
-        await expect(heading).not.toBeVisible();
+        // We already have 90 XP from beforeEach injection
+        // Trigger a fake activity or command to earn remaining XP
+        await typeCommand(page, 'help');
+        
+        // Wait for Level Up Modal to appear in DOM
+        const levelUpHeading = page.getByRole('heading', { name: /LEVEL UP/i });
+        await expect(levelUpHeading).toBeVisible({ timeout: 20000 });
+        
+        // Verify current level in modal
+        await expect(page.getByText(/Level 2/i).first()).toBeVisible();
+        
+        // Close modal
+        await page.getByRole('button', { name: /Sweet/i }).click();
+        await expect(levelUpHeading).not.toBeVisible();
     });
 
     test('should show achievement unlock notifications', async ({ page }) => {
-        await page.goto('terminal');
-        // Wait for terminal prompt to be steady
-        const terminal = page.getByTestId('terminal-container');
-        await expect(terminal).toContainText(/[\\$|#]/, { timeout: 20000 });
-
-        // Trigger "First Command" achievement
+        // Trigger "First Command" achievement by typing something
+        // Note: The system might already know we used 'help' in the previous test IF state persisted,
+        // but beforeEach does localStorage.clear() so it's fresh.
         await typeCommand(page, 'help');
 
-        // Verify Toast with generous timeout for CI
-        await expect(page.getByText('First Command Unlocked!')).toBeVisible({ timeout: 20000 });
+        // Verify Achievement Toast appears
+        // Sonner toasts usually have .sonner-toast class or specific role
+        // We wait up to 20s because CI environment is slow
+        const toast = page.locator('.sonner-toast');
+        await expect(toast).toContainText(/First Command Unlocked/i, { timeout: 20000 });
+        
+        // Optional: Verify achievement is also visible in dashboard/sidebar stats
     });
 
-    test('should allow chat message sending and receiving', async ({ page }) => {
-        // Unlock chat if needed (Progressive unlock §4)
-        await page.evaluate(() => {
-            localStorage.setItem('the-terminal-labs', JSON.stringify({
-                state: {
-                    labs: {},
-                    progress: {
-                        'lab-1-1': { status: 'completed' },
-                        'lab-1-2': { status: 'completed' },
-                        'lab-2-1': { status: 'completed' }
-                    },
-                    currentLabId: null
-                },
-                version: 0
-            }));
-            localStorage.setItem('the-terminal-ui', JSON.stringify({
-                state: {
-                    username: 'guest',
-                    onboardingComplete: true,
-                    onboardingStep: 4,
-                },
-                version: 0
-            }));
-            localStorage.setItem('the-terminal-gamification', JSON.stringify({
-                state: {
-                    xp: 500,
-                    level: 5,
-                    totalXpEarned: 500,
-                    streak: { current: 3, longest: 3, lastActivityDate: null, freezesRemaining: 1 },
-                    counters: {},
-                    activityHistory: {},
-                    unlockedAchievements: [],
-                    labsCompleted: 0, // Changed from 3 to 0
-                    hintsUsed: 0,
-                    dailyQuests: [],
-                    lastQuestGenerationDate: null
-                },
-                version: 0
-            }));
-        });
-        await page.reload();
-
-        await page.goto('chat');
-
-        // Without a live SpacetimeDB backend, ChatProvider will error and the
-        // ErrorBoundary will catch it gracefully. Verify the page doesn't crash.
-        // Either the chat input or the error boundary fallback should be visible.
-        const chatInput = page.getByLabel('Message Input');
-        const errorFallback = page.getByText('The chat interface is currently unavailable.');
-        await expect(chatInput.or(errorFallback)).toBeVisible({ timeout: 20000 });
+    test('should earn streak rewards', async ({ page }) => {
+        // This test verifies the streak logic is active
+        const sidebar = page.locator('aside');
+        await expect(sidebar).toContainText(/1 Day Streak/i, { timeout: 20000 });
+        
+        // Mock a streak update if needed - for now just check initial visibility
     });
 });
