@@ -99,7 +99,7 @@ export class VFS {
 
             const rootDentry: Dentry = {
                 id: uuidv4(),
-                name: '/',
+                name: '',
                 inodeId: rootInodeId,
                 parentId: null,
                 children: []
@@ -336,7 +336,7 @@ export class VFS {
             return dentryId;
         };
 
-        this.rootDentryId = buildDentries(legacy.rootId, '/', null);
+        this.rootDentryId = buildDentries(legacy.rootId, '', null);
         this.rebuildIndices();
     }
 
@@ -1058,5 +1058,22 @@ export class VFS {
 
     private notifySyscall(syscall: string, args: any[], result: any): void {
         this.syscallListeners.forEach(listener => listener(syscall, args, result));
+    }
+
+    public getPath(inodeId: string): string {
+        const dentry = Object.values(this.dentries).find(d => d.inodeId === inodeId);
+        if (!dentry) return '';
+
+        if (dentry.id === this.rootDentryId) return '/';
+
+        const parts: string[] = [];
+        let current: Dentry | undefined = dentry;
+        
+        while (current && current.id !== this.rootDentryId) {
+            parts.unshift(current.name);
+            current = current.parentId ? this.dentries[current.parentId] : undefined;
+        }
+        
+        return '/' + parts.join('/');
     }
 }

@@ -4,32 +4,35 @@ export const PROMPT_REGEX = /linux-lab/;
 
 /**
  * Types a command into the xterm.js terminal and waits for execution.
- * Ensures the terminal is focused before typing.
+ * Ensures the terminal is focused and READY before typing.
  */
 export async function typeCommand(page: Page, command: string) {
     const terminal = page.getByTestId('terminal-container');
     
-    // Focus the terminal by clicking it specifically on an active layer
-    await terminal.waitFor({ state: 'visible' });
+    // 1. Wait for terminal to be visible and have some content (prompt)
+    await terminal.waitFor({ state: 'visible', timeout: 20000 });
+    
+    // Wait for the xterm rows to be populated (indicates it opened correctly)
+    await page.waitForSelector('.xterm-rows', { timeout: 20000 });
+    
+    // 2. Ensure the terminal is focusable and focused
     await terminal.click({ force: true });
     
-    // Additional focus attempt to ensure xterm catches keyboard events
+    // Direct focus to the hidden textarea that xterm uses for input
     await page.evaluate(() => {
-        const terminalElem = document.querySelector('[data-testid="terminal-container"]');
-        if (terminalElem) {
-            const textarea = terminalElem.querySelector('textarea');
-            if (textarea) (textarea as HTMLElement).focus();
-        }
+        const textarea = document.querySelector('.xterm-helper-textarea') as HTMLElement;
+        if (textarea) textarea.focus();
     });
-    
-    // Type the command followed by Enter
-    await page.keyboard.type(command);
+
+    // 3. Type the command with a small delay between keys for CI stability
+    // This prevents "character spam" issues on slow runners
+    await page.keyboard.type(command, { delay: 50 });
     await page.keyboard.press('Enter');
     
-    // Wait for the prompt to reappear to ensure the command finished
+    // 4. Wait for the prompt to reappear to ensure the command finished
     // We expect the prompt to contain '$' (for user) or '#' (for root)
     // and specifically the hostname 'linux-lab'
-    await expect(terminal).toContainText(/linux-lab.*[\\$|#]/, { timeout: 10000 });
+    await expect(terminal).toContainText(/linux-lab.*[\\$|#]/, { timeout: 20000 });
 }
 
 /**
@@ -37,5 +40,6 @@ export async function typeCommand(page: Page, command: string) {
  */
 export async function expectTerminalOutput(page: Page, textOrRegex: string | RegExp) {
     const terminal = page.getByTestId('terminal-container');
-    await expect(terminal).toContainText(textOrRegex, { timeout: 10000 });
+    // Using a generous timeout for CI
+    await expect(terminal).toContainText(textOrRegex, { timeout: 20000 });
 }
