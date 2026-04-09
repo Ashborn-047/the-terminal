@@ -4,6 +4,8 @@ import { typeCommand, expectTerminalOutput } from './test-utils';
 test.describe('Gamification and Social Flow', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto('');
+        await page.evaluate(() => localStorage.clear());
+        await page.reload();
         await page.evaluate(() => {
             localStorage.setItem('the-terminal-ui', JSON.stringify({
                 state: {

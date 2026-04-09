@@ -5,6 +5,8 @@ test.describe('Curriculum and Lab Flow', () => {
     test.beforeEach(async ({ page }) => {
         // Skip onboarding for these tests by setting the flag in localStorage
         await page.goto('');
+        await page.evaluate(() => localStorage.clear());
+        await page.reload();
         await page.evaluate(() => {
             localStorage.setItem('the-terminal-ui', JSON.stringify({
                 state: {
