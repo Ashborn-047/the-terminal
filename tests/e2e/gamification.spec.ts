@@ -65,12 +65,15 @@ test.describe('Gamification and Social Flow', () => {
 
     test('should show achievement unlock notifications', async ({ page }) => {
         await page.goto('terminal');
+        // Wait for terminal prompt to be steady
+        const terminal = page.getByTestId('terminal-container');
+        await expect(terminal).toContainText(/[\\$|#]/, { timeout: 20000 });
 
         // Trigger "First Command" achievement
         await typeCommand(page, 'help');
 
-        // Verify Toast §10 - Title is "{Name} Unlocked!"
-        await expect(page.getByText('First Command Unlocked!')).toBeVisible();
+        // Verify Toast with generous timeout for CI
+        await expect(page.getByText('First Command Unlocked!')).toBeVisible({ timeout: 20000 });
     });
 
     test('should allow chat message sending and receiving', async ({ page }) => {

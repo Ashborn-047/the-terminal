@@ -15,17 +15,14 @@ export async function typeCommand(page: Page, command: string) {
     // Wait for the xterm rows to be populated (indicates it opened correctly)
     await page.waitForSelector('.xterm-rows', { timeout: 20000 });
     
-    // 2. Ensure the terminal is focusable and focused
+    // 2. Ensure the terminal is focused
     await terminal.click({ force: true });
-    
-    // Direct focus to the hidden textarea that xterm uses for input
-    await page.evaluate(() => {
-        const textarea = document.querySelector('.xterm-helper-textarea') as HTMLElement;
-        if (textarea) textarea.focus();
-    });
 
-    // 3. Type the command with a small delay between keys for CI stability
-    // This prevents "character spam" issues on slow runners
+    // 3. Wait for the prompt character ($ or #) to ensure the terminal is fully interactive
+    // This is the most robust way to handle the boot sequence delay in CI
+    await expect(terminal).toContainText(/[\\$|#]/, { timeout: 20000 });
+
+    // 4. Type the command with a small delay between keys for CI stability
     await page.keyboard.type(command, { delay: 50 });
     await page.keyboard.press('Enter');
     

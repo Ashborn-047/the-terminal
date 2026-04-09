@@ -52,11 +52,16 @@ test.describe('Curriculum and Lab Flow', () => {
 
         // 4. Complete the guided steps
         // Step 1: pwd
+        const terminal = page.getByTestId('terminal-container');
+        await expect(terminal).toContainText(/[\\$|#]/, { timeout: 20000 });
         await typeCommand(page, 'pwd');
-        await expectTerminalOutput(page, '/home/guest');
+        // Wait for step to advance
+        await expect(page.getByText(/Step.*2.*\/.*2/).first()).toBeVisible({ timeout: 5000 });
 
         // Step 2: ls
+        await expect(terminal).toContainText(/[\\$|#]/, { timeout: 10000 });
         await typeCommand(page, 'ls');
+        await expectTerminalOutput(page, '/home/guest');
 
         // 5. Verify Lab Completion Modal (CelebrationModal — shown for first lab only)
         const modal = page.getByRole('heading', { name: 'First Lab Complete!' });
@@ -88,10 +93,11 @@ test.describe('Curriculum and Lab Flow', () => {
 
         // Perform the required actions in terminal
         // Task: Create /home/guest/workspace
+        const terminal = page.getByTestId('terminal-container');
+        await expect(terminal).toContainText(/[\\$|#]/, { timeout: 20000 });
         await typeCommand(page, 'mkdir -p /home/guest/workspace');
 
         // Give a moment for the VFS snapshot to sync to the store
-        // We can verify the command actually did something by checking the terminal history
         await expectTerminalOutput(page, '/home/guest/workspace');
 
         // Click Verify button
