@@ -8,6 +8,11 @@ jobs:
   test:
     timeout-minutes: 60
     runs-on: ubuntu-latest
+    env:
+      VITE_MOCK_SPACETIME: true
+      VITE_SPACETIMEDB_IDENTITY: "mock-identity-for-ci"
+      VITE_SPACETIMEDB_DB_NAME: "terminal-mock"
+      VITE_SPACETIMEDB_URI: "http://localhost:3000"
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-node@v4
@@ -17,9 +22,11 @@ jobs:
       run: npm ci
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps
+    - name: Build and Preview
+      run: |
+        npm run build
+        npm run preview &
     - name: Run Playwright tests
-      env:
-        VITE_MOCK_SPACETIME: true
       run: npx playwright test
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
