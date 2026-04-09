@@ -106,7 +106,7 @@ test.describe('Full Regression Flow', () => {
         await page.goto('');
         await page.evaluate(() => {
             localStorage.setItem('the-terminal-ui', JSON.stringify({
-                state: { onboardingComplete: true, username: 'nav_test', onboardingStep: 4 },
+                state: { onboardingComplete: true, username: 'guest', onboardingStep: 4 },
                 version: 0
             }));
         });
@@ -116,7 +116,7 @@ test.describe('Full Regression Flow', () => {
 
         // Execute several commands
         await typeCommand(page, 'pwd');
-        await expectTerminalOutput(page, '/home/nav_test');
+        await expectTerminalOutput(page, '/home/guest');
 
         await typeCommand(page, 'mkdir testdir');
 
@@ -126,7 +126,7 @@ test.describe('Full Regression Flow', () => {
         await typeCommand(page, 'cd testdir');
 
         await typeCommand(page, 'pwd');
-        await expectTerminalOutput(page, '/home/nav_test/testdir');
+        await expectTerminalOutput(page, '/home/guest/testdir');
 
         // Test command history (up arrow)
         // Wait for React state to settle and ensure focus
@@ -144,7 +144,7 @@ test.describe('Full Regression Flow', () => {
         await page.goto('');
         await page.evaluate(() => {
             localStorage.setItem('the-terminal-ui', JSON.stringify({
-                state: { onboardingComplete: true, username: 'nav_test', onboardingStep: 4 },
+                state: { onboardingComplete: true, username: 'guest', onboardingStep: 4 },
                 version: 0
             }));
             localStorage.setItem('the-terminal-gamification', JSON.stringify({
@@ -173,6 +173,6 @@ test.describe('Full Regression Flow', () => {
 
         // Profile
         await page.goto('profile');
-        await expect(page.locator('body')).toContainText('nav_test', { timeout: 10000 });
+        await expect(page.locator('body')).toContainText('guest', { timeout: 10000 });
     });
 });

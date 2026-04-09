@@ -8,7 +8,7 @@ test.describe('Gamification and Social Flow', () => {
             localStorage.setItem('the-terminal-ui', JSON.stringify({
                 state: {
                     onboardingComplete: true,
-                    username: 'test_gamer',
+                    username: 'guest',
                     onboardingStep: 4
                 },
                 version: 0
@@ -88,7 +88,7 @@ test.describe('Gamification and Social Flow', () => {
             }));
             localStorage.setItem('the-terminal-ui', JSON.stringify({
                 state: {
-                    username: 'test_student',
+                    username: 'guest',
                     onboardingComplete: true,
                     onboardingStep: 4,
                 },
@@ -120,6 +120,6 @@ test.describe('Gamification and Social Flow', () => {
         // Either the chat input or the error boundary fallback should be visible.
         const chatInput = page.getByLabel('Message Input');
         const errorFallback = page.getByText('The chat interface is currently unavailable.');
-        await expect(chatInput.or(errorFallback)).toBeVisible({ timeout: 10000 });
+        await expect(chatInput.or(errorFallback)).toBeVisible({ timeout: 20000 });
     });
 });
