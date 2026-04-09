@@ -75,6 +75,7 @@ export const WelcomeModal: React.FC<WelcomeModalProps> = ({ onComplete }) => {
                         onChange={(e) => setUsername(e.target.value)}
                         onKeyDown={handleKeyDown}
                         placeholder="enter_username"
+                        data-testid="welcome-input"
                         className="w-full bg-brutal-black border-2 border-brutal-white p-3 text-brutal-green font-mono placeholder:text-brutal-gray/40 focus:border-brutal-green focus:outline-none"
                         autoFocus
                         maxLength={20}

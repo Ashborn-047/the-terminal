@@ -111,14 +111,15 @@ export const OnboardingWalkthrough: React.FC = () => {
                         {requiresAction ? (
                             <form onSubmit={handleTerminalSubmit} className="flex items-center gap-2">
                                 <span className="text-brutal-green font-mono text-xs">$</span>
-                                <input
-                                    type="text"
-                                    value={inputValue}
-                                    onChange={(e) => setInputValue(e.target.value)}
-                                    placeholder={step.action.match(/`([^`]+)`/)?.[1] || "type command..."}
-                                    className="bg-transparent text-brutal-white font-mono text-xs w-full focus:outline-none"
-                                    autoFocus
-                                />
+                                    <input
+                                        type="text"
+                                        value={inputValue}
+                                        onChange={(e) => setInputValue(e.target.value)}
+                                        placeholder={step.action.match(/`([^`]+)`/)?.[1] || "type command..."}
+                                        data-testid="walkthrough-input"
+                                        className="bg-transparent text-brutal-white font-mono text-xs w-full focus:outline-none"
+                                        autoFocus
+                                    />
                             </form>
                         ) : (
                             <p className="text-xs text-brutal-green font-mono">→ {step.action}</p>

@@ -57,10 +57,13 @@ export const TerminalComponent: React.FC = () => {
         term.loadAddon(new WebLinksAddon());
         
         // Try to load Canvas addon (falls back to DOM if hardware accel is missing)
-        try {
-            term.loadAddon(new CanvasAddon());
-        } catch (e) {
-            console.warn('Xterm Canvas addon failed to load, falling back to DOM renderer', e);
+        // Skip canvas in E2E tests to allow Playwright to read text content from DOM
+        if (!import.meta.env.VITE_MOCK_SPACETIME) {
+            try {
+                term.loadAddon(new CanvasAddon());
+            } catch (e) {
+                console.warn('Xterm Canvas addon failed to load, falling back to DOM renderer', e);
+            }
         }
 
         term.open(terminalRef.current);
@@ -183,7 +186,7 @@ export const TerminalComponent: React.FC = () => {
 
     const handleExecute = async (input: string) => {
         const term = xtermRef.current;
-        if (!term || !shellEnvRef.current) return;
+        if (!term) return;
 
         const trimmed = input.trim();
         if (!trimmed) {
@@ -192,45 +195,21 @@ export const TerminalComponent: React.FC = () => {
         }
 
         try {
-            const lexer = new Lexer(trimmed);
-            const tokens = lexer.tokenize();
-            const parser = new Parser(tokens);
-            const ast = parser.parse();
+            // Using executeCommand from useTerminal hook to ensure side effects (labs, XP, etc.) are handled
+            const result = await executeCommand(trimmed);
             
-            const executor = new ShellExecutor(vfs);
-            
-            // Current CommandContext (Simplified for now)
-            const context: any = {
-                cwd: shellEnvRef.current.get('PWD'),
-                userId,
-                groups: userId === 'root' ? ['root'] : [userId, 'users'],
-                resolvePath: (path: string) => {
-                    const base = shellEnvRef.current?.get('PWD') || '/';
-                    if (path.startsWith('/')) return path;
-                    if (path.startsWith('~/')) return `/home/${userId}${path.substring(1)}`;
-                    return base === '/' ? `/${path}` : `${base}/${path}`;
-                },
-                isInterrupted: () => false,
-            };
-
-            const result = await executor.execute(ast, context, shellEnvRef.current);
-            
-            if (result.stream) {
+            if (result && result.stream) {
                 for await (const chunk of result.stream) {
                     term.write(chunk);
                 }
-            } else if (result.output) {
+            } else if (result && result.output) {
                 term.writeln(result.output);
             }
 
-            if (result.error) {
+            if (result && result.error) {
                 term.writeln(`\x1b[1;31m${result.error}\x1b[0m`);
             }
 
-            // Sync CWD if changed (special case for cd)
-            // In a better implementation, executor would update environment directly
-            // For now, let's assume cd was handled if result has something or executor updated it
-            
             term.write(getPrompt());
         } catch (e: any) {
             term.writeln(`\x1b[1;31mbash: ${e.message}\x1b[0m`);

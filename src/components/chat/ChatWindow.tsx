@@ -167,6 +167,7 @@ export const ChatWindow: React.FC = () => {
                                     onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                                     placeholder={`[CHANNEL: ${currentChannel.toUpperCase()}] > `}
                                     aria-label="Message Input"
+                                    data-testid="chat-input"
                                     className="w-full bg-brutal-black border-2 border-brutal-white p-4 pl-12 text-brutal-white font-mono placeholder:text-brutal-gray/30 focus:border-brutal-green focus:outline-none transition-all shadow-[inset_4px_4px_0px_0px_rgba(0,0,0,0.5)]"
                                 />
                                 <div className="absolute left-4 top-1/2 -translate-y-1/2 text-brutal-green font-mono font-bold" aria-hidden="true">$</div>

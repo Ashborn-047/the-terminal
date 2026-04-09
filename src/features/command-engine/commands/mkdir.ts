@@ -30,8 +30,12 @@ export const mkdir = async (args: string[], context: CommandContext): Promise<Co
                 if (!recursive && !isLast) {
                     return { output: '', error: `mkdir: cannot create directory '${dir}': No such file or directory`, exitCode: 1 };
                 }
-                const result = context.vfs.mkdir(currentPath, part, context.userId, isLast ? mode : undefined, context.groups);
-                if (typeof result === 'string') return { output: '', error: `mkdir: ${result}`, exitCode: 1 };
+                try {
+                    const result = await context.vfs.mkdir(currentPath, part, context.userId, isLast ? mode : undefined, context.groups);
+                    if (typeof result === 'string') return { output: '', error: `mkdir: ${result}`, exitCode: 1 };
+                } catch (e) {
+                    return { output: '', error: `mkdir: internal error`, exitCode: 1 };
+                }
             } else if (isLast && !recursive) {
                 return { output: '', error: `mkdir: cannot create directory '${dir}': File exists`, exitCode: 1 };
             }

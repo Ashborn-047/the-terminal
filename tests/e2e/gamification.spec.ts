@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { typeCommand, expectTerminalOutput } from './test-utils';
 
 test.describe('Gamification and Social Flow', () => {
     test.beforeEach(async ({ page }) => {
@@ -42,17 +43,13 @@ test.describe('Gamification and Social Flow', () => {
         await expect(page.getByText('Your First Command')).toBeVisible({ timeout: 10000 });
         await expect(page.getByText(/Step.*1.*\/.*2/).first()).toBeVisible({ timeout: 5000 });
 
-        const terminalInput = page.locator('input[type="text"]').last();
-
         // Step 1: pwd
-        await terminalInput.fill('pwd');
-        await page.keyboard.press('Enter');
+        await typeCommand(page, 'pwd');
         // Wait for step to advance
         await expect(page.getByText(/Step.*2.*\/.*2/).first()).toBeVisible({ timeout: 5000 });
 
         // Step 2: ls
-        await terminalInput.fill('ls');
-        await page.keyboard.press('Enter');
+        await typeCommand(page, 'ls');
 
         // Verify Celebration Modal (since it's the first lab, labsCompleted: 0 → 1)
         await expect(page.getByRole('heading', { name: 'First Lab Complete!' })).toBeVisible({ timeout: 15000 });
@@ -67,11 +64,8 @@ test.describe('Gamification and Social Flow', () => {
     test('should show achievement unlock notifications', async ({ page }) => {
         await page.goto('terminal');
 
-        const terminalInput = page.locator('input[type="text"]').last();
-
         // Trigger "First Command" achievement
-        await terminalInput.fill('help');
-        await page.keyboard.press('Enter');
+        await typeCommand(page, 'help');
 
         // Verify Toast §10 - Title is "{Name} Unlocked!"
         await expect(page.getByText('First Command Unlocked!')).toBeVisible();

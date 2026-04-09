@@ -132,6 +132,7 @@ export class ShellExecutor {
 
             return result;
         } catch (e) {
+            console.error(`Command execution error (${expandedName}):`, e);
             return { output: '', error: `bash: ${expandedName}: internal error`, exitCode: 1 };
         }
     }

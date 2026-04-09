@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { typeCommand, expectTerminalOutput } from './test-utils';
 
 test.describe('Curriculum and Lab Flow', () => {
     test.beforeEach(async ({ page }) => {
@@ -8,7 +9,7 @@ test.describe('Curriculum and Lab Flow', () => {
             localStorage.setItem('the-terminal-ui', JSON.stringify({
                 state: {
                     onboardingComplete: true,
-                    username: 'test_student',
+                    username: 'guest',
                     onboardingStep: 4, // Restored onboardingStep
                     labsCompleted: 0,
                 },
@@ -49,14 +50,11 @@ test.describe('Curriculum and Lab Flow', () => {
 
         // 4. Complete the guided steps
         // Step 1: pwd
-        const terminalInput = page.locator('input[type="text"]').last();
-        await terminalInput.fill('pwd');
-        await page.keyboard.press('Enter');
-        await expect(page.getByText('/home/test_student')).toBeVisible({ timeout: 5000 });
+        await typeCommand(page, 'pwd');
+        await expectTerminalOutput(page, '/home/guest');
 
         // Step 2: ls
-        await terminalInput.fill('ls');
-        await page.keyboard.press('Enter');
+        await typeCommand(page, 'ls');
 
         // 5. Verify Lab Completion Modal (CelebrationModal — shown for first lab only)
         const modal = page.getByRole('heading', { name: 'First Lab Complete!' });
@@ -87,15 +85,12 @@ test.describe('Curriculum and Lab Flow', () => {
         await expect(page.getByText('Navigation Challenge')).toBeVisible();
 
         // Perform the required actions in terminal
-        const terminalInput = page.locator('input[type="text"]').last();
-
-        // Task: Create /home/test_student/workspace
-        await terminalInput.fill('mkdir -p /home/test_student/workspace');
-        await page.keyboard.press('Enter');
+        // Task: Create /home/guest/workspace
+        await typeCommand(page, 'mkdir -p /home/guest/workspace');
 
         // Give a moment for the VFS snapshot to sync to the store
         // We can verify the command actually did something by checking the terminal history
-        await expect(page.locator('body')).toContainText('/home/test_student/workspace', { timeout: 10000 });
+        await expectTerminalOutput(page, '/home/guest/workspace');
 
         // Click Verify button
         await page.getByRole('button', { name: 'VERIFY LAB' }).click();

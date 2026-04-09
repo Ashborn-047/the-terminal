@@ -9,7 +9,7 @@ test.describe('User Onboarding Flow', () => {
         await expect(page.getByText('Welcome, Learner')).toBeVisible();
 
         // 3. Enter username and initialize session
-        const usernameInput = page.getByPlaceholder('enter_username');
+        const usernameInput = page.getByTestId('welcome-input');
         await usernameInput.fill('test_user');
 
         const initButton = page.getByRole('button', { name: 'Initialize Session →' });
@@ -20,13 +20,13 @@ test.describe('User Onboarding Flow', () => {
         await expect(page.getByRole('heading', { name: 'The Command Line' })).toBeVisible({ timeout: 10000 });
 
         // 5. Walkthrough Step 1: pwd
-        const step1Input = page.getByPlaceholder('pwd');
+        const step1Input = page.getByTestId('walkthrough-input');
         await step1Input.fill('pwd');
         await page.keyboard.press('Enter');
 
         // 6. Walkthrough Step 2: ls
         await expect(page.getByRole('heading', { name: 'Your Location' })).toBeVisible();
-        const step2Input = page.getByPlaceholder('ls');
+        const step2Input = page.getByTestId('walkthrough-input');
         await step2Input.fill('ls');
         await page.keyboard.press('Enter');
 
@@ -48,7 +48,7 @@ test.describe('User Onboarding Flow', () => {
     test('should show validation errors for invalid usernames', async ({ page }) => {
         await page.goto('');
 
-        const usernameInput = page.getByPlaceholder('enter_username');
+        const usernameInput = page.getByTestId('welcome-input');
         const initButton = page.getByRole('button', { name: 'Initialize Session →' });
 
         // Too short
