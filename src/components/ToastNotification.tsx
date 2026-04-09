@@ -62,6 +62,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 {toasts.map((toast) => (
                     <div
                         key={toast.id}
+                        data-testid="toast"
                         className={`pointer-events-auto border-3 p-4 shadow-brutal animate-slide-in ${getToastStyle(toast.type)}`}
                         onClick={() => removeToast(toast.id)}
                     >

@@ -13,7 +13,10 @@ export const LevelUpModal: React.FC = () => {
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-brutal-black/80 backdrop-blur-sm p-4">
-            <div className="bg-brutal-white border-4 border-brutal-black shadow-brutal max-w-md w-full p-8 text-center animate-in zoom-in duration-300">
+            <div 
+                data-testid="level-up-modal"
+                className="bg-brutal-white border-4 border-brutal-black shadow-brutal max-w-md w-full p-8 text-center animate-in zoom-in duration-300"
+            >
                 <div className="flex justify-center mb-6">
                     <div className="bg-brutal-yellow p-4 border-3 border-brutal-black animate-bounce">
                         <Award size={64} className="text-brutal-black" />

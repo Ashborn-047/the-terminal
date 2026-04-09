@@ -39,41 +39,32 @@ test.describe('Gamification and Social Flow', () => {
 
     test('should trigger level-up modal on XP threshold', async ({ page }) => {
         // We already have 90 XP from beforeEach injection
-        // Trigger a fake activity or command to earn remaining XP
         await typeCommand(page, 'help');
         
-        // Wait for Level Up Modal to appear in DOM
-        const levelUpHeading = page.getByRole('heading', { name: /LEVEL UP/i });
-        await expect(levelUpHeading).toBeVisible({ timeout: 20000 });
+        // Wait for Level Up Modal using robust test-id
+        const levelUpModal = page.getByTestId('level-up-modal');
+        await expect(levelUpModal).toBeVisible({ timeout: 20000 });
         
-        // Verify current level in modal
-        await expect(page.getByText(/Level 2/i).first()).toBeVisible();
+        // Verify Content
+        await expect(levelUpModal.getByText(/Level Up!/i)).toBeVisible();
+        await expect(levelUpModal.getByText(/2/)).toBeVisible(); // The new level
         
         // Close modal
-        await page.getByRole('button', { name: /Sweet/i }).click();
-        await expect(levelUpHeading).not.toBeVisible();
+        await page.getByRole('button', { name: /Continue Journey/i }).click();
+        await expect(levelUpModal).not.toBeVisible();
     });
 
     test('should show achievement unlock notifications', async ({ page }) => {
-        // Trigger "First Command" achievement by typing something
-        // Note: The system might already know we used 'help' in the previous test IF state persisted,
-        // but beforeEach does localStorage.clear() so it's fresh.
         await typeCommand(page, 'help');
 
-        // Verify Achievement Toast appears
-        // Sonner toasts usually have .sonner-toast class or specific role
-        // We wait up to 20s because CI environment is slow
-        const toast = page.locator('.sonner-toast');
-        await expect(toast).toContainText(/First Command Unlocked/i, { timeout: 20000 });
-        
-        // Optional: Verify achievement is also visible in dashboard/sidebar stats
+        // Verify Achievement Toast using robust test-id
+        const toast = page.getByTestId('toast');
+        await expect(toast).toBeVisible({ timeout: 20000 });
+        await expect(toast).toContainText(/First Command Unlocked/i);
     });
 
     test('should earn streak rewards', async ({ page }) => {
-        // This test verifies the streak logic is active
         const sidebar = page.locator('aside');
         await expect(sidebar).toContainText(/1 Day Streak/i, { timeout: 20000 });
-        
-        // Mock a streak update if needed - for now just check initial visibility
     });
 });
