@@ -23,6 +23,8 @@ export const TerminalComponent: React.FC = () => {
     const shellEnvRef = useRef<ShellEnvironment | null>(null);
     
     const { vfs, userId, cwd, executeCommand, jobManager } = useTerminal();
+    const handleExecuteRef = useRef<any>(null);
+    const getPromptRef = useRef<any>(null);
     const foregroundProcess = useTerminalStore((state) => state.foregroundProcess);
     const sendSignal = useTerminalStore((state) => state.sendSignal);
     
@@ -78,9 +80,8 @@ export const TerminalComponent: React.FC = () => {
                 USER: userId,
                 HOME: `/home/${userId}`,
                 PWD: cwd,
-                PATH: '/usr/bin:/bin',
-                TERM: 'xterm-256color',
-                PS1: `\\x1b[1;37m[\\u@the-terminal \\W]$\\x1b[0m `
+                SHELL: '/bin/bash',
+                PS1: `\\x1b[1;37m[\\u@linux-lab \\W]$\\x1b[0m `
             });
         }
 
@@ -107,7 +108,9 @@ export const TerminalComponent: React.FC = () => {
             if (data === '\r') { // Enter
                 const cmd = inputBufferRef.current;
                 term.write('\r\n');
-                handleExecute(cmd);
+                if (handleExecuteRef.current) {
+                    handleExecuteRef.current(cmd);
+                }
                 inputBufferRef.current = '';
                 setInputBuffer('');
             } else if (data === '\x7f') { // Backspace
@@ -122,9 +125,9 @@ export const TerminalComponent: React.FC = () => {
                 if (fgJob) {
                     jobManager.terminateJob(fgJob.id, Signal.SIGINT);
                 }
-                inputBufferRef.current = '';
-                setInputBuffer('');
-                term.write(getPrompt());
+                if (getPromptRef.current) {
+                    term.write(getPromptRef.current());
+                }
             } else if (data === '\x1a') { // Ctrl+Z
                 term.write('^Z\r\n');
                 const fgJob = jobManager.getForegroundJob();
@@ -132,7 +135,9 @@ export const TerminalComponent: React.FC = () => {
                     jobManager.suspendJob(fgJob.id);
                     term.writeln(`\r\n[${fgJob.id}]+  Stopped                 ${fgJob.command}`);
                 }
-                term.write(getPrompt());
+                if (getPromptRef.current) {
+                    term.write(getPromptRef.current());
+                }
             } else if (data === '\x09') { // Tab
                 const completer = new TabCompleter(vfs);
                 const results = completer.complete(inputBufferRef.current, shellEnvRef.current!, userId);
@@ -147,7 +152,9 @@ export const TerminalComponent: React.FC = () => {
                     term.write(completion);
                 } else if (results.length > 1) {
                     term.write('\r\n' + results.join('  ') + '\r\n');
-                    term.write(getPrompt() + inputBufferRef.current);
+                    if (getPromptRef.current) {
+                        term.write(getPromptRef.current() + inputBufferRef.current);
+                    }
                 }
             } else {
                 inputBufferRef.current += data;
@@ -221,6 +228,9 @@ export const TerminalComponent: React.FC = () => {
             term.write(getPrompt());
         }
     };
+
+    handleExecuteRef.current = handleExecute;
+    getPromptRef.current = getPrompt;
 
     return (
         <div className="flex flex-col w-full h-full bg-brutal-black font-mono text-brutal-green p-4 border-3 border-brutal-white shadow-brutal-lg">

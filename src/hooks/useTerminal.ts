@@ -340,7 +340,7 @@ export function useTerminal() {
 
         syncVFS();
         return result;
-    }, [syncVFS]); // removed cwd, userId to prevent recreation
+    }, [syncVFS, userId, cwd]);
 
     return {
         history,
