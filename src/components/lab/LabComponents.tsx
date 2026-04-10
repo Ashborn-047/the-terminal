@@ -20,6 +20,7 @@ interface LabCardProps {
 export const LabCard: React.FC<LabCardProps> = ({ lab, status, progress, onStart }) => {
     return (
         <div
+            data-testid={`lab-card-${lab.id}`}
             className={`border-2 border-brutal-white/20 p-6 bg-brutal-black text-brutal-white transition-all relative flex flex-col h-full
             ${status === 'locked' ? 'opacity-40 grayscale pointer-events-none' : 'hover:border-brutal-white'} 
             ${status === 'completed' ? 'border-brutal-green' : ''}`}
