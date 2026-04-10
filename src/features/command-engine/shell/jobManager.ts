@@ -129,6 +129,12 @@ export class JobManager {
         return this.currentForegroundJob;
     }
 
+    public isJobInterrupted(command: string): boolean {
+        const jobs = Array.from(this.jobs.values()).filter(j => j.command.includes(command));
+        if (jobs.length === 0) return false;
+        return jobs.every(j => j.state === JobState.TERMINATED);
+    }
+
     private notify() {
         if (this.onJobsChanged) {
             this.onJobsChanged(this.listJobs());

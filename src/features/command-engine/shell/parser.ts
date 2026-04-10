@@ -197,8 +197,8 @@ export class Parser {
         };
 
         if (token.type === TokenType.DLESS || token.type === TokenType.DLESSDASH) {
-            redirection.delimiter = pathToken.value.replace(/['"]/g, '');
-            redirection.expand = !pathToken.value.match(/['"]/);
+            redirection.delimiter = pathToken.value; // Already stripped of outer quotes by lexer
+            redirection.expand = !pathToken.isQuoted;
             redirection.stripTabs = token.type === TokenType.DLESSDASH;
         }
 

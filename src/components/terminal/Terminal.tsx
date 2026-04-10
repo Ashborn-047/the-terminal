@@ -22,7 +22,7 @@ export const TerminalComponent: React.FC = () => {
     const fitAddonRef = useRef<FitAddon | null>(null);
     const shellEnvRef = useRef<ShellEnvironment | null>(null);
     
-    const { vfs, userId, cwd, executeCommand } = useTerminal();
+    const { vfs, userId, cwd, executeCommand, jobManager } = useTerminal();
     const foregroundProcess = useTerminalStore((state) => state.foregroundProcess);
     const sendSignal = useTerminalStore((state) => state.sendSignal);
     
@@ -118,15 +118,20 @@ export const TerminalComponent: React.FC = () => {
                 }
             } else if (data === '\x03') { // Ctrl+C
                 term.write('^C\r\n');
-                if (foregroundProcess) {
-                    sendSignal(foregroundProcess, Signal.SIGINT);
+                const fgJob = jobManager.getForegroundJob();
+                if (fgJob) {
+                    jobManager.terminateJob(fgJob.id, Signal.SIGINT);
                 }
                 inputBufferRef.current = '';
                 setInputBuffer('');
                 term.write(getPrompt());
             } else if (data === '\x1a') { // Ctrl+Z
                 term.write('^Z\r\n');
-                term.writeln('\x1b[1;33mJob control coming soon\x1b[0m');
+                const fgJob = jobManager.getForegroundJob();
+                if (fgJob) {
+                    jobManager.suspendJob(fgJob.id);
+                    term.writeln(`\r\n[${fgJob.id}]+  Stopped                 ${fgJob.command}`);
+                }
                 term.write(getPrompt());
             } else if (data === '\x09') { // Tab
                 const completer = new TabCompleter(vfs);

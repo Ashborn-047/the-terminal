@@ -1,5 +1,5 @@
 import { CommandContext, CommandResult } from '../types';
-import { readStream } from '../utils';
+import { toLines } from '../utils';
 
 export const sed = async (args: string[], context: CommandContext, input: string | AsyncGenerator<string>): Promise<CommandResult> => {
     const paths: string[] = [];
@@ -33,9 +33,15 @@ export const sed = async (args: string[], context: CommandContext, input: string
     }
 
     const regex = new RegExp(pattern, globalFlag ? 'g' : '');
-    const result = content.split('\n').filter(l => l.length > 0).map(line => line.replace(regex, replacement)).join('\n');
+    
+    const stream = async function* () {
+        for await (const line of toLines(content || input)) {
+            if (line === '' && typeof input !== 'string') continue;
+            yield line.replace(regex, replacement) + '\n';
+        }
+    }();
 
-    return { output: result + (result.length > 0 ? '\n' : ''), exitCode: 0 };
+    return { output: '', stream, exitCode: 0 };
 };
 
 export const awk = async (args: string[], context: CommandContext, input: string | AsyncGenerator<string>): Promise<CommandResult> => {
@@ -73,15 +79,19 @@ export const awk = async (args: string[], context: CommandContext, input: string
         content = fileContent;
     }
 
-    const outputLines = content.split('\n').filter(l => l.length > 0).map(line => {
-        const fields = ['', ...line.split(separator)];
-        fields[0] = line;
-        return fieldSpecs.map(spec => {
-            if (spec === '$0') return line;
-            const idx = parseInt(spec.replace('$', ''), 10);
-            return fields[idx] || '';
-        }).join(' ');
-    });
+    const stream = async function* () {
+        for await (const line of toLines(content || input)) {
+            if (line === '' && typeof input !== 'string') continue;
+            const fields = ['', ...line.split(separator)];
+            fields[0] = line;
+            const result = fieldSpecs.map(spec => {
+                if (spec === '$0') return line;
+                const idx = parseInt(spec.replace('$', ''), 10);
+                return fields[idx] || '';
+            }).join(' ');
+            yield result + '\n';
+        }
+    }();
 
-    return { output: outputLines.join('\n') + (outputLines.length > 0 ? '\n' : ''), exitCode: 0 };
+    return { output: '', stream, exitCode: 0 };
 };

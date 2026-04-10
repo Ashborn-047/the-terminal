@@ -32,6 +32,7 @@ export interface Token {
     value: string;
     line: number;
     col: number;
+    isQuoted?: boolean;
 }
 
 export class Lexer {
@@ -64,6 +65,8 @@ export class Lexer {
         const tokens: Token[] = [];
         while (this.pos < this.input.length) {
             const char = this.peek();
+            const startLine = this.line;
+            const startCol = this.col;
 
             if (char === '\n') {
                 this.advance();
@@ -75,9 +78,6 @@ export class Lexer {
                 this.advance();
                 continue;
             }
-
-            const startLine = this.line;
-            const startCol = this.col;
 
             if (char === '|') {
                 this.advance();
@@ -159,6 +159,7 @@ export class Lexer {
         const startLine = this.line;
         const startCol = this.col;
         let value = '';
+        let isQuoted = false;
         let inSingleQuote = false;
         let inDoubleQuote = false;
         let parenLevel = 0;
@@ -184,12 +185,14 @@ export class Lexer {
 
             if (char === "'" && !inDoubleQuote) {
                 inSingleQuote = !inSingleQuote;
+                isQuoted = true;
                 this.advance();
                 continue;
             }
 
             if (char === '"' && !inSingleQuote) {
                 inDoubleQuote = !inDoubleQuote;
+                isQuoted = true;
                 this.advance();
                 continue;
             }
@@ -203,6 +206,6 @@ export class Lexer {
             value += this.advance();
         }
 
-        return { type: TokenType.WORD, value, line: startLine, col: startCol };
+        return { type: TokenType.WORD, value, line: startLine, col: startCol, isQuoted };
     }
 }

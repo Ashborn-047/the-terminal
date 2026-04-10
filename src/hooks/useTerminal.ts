@@ -351,6 +351,7 @@ export function useTerminal() {
         vfs: vfsRef.current,
         executeCommand,
         handleTabComplete,
+        jobManager: jobManagerRef.current,
         setUserId,
         pendingPrompt,
         resolvePrompt: (answer: string) => {

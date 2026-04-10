@@ -71,15 +71,18 @@ export const kill = async (args: string[], context: CommandContext): Promise<Com
             continue;
         }
 
-        const proc = context.processes.find(p => p.pid === pid) || context.jobManager.getJob(pid);
+        const job = target.startsWith('%') 
+            ? context.jobManager.getJobBySpec(target)
+            : context.jobManager.listJobs().find(j => j.pgid === pid);
+
+        const proc = context.processes.find(p => p.pid === pid) || job;
+        
         if (proc) {
             terminalStore.sendSignal(pid, signalToEmit);
             found = true;
             
             // Realism: Terminating a job updates the job table
             if (signalToEmit === Signal.SIGKILL || signalToEmit === Signal.SIGTERM) {
-                const spec = target.startsWith('%') ? target : `%${pid}`;
-                const job = context.jobManager.getJobBySpec(spec);
                 if (job) {
                     context.jobManager.terminateJob(job.id, signalToEmit);
                 }

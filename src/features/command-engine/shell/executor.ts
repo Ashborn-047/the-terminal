@@ -115,7 +115,16 @@ export class ShellExecutor {
 
         // 4. Run Command
         try {
-            const result = await commandFn(expandedArgs, context, inputOverwrite || pipeInput || '');
+            // Ensure context has signal helpers if backgrounded
+            const activeContext: CommandContext = {
+                ...context,
+                isInterrupted: () => context.jobManager.isJobInterrupted(expandedName),
+                onSignal: (handler) => {
+                    // This is a proxy to the current foreground job if needed
+                    // For now, commands in background jobs don't easily get signals unless targeted
+                }
+            };
+            const result = await commandFn(expandedArgs, activeContext, inputOverwrite || pipeInput || '');
             
             // 5. Handle Output Redirections
             for (const redir of redirections) {

@@ -26,6 +26,8 @@ export interface CommandContext {
     jobManager: JobManager;
     resolvePath: (path: string) => string;
     abortSignal?: AbortSignal;
+    onSignal: (handler: SignalHandler) => void;
+    isInterrupted: () => boolean;
 }
 
 export interface CommandResult {

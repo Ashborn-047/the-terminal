@@ -61,5 +61,5 @@ export const cat = async (args: string[], context: CommandContext, input: string
         output = output.split('\n').map((line, i) => `     ${i + 1}\t${line}`).join('\n');
     }
 
-    return { output: output.trimEnd(), error: error.trim(), exitCode };
+    return { output, error: error.trim(), exitCode };
 };
