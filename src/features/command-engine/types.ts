@@ -1,4 +1,4 @@
-import { VFS } from '../vfs/vfs';
+import { JobManager } from './shell/jobManager';
 
 export enum Signal {
     SIGINT = 'SIGINT',
@@ -22,16 +22,7 @@ export interface CommandContext {
     env: Record<string, string>;
     history: string[];
     processes: { pid: number; name: string; user: string; startTime: number; status?: string }[];
-    jobs: any[];
-    aliases: Record<string, string>;
-    updateEnv: (env: Record<string, string>) => void;
-    updateProcesses: (processes: any[]) => void;
-    updateJobs: (jobs: any[]) => void;
-    updateAliases: (aliases: Record<string, string>) => void;
-    prompt?: (message: string) => Promise<string>;
-    onSignal: (handler: SignalHandler) => void;
-    removeSignalHandler: (handler: SignalHandler) => void;
-    isInterrupted: () => boolean;
+    jobManager: JobManager;
     resolvePath: (path: string) => string;
     abortSignal?: AbortSignal;
 }

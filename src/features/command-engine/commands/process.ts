@@ -62,9 +62,8 @@ export const kill = async (args: string[], context: CommandContext): Promise<Com
         
         // Support %JID
         if (target.startsWith('%')) {
-            const jid = parseInt(target.slice(1), 10);
-            const job = context.jobs.find(j => j.jid === jid);
-            if (job) pid = job.pid;
+            const job = context.jobManager.getJobBySpec(target);
+            if (job) pid = job.pgid;
         }
 
         if (isNaN(pid)) {
@@ -72,16 +71,17 @@ export const kill = async (args: string[], context: CommandContext): Promise<Com
             continue;
         }
 
-        const proc = context.processes.find(p => p.pid === pid) || context.jobs.find(j => j.pid === pid);
+        const proc = context.processes.find(p => p.pid === pid) || context.jobManager.getJob(pid);
         if (proc) {
             terminalStore.sendSignal(pid, signalToEmit);
             found = true;
             
             // Realism: Terminating a job updates the job table
             if (signalToEmit === Signal.SIGKILL || signalToEmit === Signal.SIGTERM) {
-                const jid = context.jobs.find(j => j.pid === pid)?.jid;
-                if (jid !== undefined) {
-                    terminalStore.updateJobStatus(jid, 'Terminated');
+                const spec = target.startsWith('%') ? target : `%${pid}`;
+                const job = context.jobManager.getJobBySpec(spec);
+                if (job) {
+                    context.jobManager.terminateJob(job.id, signalToEmit);
                 }
             }
         } else {
@@ -92,40 +92,3 @@ export const kill = async (args: string[], context: CommandContext): Promise<Com
     return { output, exitCode: found ? 0 : 1 };
 };
 
-export const jobs = async (args: string[], context: CommandContext): Promise<CommandResult> => {
-    if (context.jobs.length === 0) return { output: '', exitCode: 0 };
-    
-    const lines = context.jobs.map(j => {
-        const current = j.jid === Math.max(...context.jobs.map(job => job.jid)) ? '+' : '-';
-        return `[${j.jid}]${current}  ${j.status.padEnd(10)} ${j.command}`;
-    });
-    
-    return { output: lines.join('\n') + '\n', exitCode: 0 };
-};
-
-export const fg = async (args: string[], context: CommandContext): Promise<CommandResult> => {
-    const jid = args.length > 0 ? parseInt(args[0].replace('%', ''), 10) : (context.jobs.length > 0 ? Math.max(...context.jobs.map(j => j.jid)) : null);
-    if (jid === null || isNaN(jid)) return { output: '', error: 'fg: no such job', exitCode: 1 };
-
-    const job = context.jobs.find(j => j.jid === jid);
-    if (!job) return { output: '', error: 'fg: no such job', exitCode: 1 };
-
-    // In a simulator, we print the command and "bring" it to the foreground
-    // by effectively doing nothing (it's already backgrounded and will finish)
-    // but the UI should show it as foregrounded.
-    return { output: `${job.command}\n`, exitCode: 0 };
-};
-
-export const bg = async (args: string[], context: CommandContext): Promise<CommandResult> => {
-    const jid = args.length > 0 ? parseInt(args[0].replace('%', ''), 10) : (context.jobs.length > 0 ? Math.max(...context.jobs.map(j => j.jid)) : null);
-    if (jid === null || isNaN(jid)) return { output: '', error: 'bg: no such job', exitCode: 1 };
-
-    const job = context.jobs.find(j => j.jid === jid);
-    if (!job) return { output: '', error: 'bg: no such job', exitCode: 1 };
-
-    const terminalStore = useTerminalStore.getState();
-    terminalStore.sendSignal(job.pid, Signal.SIGCONT);
-    terminalStore.updateJobStatus(job.jid, 'Running');
-
-    return { output: `[${job.jid}] ${job.command} &\n`, exitCode: 0 };
-};

@@ -31,10 +31,21 @@ export class ShellExecutor {
         }
 
         switch (node.type) {
-            case NodeType.COMMAND:
-                return this.executeCommand(node as CommandNode, context, env);
-            case NodeType.PIPELINE:
-                return this.executePipeline(node as PipelineNode, context, env);
+            case NodeType.COMMAND: {
+                const cmdNode = node as CommandNode;
+                if (cmdNode.background) {
+                    return this.launchBackgroundJob(cmdNode, context, env);
+                }
+                return this.executeCommand(cmdNode, context, env);
+            }
+            case NodeType.PIPELINE: {
+                const pipeNode = node as PipelineNode;
+                // If the last command in pipeline is backgrounded, the whole pipeline is
+                if (pipeNode.commands[pipeNode.commands.length - 1].background) {
+                    return this.launchBackgroundJob(pipeNode, context, env);
+                }
+                return this.executePipeline(pipeNode, context, env);
+            }
             case NodeType.LOGICAL_AND:
                 return this.executeLogical(node as LogicalNode, context, env, '&&');
             case NodeType.LOGICAL_OR:
@@ -238,6 +249,33 @@ export class ShellExecutor {
         return result;
     }
     
+    private async launchBackgroundJob(node: CommandNode | PipelineNode, context: CommandContext, env: ShellEnvironment): Promise<CommandResult> {
+        const commandText = this.getCommandText(node);
+        const pid = Math.floor(Math.random() * 9000) + 1000;
+        
+        const promise = node.type === NodeType.COMMAND 
+            ? this.executeCommand(node as CommandNode, context, env)
+            : this.executePipeline(node as PipelineNode, context, env);
+
+        const job = context.jobManager.addJob(commandText, [{ pid, name: commandText.split(' ')[0], promise }], false);
+        
+        return {
+            output: `[${job.id}] ${pid}\n`,
+            exitCode: 0
+        };
+    }
+
+    private getCommandText(node: ASTNode): string {
+        if (node.type === NodeType.COMMAND) {
+            const cmd = node as CommandNode;
+            return [cmd.name, ...cmd.args].join(' ');
+        }
+        if (node.type === NodeType.PIPELINE) {
+            return (node as PipelineNode).commands.map(c => this.getCommandText(c)).join(' | ');
+        }
+        return 'unknown';
+    }
+
     private lastContext?: CommandContext;
 
     private formatVfsError(errno: string): string {

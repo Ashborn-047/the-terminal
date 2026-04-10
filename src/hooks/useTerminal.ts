@@ -96,6 +96,7 @@ export function useTerminal() {
         }
     }, [processes]);
 
+    const jobManagerRef = useRef<JobManager>(new JobManager((jobs) => setJobs(jobs)));
     const executorRef = useRef<ShellExecutor>(new ShellExecutor(vfsRef.current));
     const shellEnvRef = useRef<ShellEnvironment>(new ShellEnvironment(env));
 
@@ -188,20 +189,7 @@ export function useTerminal() {
             env,
             history: historyRef.current.map(h => h.command),
             processes,
-            jobs,
-            aliases: {}, 
-            updateEnv: (newEnv) => {
-                setEnv(newEnv);
-                // Synchronize shell environment with React state
-                Object.entries(newEnv).forEach(([k, v]) => shellEnvRef.current.set(k, v));
-            },
-            updateProcesses: (newProcesses) => setProcesses(newProcesses),
-            updateJobs: (newJobs) => setJobs(newJobs),
-            updateAliases: () => {}, 
-            prompt: async (message: string) => new Promise(resolve => setPendingPrompt({ message, resolve })),
-            onSignal: () => () => {},
-            removeSignalHandler: () => {},
-            isInterrupted: () => abortController?.signal.aborted || false,
+            jobManager: jobManagerRef.current,
             resolvePath: (path: string) => {
                 if (path.startsWith('/')) return path;
                 const base = context.cwd === '/' ? '/' : context.cwd + '/';

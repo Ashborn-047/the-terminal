@@ -34,7 +34,7 @@ import { du } from './du';
 import { which } from './which';
 import { hostname } from './hostname';
 import { rmdir, dirname, basename } from './path';
-import { jobs, fg, bg } from './process';
+import { jobs, fg, bg } from './jobs';
 import { alias, unalias } from './alias';
 import { sort, uniq, cut } from './text';
 import { tee, xargs } from './io';
