@@ -23,6 +23,7 @@ export enum TokenType {
     WHILE,         // while
     DO,            // do
     DONE,          // done
+    NEWLINE,
     EOF,
 }
 
@@ -63,6 +64,12 @@ export class Lexer {
         const tokens: Token[] = [];
         while (this.pos < this.input.length) {
             const char = this.peek();
+
+            if (char === '\n') {
+                this.advance();
+                tokens.push({ type: TokenType.NEWLINE, value: '\n', line: startLine, col: startCol });
+                continue;
+            }
 
             if (/\s/.test(char)) {
                 this.advance();

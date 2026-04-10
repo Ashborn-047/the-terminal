@@ -130,7 +130,38 @@ export class Parser {
             }
         }
 
+        // Post-processing for heredocs: capture body from subsequent lines
+        const heredocs = node.redirections.filter(r => r.type === 'heredoc');
+        if (heredocs.length > 0) {
+            // Consume until newline first
+            while (this.peek().type !== TokenType.EOF && this.peek().type !== TokenType.NEWLINE) {
+                this.advance();
+            }
+            if (this.match(TokenType.NEWLINE)) {
+                for (const hd of heredocs) {
+                    let body = '';
+                    while (this.peek().type !== TokenType.EOF) {
+                        const lineToken = this.consumeLine();
+                        if (lineToken.trim() === hd.delimiter) {
+                            break;
+                        }
+                        body += lineToken + '\n';
+                    }
+                    hd.path = body; // Store body in path (to be expanded later by executor)
+                }
+            }
+        }
+
         return node;
+    }
+
+    private consumeLine(): string {
+        let line = '';
+        while (this.peek().type !== TokenType.EOF && this.peek().type !== TokenType.NEWLINE) {
+            line += this.advance().value + ' '; // Simplified space reconstruction
+        }
+        this.match(TokenType.NEWLINE);
+        return line.trimEnd();
     }
 
     private isRedirection(type: TokenType): boolean {

@@ -101,6 +101,15 @@ export class ShellExecutor {
                 } else {
                     return { output: '', error: `bash: ${path}: ${this.formatVfsError(content.error)}`, exitCode: 1 };
                 }
+            } else if (redir.type === 'heredoc') {
+                let content = redir.path; // Already captured by parser
+                if (redir.stripTabs) {
+                    content = content.split('\n').map(line => line.replace(/^\t+/, '')).join('\n');
+                }
+                if (redir.expand) {
+                    content = await this.expand(content, env);
+                }
+                inputOverwrite = content;
             }
         }
 
