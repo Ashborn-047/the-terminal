@@ -41,6 +41,10 @@ jobs:
         run: npx playwright test
 
       - name: Build Frontend
+        env:
+          VITE_MOCK_SPACETIME: ${{ secrets.VITE_MOCK_SPACETIME }}
+          VITE_SPACETIME_URI: ${{ secrets.VITE_SPACETIME_URI }}
+          VITE_SPACETIME_DB_NAME: ${{ secrets.VITE_SPACETIME_DB_NAME }}
         run: npm run build
 
       - name: Setup Rust (for SpacetimeDB)
