@@ -248,6 +248,7 @@ export class VFS {
         this.rootDentryId = snapshot.rootDentryId;
         this.dentries = JSON.parse(JSON.stringify(snapshot.dentries));
         this.inodeTable = new InodeTable(snapshot.inodeTable as any);
+        this.umask = snapshot.umask || '0022';
         this.rebuildIndices();
     }
 
@@ -255,7 +256,8 @@ export class VFS {
         return JSON.stringify({ 
             rootDentryId: this.rootDentryId, 
             dentries: this.dentries,
-            inodeTable: JSON.parse(this.inodeTable.serialize())
+            inodeTable: JSON.parse(this.inodeTable.serialize()),
+            umask: this.umask
         });
     }
 
@@ -266,6 +268,7 @@ export class VFS {
                 this.rootDentryId = newSnapshot.rootDentryId;
                 this.dentries = newSnapshot.dentries;
                 this.inodeTable = new InodeTable(newSnapshot.inodeTable);
+                this.umask = newSnapshot.umask || '0022';
                 this.rebuildIndices();
             } else {
                  // Failsafe for older direct-inode snapshots.

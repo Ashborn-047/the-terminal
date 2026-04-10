@@ -34,6 +34,7 @@ export interface Inode {
     target?: string;  // Destination for symlinks
     isVirtual?: boolean; 
     handler?: (userId: string) => string; 
+    acls?: Record<string, VFSPermissions>;
 }
 
 /**
@@ -51,4 +52,5 @@ export interface VFSSnapshot {
     rootDentryId: string;
     dentries: Record<string, Dentry>;
     inodeTable: Record<string, Inode>;
+    umask?: string;
 }
