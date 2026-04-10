@@ -494,6 +494,24 @@ export class VFS {
         return perms.others[type];
     }
 
+    /**
+     * Check if a user can delete or rename an entry within a directory.
+     * Sticky bit: only owner of the file or owner of the directory (or root) can delete/rename.
+     */
+    private canModifyEntry(parentInode: Inode, targetInode: Inode, userId: string): boolean {
+        if (userId === 'root') return true;
+
+        // If parent directory has sticky bit set
+        if (parentInode.permissions.sticky) {
+            // User must own the target file OR own the parent directory
+            if (targetInode.ownerId !== userId && parentInode.ownerId !== userId) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     private resolveDentry(
         path: string,
         startDentryId: string = this.rootDentryId,
@@ -793,8 +811,8 @@ export class VFS {
             const parentInode = this.inodeTable.getInodeRef(parentDentry.inodeId);
             if (!parentInode) return 'Internal error: parent inode missing';
 
-            if (parentInode.permissions.sticky && userId !== 'root') {
-                if (inode.ownerId !== userId && parentInode.ownerId !== userId) return 'Operation not permitted (Sticky bit set)';
+            if (!this.canModifyEntry(parentInode, inode, userId)) {
+                return 'Operation not permitted (Sticky bit set)';
             }
 
             if (!this.hasPermission(parentInode, userId, 'write', groups)) return 'Permission denied.';
@@ -986,6 +1004,13 @@ export class VFS {
                 oldParentDentry.children = oldParentDentry.children?.filter(id => id !== srcResult.id);
                 this.dentryIndex.delete(`${oldParentDentry.id}:${srcResult.name}`);
                 this.inodeTable.updateInode(oldParentDentry.inodeId, { mtime: Date.now() });
+            }
+
+            const oldParentInode = this.inodeTable.getInodeRef(oldParentDentry.inodeId)!;
+            const srcInode = this.inodeTable.getInodeRef(srcResult.inodeId)!;
+
+            if (!this.canModifyEntry(oldParentInode, srcInode, userId) || !this.hasPermission(oldParentInode, userId, 'write', groups)) {
+                return formatError('PERMISSION_DENIED');
             }
 
             srcResult.name = destName;
