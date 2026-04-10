@@ -35,12 +35,18 @@ test.describe('Curriculum and Lab Flow', () => {
 
         await page.goto('');
         await page.waitForLoadState('networkidle');
+        
+        // Wait for store hydration
+        await page.waitForFunction(() => {
+            const ui = localStorage.getItem('the-terminal-ui');
+            return ui && JSON.parse(ui).state.onboardingComplete;
+        });
     });
 
     test('should navigate through curriculum and complete a guided lab', async ({ page }) => {
         // Step 1: Browse to Curriculum
         await page.goto('labs');
-        await expect(page.getByText(/Foundations/i)).toBeVisible({ timeout: 15000 });
+        await expect(page.getByText(/Foundations/i).first()).toBeVisible({ timeout: 15000 });
 
         // Step 2: Start "Your First Command" (lab-1-1)
         const startBtn = page.locator('[data-testid="lab-card-lab-1-1"]').getByRole('button', { name: /Start/i });
@@ -73,6 +79,7 @@ test.describe('Curriculum and Lab Flow', () => {
         
         // Find a challenge lab (e.g. Navigation Master)
         const challengeCard = page.locator('[data-testid="lab-card-lab-1-2"]');
+        await expect(challengeCard).toBeVisible({ timeout: 15000 });
         await expect(challengeCard).toContainText(/challenge/i);
         
         const startBtn = challengeCard.getByRole('button', { name: /Start/i });
