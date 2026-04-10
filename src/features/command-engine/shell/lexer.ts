@@ -12,6 +12,8 @@ export enum TokenType {
     DGREATER,      // >>
     ERR_GREATER,   // 2>
     BOTH_GREATER,  // &>
+    DLESS,         // <<
+    DLESSDASH,     // <<-
     IF,            // if
     THEN,          // then
     ELSE,          // else
@@ -100,7 +102,17 @@ export class Lexer {
                 tokens.push({ type: TokenType.RPAREN, value: ')', line: startLine, col: startCol });
             } else if (char === '<') {
                 this.advance();
-                tokens.push({ type: TokenType.LESS, value: '<', line: startLine, col: startCol });
+                if (this.peek() === '<') {
+                    this.advance();
+                    if (this.peek() === '-') {
+                        this.advance();
+                        tokens.push({ type: TokenType.DLESSDASH, value: '<<-', line: startLine, col: startCol });
+                    } else {
+                        tokens.push({ type: TokenType.DLESS, value: '<<', line: startLine, col: startCol });
+                    }
+                } else {
+                    tokens.push({ type: TokenType.LESS, value: '<', line: startLine, col: startCol });
+                }
             } else if (char === '>') {
                 this.advance();
                 if (this.peek() === '>') {

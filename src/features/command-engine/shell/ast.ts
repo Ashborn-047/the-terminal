@@ -10,11 +10,14 @@ export enum NodeType {
     SUBSHELL,
 }
 
-export type RedirectionType = 'overwrite' | 'append' | 'input' | 'stderr' | 'both';
+export type RedirectionType = 'overwrite' | 'append' | 'input' | 'stderr' | 'both' | 'heredoc';
 
 export interface Redirection {
     type: RedirectionType;
     path: string;
+    delimiter?: string;     // For heredoc
+    expand?: boolean;      // For heredoc expansion
+    stripTabs?: boolean;   // For heredoc <<-
 }
 
 export interface ASTNode {

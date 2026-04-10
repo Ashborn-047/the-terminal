@@ -43,8 +43,13 @@ export class Parser {
         while (this.peek().type !== TokenType.EOF && !stopTokens.includes(this.peek().type)) {
             const startPos = this.pos;
             nodes.push(this.parseLogical());
-            if (this.match(TokenType.SEMI) || this.match(TokenType.AMPERSAND)) {
-                // Background/Sequence handled here
+            if (this.match(TokenType.SEMI)) {
+                // Sequence handled by the loop
+            } else if (this.match(TokenType.AMPERSAND)) {
+                if (nodes.length > 0) {
+                    const lastNode = nodes[nodes.length - 1];
+                    this.markBackground(lastNode);
+                }
             }
             if (this.pos === startPos) {
                 // Safety: advance if no progress made
@@ -134,7 +139,9 @@ export class Parser {
             TokenType.GREATER, 
             TokenType.DGREATER, 
             TokenType.ERR_GREATER, 
-            TokenType.BOTH_GREATER
+            TokenType.BOTH_GREATER,
+            TokenType.DLESS,
+            TokenType.DLESSDASH
         ].includes(type);
     }
 
@@ -146,15 +153,36 @@ export class Parser {
             [TokenType.DGREATER]: 'append',
             [TokenType.ERR_GREATER]: 'stderr',
             [TokenType.BOTH_GREATER]: 'both',
+            [TokenType.DLESS]: 'heredoc',
+            [TokenType.DLESSDASH]: 'heredoc',
         };
         
         const pathToken = this.match(TokenType.WORD) ? this.tokens[this.pos - 1] : null;
-        if (!pathToken) throw new Error(`Expected path after redirection operator ${token.value}`);
+        if (!pathToken) throw new Error(`Expected delimiter after redirection operator ${token.value}`);
 
-        return {
+        const redirection: Redirection = {
             type: typeMap[token.type],
             path: pathToken.value
         };
+
+        if (token.type === TokenType.DLESS || token.type === TokenType.DLESSDASH) {
+            redirection.delimiter = pathToken.value.replace(/['"]/g, '');
+            redirection.expand = !pathToken.value.match(/['"]/);
+            redirection.stripTabs = token.type === TokenType.DLESSDASH;
+        }
+
+        return redirection;
+    }
+
+    private markBackground(node: ASTNode) {
+        if (node.type === NodeType.COMMAND) {
+            (node as CommandNode).background = true;
+        } else if (node.type === NodeType.PIPELINE) {
+            const pipeline = node as PipelineNode;
+            pipeline.commands[pipeline.commands.length - 1].background = true;
+        } else if (node.type === NodeType.LOGICAL_AND || node.type === NodeType.LOGICAL_OR) {
+            this.markBackground((node as LogicalNode).right);
+        }
     }
 
     private parseIf(): IfNode {
