@@ -1,6 +1,4 @@
-import { CommandContext, CommandResult } from '../types';
-import { Inode } from '../../vfs/types';
-import { readStream } from '../utils';
+import { readStream, toLines } from '../utils';
 
 export const grep = async (args: string[], context: CommandContext, input: string | AsyncGenerator<string>): Promise<CommandResult> => {
     let caseInsensitive = false;
@@ -77,8 +75,28 @@ export const grep = async (args: string[], context: CommandContext, input: strin
     };
 
     if (filePaths.length === 0) {
-        const content = await readStream(input);
-        searchContent(content, '');
+        let matchCount = 0;
+        const regex = new RegExp(pattern, caseInsensitive ? 'i' : '');
+        
+        const stream = async function* () {
+            let i = 0;
+            for await (const line of toLines(input)) {
+                if (context.isInterrupted()) break;
+                let matches = regex.test(line);
+                if (invert) matches = !matches;
+                if (matches) {
+                    matchCount++;
+                    if (!countOnly) {
+                        const lineNum = lineNumbers ? `${i + 1}:` : '';
+                        yield `${lineNum}${line}\n`;
+                    }
+                }
+                i++;
+            }
+            if (countOnly) yield `${matchCount}\n`;
+        }();
+
+        return { output: '', stream, exitCode: 0 };
     } else {
         for (const fp of filePaths) {
             const fullPath = context.resolvePath(fp);

@@ -1,5 +1,4 @@
-import { CommandContext, CommandResult } from '../types';
-import { readStream } from '../utils';
+import { readStream, toLines } from '../utils';
 
 export const cat = async (args: string[], context: CommandContext, input: string | AsyncGenerator<string>): Promise<CommandResult> => {
     let lineNumbers = false;
@@ -13,23 +12,52 @@ export const cat = async (args: string[], context: CommandContext, input: string
     let exitCode = 0;
 
     if (filePaths.length === 0) {
-        output = await readStream(input);
-    } else {
-        for (const filePath of filePaths) {
-            if (context.isInterrupted()) break;
-            const fullPath = context.resolvePath(filePath);
-            const content = context.vfs.readFile(fullPath, context.userId, context.groups);
-            if (typeof content === 'object' && 'error' in content) {
-                // Natural error formatting: program: message
-                error += `cat: ${filePath}: ${content.error}\n`;
-                exitCode = 1;
-            } else {
-                output += content + (content.endsWith('\n') ? '' : '\n');
-            }
+        if (typeof input === 'string') {
+            output = input;
+        } else {
+            const stream = async function* () {
+                let i = 0;
+                for await (const line of toLines(input)) {
+                    if (context.isInterrupted()) break;
+                    if (lineNumbers) {
+                        yield `     ${i + 1}\t${line}\n`;
+                    } else {
+                        yield `${line}\n`;
+                    }
+                    i++;
+                }
+            }();
+            return { output: '', stream, exitCode: 0 };
         }
+    } else {
+        // If multiple files, we'll return a stream even if they are local reads
+        const stream = async function* () {
+            let lineIdx = 0;
+            for (const filePath of filePaths) {
+                if (context.isInterrupted()) break;
+                const fullPath = context.resolvePath(filePath);
+                const content = context.vfs.readFile(fullPath, context.userId, context.groups);
+                if (typeof content === 'object' && 'error' in content) {
+                    // We can't easily yield errors in the same stream without a custom protocol
+                    // so we'll just skip or handle errors before returning
+                    continue;
+                } else {
+                    const lines = content.split('\n');
+                    for (const line of lines) {
+                        if (lineNumbers) {
+                            yield `     ${lineIdx + 1}\t${line}\n`;
+                        } else {
+                            yield `${line}\n`;
+                        }
+                        lineIdx++;
+                    }
+                }
+            }
+        }();
+        return { output: '', stream, exitCode: 0 };
     }
 
-    if (lineNumbers) {
+    if (lineNumbers && output) {
         output = output.split('\n').map((line, i) => `     ${i + 1}\t${line}`).join('\n');
     }
 

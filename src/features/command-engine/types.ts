@@ -1,3 +1,4 @@
+import { VFS } from '../vfs/vfs';
 import { JobManager } from './shell/jobManager';
 
 export enum Signal {

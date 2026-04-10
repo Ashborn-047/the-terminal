@@ -20,6 +20,32 @@ export async function readStream(input: string | AsyncGenerator<string>): Promis
 }
 
 /**
+ * Transforms a stream of chunks into a stream of lines.
+ */
+export async function* toLines(input: string | AsyncGenerator<string>): AsyncGenerator<string> {
+    if (typeof input === 'string') {
+        const lines = input.split('\n');
+        for (const line of lines) {
+            yield line;
+        }
+        return;
+    }
+
+    let buffer = '';
+    for await (const chunk of input) {
+        buffer += chunk;
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+        for (const line of lines) {
+            yield line;
+        }
+    }
+    if (buffer) {
+        yield buffer;
+    }
+}
+
+/**
  * Normalizes a path by prepending the CWD if the path is relative.
  */
 export function getAbsolutePath(path: string, cwd: string): string {

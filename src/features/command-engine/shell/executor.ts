@@ -72,7 +72,7 @@ export class ShellExecutor {
         }
     }
 
-    private async executeCommand(node: CommandNode, context: CommandContext, env: ShellEnvironment, pipeInput?: string): Promise<CommandResult> {
+    private async executeCommand(node: CommandNode, context: CommandContext, env: ShellEnvironment, pipeInput?: string | AsyncGenerator<string>): Promise<CommandResult> {
         // 1. Expand variables in name and args
         const expandedName = await this.expand(node.name, env);
         const expandedArgs = await Promise.all(node.args.map(arg => this.expand(arg, env)));
@@ -149,19 +149,25 @@ export class ShellExecutor {
     }
 
     private async executePipeline(node: PipelineNode, context: CommandContext, env: ShellEnvironment): Promise<CommandResult> {
-        let lastInput = '';
+        let currentInput: string | AsyncGenerator<string> = '';
         let lastResult: CommandResult = { output: '', exitCode: 0 };
 
         for (let i = 0; i < node.commands.length; i++) {
             const cmdNode = node.commands[i];
             const isLast = i === node.commands.length - 1;
 
-            const result = await this.executeCommand(cmdNode, context, env, lastInput);
-            if (result.exitCode !== 0 && !isLast) {
-                // Pipelines usually keep going but subsequent commands might fail if they expect input
+            const result = await this.executeCommand(cmdNode, context, env, currentInput);
+            
+            // If it's not the last command, we need to pass its output/stream to the next one
+            if (!isLast) {
+                if (result.stream) {
+                    currentInput = result.stream;
+                } else {
+                    currentInput = result.output;
+                }
+            } else {
+                lastResult = result;
             }
-            lastInput = result.output;
-            lastResult = result;
         }
 
         return lastResult;
