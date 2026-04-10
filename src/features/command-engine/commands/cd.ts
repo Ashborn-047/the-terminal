@@ -19,5 +19,7 @@ export const cd = async (args: string[], context: CommandContext): Promise<Comma
         return { output: '', error: `cd: ${path}: Not a directory`, exitCode: 1 };
     }
 
-    return { output: context.vfs.getPath(inode.id), exitCode: 0 };
+    const newCwd = context.vfs.getPath(inode.id);
+    context.updateCwd(newCwd);
+    return { output: newCwd, exitCode: 0 };
 };

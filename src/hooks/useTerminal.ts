@@ -179,6 +179,9 @@ export function useTerminal() {
 
         const context: CommandContext = {
             cwd: currentCwd,
+            updateCwd: (path) => {
+                context.cwd = path;
+            },
             userId: currentUserId,
             groups: currentUserId === 'root' ? ['root'] : [currentUserId, 'users'], 
             vfs: vfsRef.current,
@@ -201,7 +204,7 @@ export function useTerminal() {
             isInterrupted: () => abortController?.signal.aborted || false,
             resolvePath: (path: string) => {
                 if (path.startsWith('/')) return path;
-                const base = currentCwd === '/' ? '/' : currentCwd + '/';
+                const base = context.cwd === '/' ? '/' : context.cwd + '/';
                 return base + path;
             }
         };
@@ -318,11 +321,10 @@ export function useTerminal() {
         // Run achievement check after every command
         checkAchievements();
 
-        // Handle special case: cd updates CWD
-        if (cmdName === 'cd' && result.exitCode === 0) {
-            const nextCwd = result.output || '/';
-            cwdRef.current = nextCwd; // Update ref immediately for next potential commands
-            setCwd(nextCwd);
+        // Synchronize CWD from context (handles cd changes, including compound commands)
+        if (context.cwd !== currentCwd) {
+            cwdRef.current = context.cwd;
+            setCwd(context.cwd);
         }
 
         // Add to history

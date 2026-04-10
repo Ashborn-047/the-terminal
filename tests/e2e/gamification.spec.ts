@@ -17,9 +17,9 @@ test.describe('Gamification and Social Flow', () => {
             // Mock gamification state if needed to trigger level up faster
             localStorage.setItem('the-terminal-gamification', JSON.stringify({
                 state: {
-                    xp: 90,
+                    xp: 140,
                     level: 1,
-                    totalXpEarned: 90,
+                    totalXpEarned: 140,
                     streak: { current: 1, longest: 1, lastActivityDate: null, freezesRemaining: 1 },
                     counters: {},
                     activityHistory: {},
@@ -27,7 +27,8 @@ test.describe('Gamification and Social Flow', () => {
                     labsCompleted: 0,
                     hintsUsed: 0,
                     dailyQuests: [],
-                    lastQuestGenerationDate: null
+                    lastQuestGenerationDate: null,
+                    version: '3.1'
                 },
                 version: 0
             }));

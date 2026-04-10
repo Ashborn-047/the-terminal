@@ -27,7 +27,7 @@ export function useFeatureAccess(): FeatureAccess {
         achievements: labsCompleted >= 2,
         chat: labsCompleted >= 3,
         commandReference: labsCompleted >= 5,
-        diyLabs: labsCompleted >= 10,
+        diyLabs: labsCompleted >= 1,
         settings: level >= 3,
         labReset: labsCompleted >= 1,
         hints: true,

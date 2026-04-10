@@ -423,6 +423,14 @@ export const useGamificationStore = create<GamificationState>()(
                     if (value >= ach.criteria.threshold) {
                         newlyUnlocked.push(ach.id);
                         get().awardXP(ach.xpReward);
+                        
+                        toastEmitter.emit({
+                            type: 'achievement',
+                            title: `${ach.name} Unlocked!`,
+                            message: ach.description,
+                            icon: ach.icon,
+                            duration: 6000
+                        });
                     }
                 }
 

@@ -27,7 +27,8 @@ test.describe('Curriculum and Lab Flow', () => {
                     unlockedAchievements: [],
                     hintsUsed: 0,
                     dailyQuests: [],
-                    lastQuestGenerationDate: null
+                    lastQuestGenerationDate: null,
+                    version: '3.1'
                 },
                 version: 0
             }));
@@ -43,18 +44,27 @@ test.describe('Curriculum and Lab Flow', () => {
         });
     });
 
-    test('should navigate through curriculum and complete a guided lab', async ({ page }) => {
-        // Step 1: Browse to Curriculum
-        await page.goto('labs');
-        await expect(page.getByText(/Foundations/i).first()).toBeVisible({ timeout: 15000 });
+    test('should navigate through curriculum and complete lab flow', async ({ page }) => {
+        // Step 1: Start at Home to ensure store hydration
+        await page.goto('/');
+        
+        // Wait for activity bar to be visible
+        const curriculumLink = page.getByRole('button', { name: /Curriculum/i });
+        await expect(curriculumLink).toBeVisible({ timeout: 15000 });
+        await curriculumLink.click();
 
-        // Step 2: Start "Your First Command" (lab-1-1)
+        // Step 2: Verify Foundations module is active
+        await expect(page).toHaveURL(/\/labs/);
+        await expect(page.getByText(/Foundations/i).first()).toBeVisible({ timeout: 25000 });
+
+        // Step 3: Start "Your First Command" (lab-1-1)
         const startBtn = page.locator('[data-testid="lab-card-lab-1-1"]').getByRole('button', { name: /Start/i });
+        await expect(startBtn).toBeVisible({ timeout: 15000 });
         await startBtn.click();
 
-        // Step 3: Verify Lab View mounts terminal
+        // Step 4: Verify Lab View mounts terminal
         await expect(page).toHaveURL(/\/lab\/lab-1-1/);
-        await expect(page.getByText('Your First Command')).toBeVisible();
+        await expect(page.getByText(/Your First Command/i).first()).toBeVisible();
         
         // Wait for terminal prompt
         const terminal = page.getByTestId('terminal-container');
@@ -64,7 +74,6 @@ test.describe('Curriculum and Lab Flow', () => {
         await typeCommand(page, 'pwd');
         
         // Wait for step to advance in instructions sidebar
-        // Note: The instruction components might have specific testids or headings
         await expect(page.getByText(/Step.*2.*\/.*2/).first()).toBeVisible({ timeout: 15000 });
 
         // Step 5: Execute final step (ls)
@@ -72,22 +81,23 @@ test.describe('Curriculum and Lab Flow', () => {
 
         // Step 6: Verify Celebration Modal (triggers on first lab completion)
         await expect(page.getByRole('heading', { name: 'First Lab Complete!' })).toBeVisible({ timeout: 20000 });
-    });
 
-    test('should track challenge lab attempts', async ({ page }) => {
-        await page.goto('labs');
-        
-        // Find a challenge lab (e.g. Navigation Master)
+        // Step 7: Continue Learning (Continue button in modal goes back to labs)
+        await page.getByRole('button', { name: /Continue Learning/i }).click();
+        await expect(page).toHaveURL(/\/labs/);
+
+        // Step 8: Verify Navigation Challenge (lab-1-2) is now unlocked
         const challengeCard = page.locator('[data-testid="lab-card-lab-1-2"]');
         await expect(challengeCard).toBeVisible({ timeout: 15000 });
         await expect(challengeCard).toContainText(/challenge/i);
         
-        const startBtn = challengeCard.getByRole('button', { name: /Start/i });
-        await startBtn.click();
+        const challengeStartBtn = challengeCard.getByRole('button', { name: /Start/i });
+        await expect(challengeStartBtn).toBeVisible();
+        await challengeStartBtn.click();
         
         await expect(page).toHaveURL(/\/lab\/lab-1-2/);
         
-        // Terminal interaction is verified here to ensure VFS state isolation
+        // Step 9: Verify VFS state isolation in challenge lab
         await typeCommand(page, 'cd / && ls');
         await expect(page.getByTestId('terminal-container')).toContainText(/etc/i);
     });

@@ -15,6 +15,7 @@ export type SignalHandler = (sig: Signal) => void;
 
 export interface CommandContext {
     cwd: string;
+    updateCwd: (path: string) => void;
     userId: string;
     groups: string[];
     vfs: VFS;
