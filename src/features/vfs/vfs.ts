@@ -486,11 +486,29 @@ export class VFS {
     public hasPermission(inode: Inode, userId: string, type: keyof VFSPermissions, groups: string[] = []): boolean {
         if (userId === 'root') return true;
         
-        // Fallback for missing permissions (migration / legacy snapshots)
+        // 1. Owner check
         const perms = inode.permissions || (inode.type === 'directory' ? DEFAULT_DIR_PERMISSIONS : DEFAULT_FILE_PERMISSIONS);
-        
         if (inode.ownerId === userId) return perms.owner[type];
+
+        // 2. ACL checks (named user, then group)
+        if (inode.acls) {
+            // Named user ACL takes precedence
+            const userAcl = inode.acls[`user:${userId}`];
+            if (userAcl) return userAcl[type];
+
+            // Group ACLs
+            for (const [key, aclPerms] of Object.entries(inode.acls)) {
+                if (key.startsWith('group:')) {
+                    const groupName = key.slice(6);
+                    if (groups.includes(groupName)) return aclPerms[type];
+                }
+            }
+        }
+
+        // 3. Standard group permission
         if (groups.includes(inode.groupId)) return perms.group[type];
+
+        // 4. Others permission
         return perms.others[type];
     }
 
