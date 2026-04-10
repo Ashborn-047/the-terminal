@@ -1018,11 +1018,7 @@ export class VFS {
             if (this.dentryIndex.has(`${destParentResult.id}:${destName}`)) return 'Destination already exists';
 
             const oldParentDentry = this.dentries[srcResult.parentId!];
-            if (oldParentDentry) {
-                oldParentDentry.children = oldParentDentry.children?.filter(id => id !== srcResult.id);
-                this.dentryIndex.delete(`${oldParentDentry.id}:${srcResult.name}`);
-                this.inodeTable.updateInode(oldParentDentry.inodeId, { mtime: Date.now() });
-            }
+            if (!oldParentDentry) return 'Internal error: source parent missing';
 
             const oldParentInode = this.inodeTable.getInodeRef(oldParentDentry.inodeId)!;
             const srcInode = this.inodeTable.getInodeRef(srcResult.inodeId)!;
@@ -1030,6 +1026,13 @@ export class VFS {
             if (!this.canModifyEntry(oldParentInode, srcInode, userId) || !this.hasPermission(oldParentInode, userId, 'write', groups)) {
                 return formatError('PERMISSION_DENIED');
             }
+
+            if (oldParentDentry) {
+                oldParentDentry.children = oldParentDentry.children?.filter(id => id !== srcResult.id);
+                this.dentryIndex.delete(`${oldParentDentry.id}:${srcResult.name}`);
+                this.inodeTable.updateInode(oldParentDentry.inodeId, { mtime: Date.now() });
+            }
+
 
             srcResult.name = destName;
             srcResult.parentId = destParentResult.id;
