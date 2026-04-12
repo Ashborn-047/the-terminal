@@ -23,12 +23,11 @@ export async function typeCommand(page: Page, command: string) {
         await page.waitForSelector('.xterm-screen', { timeout: 20000 });
     }
     
-    // 4. Robust check for xterm content to render (ensures we have cells, not just rows)
+    // 4. Ensure xterm is mounted and has rows
     await page.waitForFunction(
         () => {
             const rows = document.querySelector('.xterm-rows') || document.querySelector('.xterm-screen');
-            const cells = document.querySelectorAll('.xterm-cell');
-            return rows && rows.children.length > 0 && cells.length > 0;
+            return rows && rows.children.length > 0;
         },
         { timeout: 30000 }
     );

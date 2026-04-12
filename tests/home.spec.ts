@@ -16,7 +16,6 @@ test('homepage has correct title and renders terminal', async ({ page }) => {
     
     // 2. Navigate specifically to terminal view
     await page.goto('terminal');
-    await page.waitForLoadState('networkidle');
     await page.waitForLoadState('domcontentloaded');
 
     // Expect a title "to contain" a substring.

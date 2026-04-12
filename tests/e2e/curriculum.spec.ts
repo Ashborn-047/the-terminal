@@ -35,7 +35,7 @@ test.describe('Curriculum and Lab Flow', () => {
         });
 
         await page.goto('');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('domcontentloaded');
         
         // Wait for store hydration
         await page.waitForFunction(() => {
