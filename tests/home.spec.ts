@@ -20,8 +20,14 @@ test('homepage has correct title and renders terminal', async ({ page }) => {
 
     // Expect a title "to contain" a substring.
     await expect(page).toHaveTitle(/The Terminal/i, { timeout: 15000 });
+    
+    // 3. Wait for terminal container to exist in DOM first
+    await page.waitForSelector('[data-testid="terminal-container"]', { timeout: 20000 });
+    
+    // 4. Wait for xterm content to render
+    await page.waitForSelector('.xterm-rows', { timeout: 20000 });
 
-    // Expect the terminal prompt to be visible
+    // 5. Expect the terminal prompt to be visible
     const terminal = page.getByTestId('terminal-container');
     await expect(terminal).toBeVisible({ timeout: 20000 });
     await expect(terminal).toContainText(/linux-lab/i, { timeout: 20000 });
