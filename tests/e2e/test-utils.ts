@@ -7,6 +7,11 @@ export const PROMPT_REGEX = /linux-lab/;
  * Ensures the terminal is focused and READY before typing.
  */
 export async function typeCommand(page: Page, command: string) {
+    // Inject flag to disable performance-heavy features (like Canvas) during tests
+    await page.addInitScript(() => {
+        (window as any).PLAYWRIGHT_TESTING = true;
+    });
+
     const terminal = page.getByTestId('terminal-container');
     
     // 1. Wait for terminal container to exist in DOM

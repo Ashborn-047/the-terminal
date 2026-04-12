@@ -14,9 +14,16 @@ test('homepage has correct title and renders terminal', async ({ page }) => {
         }));
     });
     
-    // 2. Navigate specifically to terminal view
-    await page.goto('terminal');
+    // 2. Navigate to root and then use UI navigation to bypass SPA routing issues
+    await page.goto('./');
     await page.waitForLoadState('domcontentloaded');
+
+    // Wait for app to be ready and sidebar to render
+    const terminalLink = page.getByRole('link', { name: /Terminal/i }).or(page.locator('a:has-text("Terminal")'));
+    await terminalLink.first().click();
+    
+    // Ensure we reached the terminal view
+    await expect(page).toHaveURL(/.*terminal/);
 
     // Expect a title "to contain" a substring.
     await expect(page).toHaveTitle(/The Terminal/i, { timeout: 15000 });

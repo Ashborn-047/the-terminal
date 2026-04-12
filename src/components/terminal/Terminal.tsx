@@ -62,7 +62,7 @@ export const TerminalComponent: React.FC = () => {
         // CRITICAL: Skip canvas in MOCK mode (CI) or ifspecifically disabled to ensure 
         // Playwright can reliably read terminal contents from the DOM.
         const isMock = import.meta.env.VITE_MOCK_SPACETIME === 'true';
-        const isTesting = import.meta.env.MODE === 'test';
+        const isTesting = import.meta.env.MODE === 'test' || (window as any).PLAYWRIGHT_TESTING;
         
         if (!isMock && !isTesting) {
             try {
