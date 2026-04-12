@@ -35,11 +35,8 @@ export function useTerminal() {
     });
     const { processes, setProcesses, jobs, setJobs, setEngineStatus } = useTerminalStore();
     
-    // Initial Hydration Signal
-    useEffect(() => {
-        // Mark as ready once the hook is mounted and basic refs are initialized
-        setEngineStatus('ready');
-    }, [setEngineStatus]);
+    // NOTE: Engineering Status is now managed by the UI component (Terminal.tsx) 
+    // to ensure readiness signals are only sent AFTER the DOM has populated the first prompt.
 
     // Sync terminal identity when Zustand hydrates the persisted username
     useEffect(() => {

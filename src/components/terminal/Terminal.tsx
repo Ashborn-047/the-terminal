@@ -111,6 +111,14 @@ export const TerminalComponent: React.FC = () => {
         const ps1 = getPrompt();
         term.write(ps1);
 
+        // STABILIZATION GATE: Signal readiness only after the initial prompt is written.
+        // We add a small delay to ensure xterm has flushed its internal buffer to the DOM
+        // mirror, which is critical for Playwright reliability in CI.
+        setTimeout(() => {
+            useTerminalStore.getState().setEngineStatus('ready');
+            console.info('[Terminal] Engine Ready via UI Bridge.');
+        }, 100);
+
         // Handle Input
         term.onData(data => {
             if (data === '\r') { // Enter
