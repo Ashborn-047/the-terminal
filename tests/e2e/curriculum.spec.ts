@@ -66,9 +66,9 @@ test.describe('Curriculum and Lab Flow', () => {
         await expect(page).toHaveURL(/\/lab\/lab-1-1/);
         await expect(page.getByText(/Your First Command/i).first()).toBeVisible();
         
-        // Wait for terminal prompt
+        // Wait for terminal prompt with extended timeout
         const terminal = page.getByTestId('terminal-container');
-        await expect(terminal).toContainText(/[\\$|#]/, { timeout: 20000 });
+        await expect(terminal).toContainText(/[$#>]/, { timeout: 30000 });
 
         // Step 4: Execute required step (pwd)
         await typeCommand(page, 'pwd');

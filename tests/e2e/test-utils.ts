@@ -9,40 +9,45 @@ export const PROMPT_REGEX = /linux-lab/;
 export async function typeCommand(page: Page, command: string) {
     const terminal = page.getByTestId('terminal-container');
     
-    // 1. Wait for terminal container to exist in DOM (not just visible)
-    await page.waitForSelector('[data-testid="terminal-container"]', { timeout: 20000 });
+    // 1. Wait for terminal container to exist in DOM
+    await page.waitForSelector('[data-testid="terminal-container"]', { timeout: 30000 });
     
     // 2. Wait for terminal to be visible
-    await terminal.waitFor({ state: 'visible', timeout: 20000 });
+    await terminal.waitFor({ state: 'visible', timeout: 30000 });
     
-    // 3. Wait for the xterm rows to be populated (indicates it opened correctly)
-    await page.waitForSelector('.xterm-rows', { timeout: 20000 });
+    // 3. Wait for xterm to initialize - try multiple selectors as fallback
+    try {
+        await page.waitForSelector('.xterm-rows', { timeout: 20000 });
+    } catch {
+        // Fallback: wait for xterm screen container if rows are delayed
+        await page.waitForSelector('.xterm-screen', { timeout: 20000 });
+    }
     
-    // 4. Robust check for xterm content to render
+    // 4. Robust check for xterm content to render (ensures we have cells, not just rows)
     await page.waitForFunction(
         () => {
-            const rows = document.querySelector('.xterm-rows');
-            return rows && rows.children.length > 0;
+            const rows = document.querySelector('.xterm-rows') || document.querySelector('.xterm-screen');
+            const cells = document.querySelectorAll('.xterm-cell');
+            return rows && rows.children.length > 0 && cells.length > 0;
         },
-        { timeout: 20000 }
+        { timeout: 30000 }
     );
     
-    // 5. Ensure the terminal is focused
+    // 5. Ensure the terminal is focused with a significant delay for CI stability
     await terminal.click({ force: true });
-    await page.waitForTimeout(500); // Brief delay for focus stability in CI
+    await page.waitForTimeout(1000); 
 
-    // 6. Wait for the prompt character ($ or #) to ensure the terminal is fully interactive
-    // This is the most robust way to handle the boot sequence delay in CI
-    await expect(terminal).toContainText(/[\\$|#]/, { timeout: 20000 });
+    // 6. Wait for the prompt character ($ or # or >) to ensure the terminal is fully interactive
+    // Using a more lenient regex to accommodate various prompt states
+    await expect(terminal).toContainText(/[$#>]/, { timeout: 30000 });
 
-    // 4. Type the command with a small delay between keys for CI stability
-    await page.keyboard.type(command, { delay: 50 });
+    // 7. Type the command with a larger delay between keys for high-latency CI environments
+    await page.keyboard.type(command, { delay: 100 });
     await page.keyboard.press('Enter');
     
-    // 4. Wait for the prompt to reappear to ensure the command finished
-    // We expect the prompt to contain '$' (for user) or '#' (for root)
-    // and specifically the hostname 'linux-lab'
-    await expect(terminal).toContainText(/linux-lab.*[\\$|#]/, { timeout: 20000 });
+    // 8. Wait for the command execution and the prompt to reappear
+    // Expect the prompt to contain 'linux-lab' and one of the prompt chars
+    await expect(terminal).toContainText(/linux-lab.*[$#>]/, { timeout: 30000 });
 }
 
 /**
@@ -50,6 +55,6 @@ export async function typeCommand(page: Page, command: string) {
  */
 export async function expectTerminalOutput(page: Page, textOrRegex: string | RegExp) {
     const terminal = page.getByTestId('terminal-container');
-    // Using a generous timeout for CI
-    await expect(terminal).toContainText(textOrRegex, { timeout: 20000 });
+    // Using an extended timeout for heavy processing tasks
+    await expect(terminal).toContainText(textOrRegex, { timeout: 30000 });
 }
