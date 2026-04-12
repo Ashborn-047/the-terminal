@@ -22,8 +22,8 @@ export class CommandExecutor {
         const signal = abortController?.signal;
 
         // Track foreground process
-        const initialPid = Math.floor(Math.random() * 1000) + 9000;
         const terminalStore = useTerminalStore.getState();
+        const initialPid = terminalStore.getNextPid();
         terminalStore.setForegroundProcess(initialPid);
 
         try {
@@ -146,7 +146,7 @@ export class CommandExecutor {
 
                 if (isLast && action.background) {
                     // Background job: generate a SINGLE PID used for BOTH the job table AND signal registry
-                    const bgPid = Math.floor(Math.random() * 9000) + 1000;
+                    const bgPid = terminalStore.getNextPid();
                     const jid = context.jobs.length + 1;
                     const newJob = { jid, pid: bgPid, command: action.name, status: 'Running' as const, isBackground: true };
                     

@@ -39,23 +39,43 @@ const PageLoader = () => (
 function AppContent() {
   const { onboardingComplete, completeOnboarding, setActiveView, onboardingStep, setOnboardingStep, setUsername, username } = useUIStore();
   const { setLabs, labs } = useLabStore();
+  const [isAppReady, setIsAppReady] = React.useState(false);
+  const [isServicesStarted, setIsServicesStarted] = React.useState(false);
 
   // Initialize SpacetimeDB subscription
   React.useEffect(() => {
     initSpacetimeSync();
     spacetime.onConnect(() => {
       spacetime.subscribeToAll();
+      setIsServicesStarted(true);
     });
+    
+    // In MOCK mode (CI), services are nearly instantaneous, but we still wait
+    if (import.meta.env.VITE_MOCK_SPACETIME === 'true') {
+        setTimeout(() => setIsServicesStarted(true), 500);
+    }
   }, []);
 
   // Heartbeat & Registration synchronization
   React.useEffect(() => {
-    // If we have a username, ensure they are registered/tracked
-    if (username) {
-      spacetime.registerUser(username).catch(err =>
-        logger.error('Failed to register user in SpacetimeDB', { err })
-      );
-    }
+    if (!isServicesStarted) return;
+
+    const startWork = async () => {
+        // If we have a username, ensure they are registered/tracked
+        if (username) {
+            try {
+                await spacetime.registerUser(username);
+            } catch (err) {
+                logger.error('Failed to register user in SpacetimeDB', { err });
+            }
+        }
+        
+        // Wait for VFS to settle (briefly)
+        setIsAppReady(true);
+        (window as any).__APP_READY__ = true;
+    };
+
+    startWork();
 
     const interval = setInterval(() => {
       spacetime.heartbeat(undefined).catch(err =>
@@ -64,7 +84,7 @@ function AppContent() {
     }, 30000); // 30s heartbeat
 
     return () => clearInterval(interval);
-  }, [username]);
+  }, [username, isServicesStarted]);
 
   // Load initial labs if not already loaded
   React.useEffect(() => {
@@ -72,7 +92,7 @@ function AppContent() {
       setLabs(INITIAL_LABS);
       logger.info('Loaded initial labs:', Object.keys(INITIAL_LABS).length);
     }
-  }, []);
+  }, [labs, setLabs]);
 
   const handleOnboardingComplete = (name: string) => {
     logger.info('Onboarding complete for user:', name);
@@ -80,6 +100,11 @@ function AppContent() {
     // Advance to walkthrough phase (step 2)
     setOnboardingStep(2);
   };
+
+  // Readiness Gate — ensuring the "Healing" architecture is strictly respected
+  if (!isAppReady) {
+    return <PageLoader />;
+  }
 
   return (
     <div className="h-full w-full bg-brutal-dark overflow-hidden flex flex-col">

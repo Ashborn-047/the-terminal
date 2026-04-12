@@ -26,6 +26,7 @@ export const TerminalComponent: React.FC = () => {
     const handleExecuteRef = useRef<any>(null);
     const getPromptRef = useRef<any>(null);
     const foregroundProcess = useTerminalStore((state) => state.foregroundProcess);
+    const engineStatus = useTerminalStore((state) => state.engineStatus);
     const sendSignal = useTerminalStore((state) => state.sendSignal);
     
     const [inputBuffer, setInputBuffer] = useState('');
@@ -58,18 +59,21 @@ export const TerminalComponent: React.FC = () => {
         term.loadAddon(fitAddon);
         term.loadAddon(new WebLinksAddon());
         
-        // Try to load Canvas addon (falls back to DOM if hardware accel is missing)
-        // CRITICAL: Skip canvas in MOCK mode (CI) or ifspecifically disabled to ensure 
-        // Playwright can reliably read terminal contents from the DOM.
-        const isMock = import.meta.env.VITE_MOCK_SPACETIME === 'true';
+        // ADAPTIVE RENDERER: We prioritize high-performance Canvas rendering, 
+        // but automatically "heal" to DOM rendering if the environment (CI/Headless/Legacy) 
+        // cannot support hardware acceleration.
         const isTesting = import.meta.env.MODE === 'test' || (window as any).PLAYWRIGHT_TESTING;
         
-        if (!isMock && !isTesting) {
+        // In E2E tests, we prefer DOM rendering for better text-selection and content-scraping reliability
+        if (!isTesting) {
             try {
                 term.loadAddon(new CanvasAddon());
+                console.info('[Terminal] Canvas renderer initialized.');
             } catch (e) {
-                console.warn('Xterm Canvas addon failed to load, falling back to DOM renderer', e);
+                console.warn('[Terminal] Canvas renderer failed. Falling back to DOM.', e);
             }
+        } else {
+            console.info('[Terminal] CI/Test mode detected. Using stable DOM renderer.');
         }
 
         term.open(terminalRef.current);
@@ -262,7 +266,12 @@ export const TerminalComponent: React.FC = () => {
                     </div>
                 )}
 
-                <div ref={terminalRef} className="w-full h-full overflow-hidden" data-testid="terminal-container" />
+                <div 
+                    ref={terminalRef} 
+                    className="w-full h-full overflow-hidden" 
+                    data-testid="terminal-container" 
+                    data-engine-status={engineStatus}
+                />
             </div>
         </div>
     );

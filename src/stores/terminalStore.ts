@@ -14,6 +14,8 @@ interface TerminalState {
     processes: Process[];
     jobs: any[];
     foregroundProcess: number | null;
+    nextPid: number; // For deterministic process IDs
+    engineStatus: 'booting' | 'ready' | 'busy';
     setProcesses: (processes: Process[]) => void;
     setJobs: (jobs: any[]) => void;
     addProcess: (process: Process) => void;
@@ -23,14 +25,18 @@ interface TerminalState {
     sendSignal: (pid: number, sig: Signal) => void;
     onSignal: (pid: number, handler: (sig: Signal) => void) => () => void;
     updateJobStatus: (jid: number, status: string) => void;
+    getNextPid: () => number;
+    setEngineStatus: (status: 'booting' | 'ready' | 'busy') => void;
 }
 
 const signalHandlers = new Map<number, Set<(sig: Signal) => void>>();
 
-export const useTerminalStore = create<TerminalState>((set) => ({
+export const useTerminalStore = create<TerminalState>((set, get) => ({
     processes: [],
     jobs: [],
     foregroundProcess: null,
+    nextPid: 1000,
+    engineStatus: 'booting',
     setProcesses: (processes) => set({ processes }),
     setJobs: (jobs) => set({ jobs }),
     addProcess: (process) => set((state) => ({ processes: [...state.processes, process] })),
@@ -43,7 +49,6 @@ export const useTerminalStore = create<TerminalState>((set) => ({
             handlers.forEach((handler) => handler(sig));
         }
         // Immediately remove from process table if it's a kill signal to sync UI state
-        // In reality, the process exiting should emit a signal to remove itself, but this is a PoC bridge
         if (sig === Signal.SIGKILL || sig === Signal.SIGTERM) {
             set((state) => ({ processes: state.processes.filter((p) => p.pid !== pid) }));
         }
@@ -68,4 +73,10 @@ export const useTerminalStore = create<TerminalState>((set) => ({
             }
         };
     },
+    getNextPid: () => {
+        const pid = get().nextPid;
+        set({ nextPid: pid + 1 });
+        return pid;
+    },
+    setEngineStatus: (status) => set({ engineStatus: status }),
 }));
