@@ -33,8 +33,9 @@ export async function typeCommand(page: Page, command: string) {
     );
     
     // 5. Ensure the terminal is focused with a significant delay for CI stability
+    // This gives the simulator engine a moment to bootstrap the shell
     await terminal.click({ force: true });
-    await page.waitForTimeout(1000); 
+    await page.waitForTimeout(3000); 
 
     // 6. Wait for the prompt character ($ or # or >) to ensure the terminal is fully interactive
     // Using a more lenient regex to accommodate various prompt states

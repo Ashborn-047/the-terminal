@@ -59,8 +59,12 @@ export const TerminalComponent: React.FC = () => {
         term.loadAddon(new WebLinksAddon());
         
         // Try to load Canvas addon (falls back to DOM if hardware accel is missing)
-        // Skip canvas in E2E tests to allow Playwright to read text content from DOM
-        if (!import.meta.env.VITE_MOCK_SPACETIME) {
+        // CRITICAL: Skip canvas in MOCK mode (CI) or ifspecifically disabled to ensure 
+        // Playwright can reliably read terminal contents from the DOM.
+        const isMock = import.meta.env.VITE_MOCK_SPACETIME === 'true';
+        const isTesting = import.meta.env.MODE === 'test';
+        
+        if (!isMock && !isTesting) {
             try {
                 term.loadAddon(new CanvasAddon());
             } catch (e) {
