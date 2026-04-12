@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { typeCommand, expectTerminalOutput } from './test-utils';
+import { typeCommand, verifyOutput } from './test-utils';
 
 /**
  * Full Regression Flow — End-to-End
@@ -116,17 +116,17 @@ test.describe('Full Regression Flow', () => {
 
         // Execute several commands
         await typeCommand(page, 'pwd');
-        await expectTerminalOutput(page, '/home/guest');
+        await verifyOutput(page, '/home/guest');
 
         await typeCommand(page, 'mkdir testdir');
 
         await typeCommand(page, 'ls');
-        await expectTerminalOutput(page, 'testdir');
+        await verifyOutput(page, 'testdir');
 
         await typeCommand(page, 'cd testdir');
 
         await typeCommand(page, 'pwd');
-        await expectTerminalOutput(page, '/home/guest/testdir');
+        await verifyOutput(page, '/home/guest/testdir');
 
         // Test command history (up arrow)
         // Wait for React state to settle and ensure focus
@@ -135,9 +135,9 @@ test.describe('Full Regression Flow', () => {
         await terminal.click();
         await page.keyboard.press('ArrowUp');
         // Note: xterm doesn't have a value property, we check if it's rendered
-        await expectTerminalOutput(page, 'pwd');
+        await verifyOutput(page, 'pwd');
         await page.keyboard.press('ArrowUp');
-        await expectTerminalOutput(page, 'cd testdir');
+        await verifyOutput(page, 'cd testdir');
     });
 
     test('page navigation works for all routes', async ({ page }) => {
