@@ -111,33 +111,38 @@ export const TerminalComponent: React.FC = () => {
         const ps1 = getPrompt();
         term.write(ps1);
 
-        // HARDENED STABILIZATION GATE: Visual Readiness Verification
-        // Instead of a brittle timer, we poll the DOM until the bash prompt is actually rendered.
-        // This ensures that 'ready' strictly means 'Visually Populated and Interactive'.
+        // DEFINITIVE STABILIZATION GATE: Instance-Aware Visual Readiness
+        // We poll the DOM until BOTH the welcome message and the bash prompt are rendered.
+        // We localize the start timer to this component instance to ensure resets on re-render.
+        const bootStart = Date.now();
         const checkVisualReadiness = () => {
             const text = terminalRef.current?.textContent || '';
             const promptExists = text.includes(`${userId}@linux-lab`);
             const welcomeExists = text.includes('Welcome to the Linux Simulator');
 
-            if (promptExists || welcomeExists) {
+            // Log polling status for CI diagnostics
+            if (Date.now() % 500 === 0) { // Log every ~500ms
+                console.debug(`[Terminal] Polling Readiness... Prompt: ${promptExists}, Welcome: ${welcomeExists}, TextLen: ${text.length}`);
+            }
+
+            if (promptExists && welcomeExists) {
                 useTerminalStore.getState().setEngineStatus('ready');
                 console.info('[Terminal] Visual readiness confirmed. Engine is READY.');
             } else {
-                // Poll every 50ms until visible (max 5 seconds for safety)
-                const start = (window as any)._terminalBootStart || Date.now();
-                (window as any)._terminalBootStart = start;
-                
-                if (Date.now() - start < 5000) {
+                // Poll every 50ms until visible (max 10 seconds for safety in CI)
+                if (Date.now() - bootStart < 10000) {
                     setTimeout(checkVisualReadiness, 50);
                 } else {
-                    console.warn('[Terminal] Visual readiness timeout. Forcing READY signal.');
+                    console.warn('[Terminal] Visual readiness timeout. Forcing READY signal.', {
+                        prompt: promptExists,
+                        welcome: welcomeExists,
+                        text: text.substring(0, 100)
+                    });
                     useTerminalStore.getState().setEngineStatus('ready');
                 }
             }
         };
 
-        // Initialize boot timer and start polling
-        (window as any)._terminalBootStart = Date.now();
         checkVisualReadiness();
 
         // Handle Input
