@@ -10,7 +10,13 @@ export async function waitForEngineReady(page: Page) {
 
     // 2. Wait for the Terminal Engine to signal 'ready' status
     const terminal = page.getByTestId('terminal-container');
-    await page.waitForSelector('[data-engine-status="ready"]', { timeout: 30000 });
+    try {
+        await page.waitForSelector('[data-engine-status="ready"]', { timeout: 30000 });
+    } catch (e) {
+        const text = await terminal.textContent();
+        console.error(`[Test Diagnostic] Engine readiness timeout. Current DOM text: "${text}"`);
+        throw e;
+    }
     
     return terminal;
 }
