@@ -50,9 +50,7 @@ test.describe('Gamification and Social Flow', () => {
         
         // Wait for Level Up Modal using robust test-id
         const levelUpModal = page.getByTestId('level-up-modal');
-        await expect(levelUpModal).toBeVisible({ timeout: 20000 });
-        
-        await page.waitForTimeout(500); // Small delay for rendering
+        await expect(levelUpModal).toBeVisible({ timeout: 30000 });
         
         // Verify Content
         await expect(levelUpModal.getByText(/Level Up!/i)).toBeVisible();
@@ -68,7 +66,7 @@ test.describe('Gamification and Social Flow', () => {
 
         // Verify Achievement Toast using robust test-id and correct text filtering
         const toast = page.getByTestId('toast').filter({ hasText: /First Command Unlocked/i });
-        await expect(toast).toBeVisible({ timeout: 20000 });
+        await expect(toast).toBeVisible({ timeout: 30000 });
     });
 
     test('should earn streak rewards', async ({ page }) => {

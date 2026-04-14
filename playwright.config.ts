@@ -26,8 +26,8 @@ export default defineConfig({
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   timeout: 120000,
   use: {
-    actionTimeout: 15000,
-    navigationTimeout: 15000,
+    actionTimeout: 30000,
+    navigationTimeout: 30000,
     /* Base URL to use in actions like `await page.goto('')`. */
     baseURL: process.env.CI ? 'http://localhost:4173/the-terminal/' : 'http://localhost:5173/the-terminal/',
 

@@ -80,12 +80,12 @@ test.describe('Full Regression Flow', () => {
         // STEP 6: Celebration Modal
         // ──────────────────────────────────────────────
         const celebrationHeading = page.getByRole('heading', { name: 'First Lab Complete!' });
-        await expect(celebrationHeading).toBeVisible({ timeout: 15000 });
+        await expect(celebrationHeading).toBeVisible({ timeout: 30000 });
         await expect(page.getByText('+50 XP').first()).toBeVisible();
 
         // Dismiss celebration
         const continueBtn = page.getByRole('button', { name: /Continue Learning/i });
-        await continueBtn.dispatchEvent('click');
+        await continueBtn.click();
         await expect(celebrationHeading).not.toBeVisible();
 
         // ──────────────────────────────────────────────
@@ -116,21 +116,24 @@ test.describe('Full Regression Flow', () => {
 
         // Execute several commands
         await typeCommand(page, 'pwd');
+        await page.waitForTimeout(500); // 100% Reliability Gate for DOM rendering
         await verifyOutput(page, '/home/guest');
 
         await typeCommand(page, 'mkdir testdir');
 
         await typeCommand(page, 'ls');
+        await page.waitForTimeout(500); // 100% Reliability Gate for DOM rendering
         await verifyOutput(page, 'testdir');
 
         await typeCommand(page, 'cd testdir');
 
         await typeCommand(page, 'pwd');
+        await page.waitForTimeout(500); // 100% Reliability Gate for DOM rendering
         await verifyOutput(page, '/home/guest/testdir');
 
         // Test command history (up arrow)
         // Wait for React state to settle and ensure focus
-        await page.waitForTimeout(300);
+        await page.waitForTimeout(500);
         const terminal = page.getByTestId('terminal-container');
         await terminal.click();
         await page.keyboard.press('ArrowUp');

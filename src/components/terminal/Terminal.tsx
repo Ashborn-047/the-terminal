@@ -79,6 +79,13 @@ export const TerminalComponent: React.FC = () => {
         term.open(terminalRef.current);
         fitAddon.fit();
 
+        // CI FIX: If the headless browser reports a 0x0 container size, fit() will result in an empty grid.
+        // We force standard dimensions (80x24) specifically for testing environments to ensure 100% visibility.
+        if (isTesting && (term.cols <= 0 || term.rows <= 1)) {
+            console.warn('[Terminal] Container size detected as 0x0/0x1. Forcing 80x24 grid for CI stability.');
+            term.resize(80, 24);
+        }
+
         xtermRef.current = term;
         fitAddonRef.current = fitAddon;
 

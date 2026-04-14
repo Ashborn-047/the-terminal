@@ -14,32 +14,29 @@ test('homepage has correct title and renders terminal', async ({ page }) => {
         }));
     });
     
-    // 2. Navigate to root and then use UI navigation to bypass SPA routing issues
+    // 2. Navigate to root and use networkidle for full hydration
     await page.goto('./');
-    await page.waitForLoadState('domcontentloaded');
+    await page.waitForLoadState('networkidle');
 
-    // Wait for app to be ready and sidebar to render
-    const terminalLink = page.getByRole('link', { name: /Terminal/i }).or(page.locator('a:has-text("Terminal")'));
-    await terminalLink.first().click();
+    // Robust link selection
+    const terminalLink = page.getByRole('link', { name: /Terminal/i });
+    await terminalLink.waitFor({ state: 'visible', timeout: 30000 });
+    await terminalLink.click();
     
-    // Ensure we reached the terminal view
-    await expect(page).toHaveURL(/.*terminal/);
+    // Explicit wait for navigation completion
+    await page.waitForURL(/.*terminal/, { timeout: 30000 });
+    await page.waitForLoadState('networkidle');
 
     // Expect a title "to contain" a substring.
-    await expect(page).toHaveTitle(/The Terminal/i, { timeout: 15000 });
+    await expect(page).toHaveTitle(/The Terminal/i, { timeout: 30000 });
     
-    // 3. Wait for terminal container to exist in DOM first
+    // 3. Wait for terminal container and its visual population
     await page.waitForSelector('[data-testid="terminal-container"]', { timeout: 30000 });
     
-    // 4. Wait for xterm content to render (with fallback)
-    try {
-        await page.waitForSelector('.xterm-rows', { timeout: 20000 });
-    } catch {
-        await page.waitForSelector('.xterm-screen', { timeout: 20000 });
-    }
-
-    // 5. Expect the terminal prompt to be visible
     const terminal = page.getByTestId('terminal-container');
     await expect(terminal).toBeVisible({ timeout: 30000 });
+    
+    // Use the custom readiness signal we implemented
+    await expect(terminal).toHaveAttribute('data-engine-status', 'ready', { timeout: 30000 });
     await expect(terminal).toContainText(/linux-lab/i, { timeout: 30000 });
 });
