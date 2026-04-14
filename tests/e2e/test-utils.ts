@@ -17,6 +17,10 @@ export async function waitForEngineReady(page: Page) {
         console.error(`[Test Diagnostic] Engine readiness timeout. Current DOM text: "${text}"`);
         throw e;
     }
+
+    // 3. SECONDARY GATE: Ensure the prompt is visually rendered in the DOM
+    // This prevents race conditions where 'ready' status fires before xterm flushes rows.
+    await expect(terminal).toContainText(/linux-lab|[$#>]/, { timeout: 15000 });
     
     return terminal;
 }

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { typeCommand, verifyOutput } from './test-utils';
+import { typeCommand, verifyOutput, waitForEngineReady } from './test-utils';
 
 /**
  * Full Regression Flow — End-to-End
@@ -16,10 +16,12 @@ import { typeCommand, verifyOutput } from './test-utils';
  */
 test.describe('Full Regression Flow', () => {
     test.beforeEach(async ({ page }) => {
-        // Start fresh — clear all localStorage before each test
+        // Start fresh — clear all localStorage and inject testing flag BEFORE navigation
+        await page.addInitScript(() => {
+            localStorage.clear();
+            (window as any).PLAYWRIGHT_TESTING = true;
+        });
         await page.goto('');
-        await page.evaluate(() => localStorage.clear());
-        await page.reload();
     });
 
     test('complete user journey: register → walkthrough → lab → celebrate → dashboard', async ({ page }) => {
@@ -102,17 +104,16 @@ test.describe('Full Regression Flow', () => {
     });
 
     test('terminal command execution and history navigation', async ({ page }) => {
-        // Set up completed onboarding
-        await page.goto('');
-        await page.evaluate(() => {
+        // Set up completed onboarding with persistent flag
+        await page.addInitScript(() => {
             localStorage.setItem('the-terminal-ui', JSON.stringify({
                 state: { onboardingComplete: true, username: 'guest', onboardingStep: 4 },
                 version: 0
             }));
+            (window as any).PLAYWRIGHT_TESTING = true;
         });
-        await page.reload();
-
         await page.goto('terminal');
+        await waitForEngineReady(page);
 
         // Execute several commands
         await typeCommand(page, 'pwd');
@@ -144,8 +145,7 @@ test.describe('Full Regression Flow', () => {
     });
 
     test('page navigation works for all routes', async ({ page }) => {
-        await page.goto('');
-        await page.evaluate(() => {
+        await page.addInitScript(() => {
             localStorage.setItem('the-terminal-ui', JSON.stringify({
                 state: { onboardingComplete: true, username: 'guest', onboardingStep: 4 },
                 version: 0
@@ -159,8 +159,9 @@ test.describe('Full Regression Flow', () => {
                 },
                 version: 0
             }));
+            (window as any).PLAYWRIGHT_TESTING = true;
         });
-        await page.reload();
+        await page.goto('');
 
         // Home
         await page.goto('');

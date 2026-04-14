@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { typeCommand } from './test-utils';
+import { typeCommand, waitForEngineReady } from './test-utils';
 
 test.describe('Curriculum and Lab Flow', () => {
     test.beforeEach(async ({ page }) => {
@@ -32,16 +32,11 @@ test.describe('Curriculum and Lab Flow', () => {
                 },
                 version: 0
             }));
+            (window as any).PLAYWRIGHT_TESTING = true;
         });
 
         await page.goto('');
-        await page.waitForLoadState('domcontentloaded');
-        
-        // Wait for store hydration
-        await page.waitForFunction(() => {
-            const ui = localStorage.getItem('the-terminal-ui');
-            return ui && JSON.parse(ui).state.onboardingComplete;
-        });
+        await page.waitForLoadState('networkidle');
     });
 
     test('should navigate through curriculum and complete lab flow', async ({ page }) => {
@@ -66,9 +61,8 @@ test.describe('Curriculum and Lab Flow', () => {
         await expect(page).toHaveURL(/\/lab\/lab-1-1/);
         await expect(page.getByText(/Your First Command/i).first()).toBeVisible();
         
-        // Wait for terminal prompt with extended timeout
-        const terminal = page.getByTestId('terminal-container');
-        await expect(terminal).toContainText(/[$#>]/, { timeout: 30000 });
+        // Wait for terminal prompt using the standardized readiness gate
+        await waitForEngineReady(page);
 
         // Step 4: Execute required step (pwd)
         await typeCommand(page, 'pwd');

@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { waitForEngineReady } from './e2e/test-utils';
 
 test('homepage has correct title and renders terminal', async ({ page }) => {
     // 1. Inject state BEFORE navigation to ensure hydration picks it up
@@ -12,6 +13,7 @@ test('homepage has correct title and renders terminal', async ({ page }) => {
             },
             version: 0
         }));
+        (window as any).PLAYWRIGHT_TESTING = true;
     });
     
     // 2. Navigate to root and use networkidle for full hydration
@@ -30,13 +32,6 @@ test('homepage has correct title and renders terminal', async ({ page }) => {
     // Expect a title "to contain" a substring.
     await expect(page).toHaveTitle(/The Terminal/i, { timeout: 30000 });
     
-    // 3. Wait for terminal container and its visual population
-    await page.waitForSelector('[data-testid="terminal-container"]', { timeout: 30000 });
-    
-    const terminal = page.getByTestId('terminal-container');
-    await expect(terminal).toBeVisible({ timeout: 30000 });
-    
-    // Use the custom readiness signal we implemented
-    await expect(terminal).toHaveAttribute('data-engine-status', 'ready', { timeout: 30000 });
-    await expect(terminal).toContainText(/linux-lab/i, { timeout: 30000 });
+    // Standardized Readiness Gate
+    await waitForEngineReady(page);
 });
