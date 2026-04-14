@@ -35,7 +35,7 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
     processes: [],
     jobs: [],
     foregroundProcess: null,
-    nextPid: 1000,
+    nextPid: 502,
     engineStatus: 'booting',
     setProcesses: (processes) => set({ processes }),
     setJobs: (jobs) => set({ jobs }),
