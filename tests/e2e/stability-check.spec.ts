@@ -10,6 +10,7 @@ test.describe('Engine Stability and Determinism Check', () => {
                 state: { onboardingComplete: true, username: 'guest', onboardingStep: 4 },
                 version: 0
             }));
+            (window as any).PLAYWRIGHT_TESTING = true;
         });
         await page.goto('terminal');
         await page.waitForLoadState('networkidle');

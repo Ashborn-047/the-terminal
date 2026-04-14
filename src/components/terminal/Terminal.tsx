@@ -62,7 +62,7 @@ export const TerminalComponent: React.FC = () => {
         // ADAPTIVE RENDERER: We prioritize high-performance Canvas rendering, 
         // but automatically "heal" to DOM rendering if the environment (CI/Headless/Legacy) 
         // cannot support hardware acceleration.
-        const isTesting = import.meta.env.MODE === 'test' || (window as any).PLAYWRIGHT_TESTING;
+        const isTesting = import.meta.env.MODE === 'test' || (window as any).PLAYWRIGHT_TESTING || navigator.userAgent.includes('Headless');
         
         // In E2E tests, we prefer DOM rendering for better text-selection and content-scraping reliability
         if (!isTesting) {
@@ -123,13 +123,13 @@ export const TerminalComponent: React.FC = () => {
         // We localize the start timer to this component instance to ensure resets on re-render.
         const bootStart = Date.now();
         const checkVisualReadiness = () => {
-            const text = terminalRef.current?.textContent || '';
-            const promptExists = text.includes(`${userId}@linux-lab`);
+            const text = terminalRef.current?.innerText || '';
+            const promptExists = text.includes('linux-lab');
             const welcomeExists = text.includes('Welcome to the Linux Simulator');
 
             // Log polling status for CI diagnostics
             if (Date.now() % 500 === 0) { // Log every ~500ms
-                console.debug(`[Terminal] Polling Readiness... Prompt: ${promptExists}, Welcome: ${welcomeExists}, TextLen: ${text.length}`);
+                console.debug(`[Terminal] Polling Readiness... TextLen: ${text.length}, Prompt: ${promptExists}, Welcome: ${welcomeExists}`);
             }
 
             if (promptExists && welcomeExists) {
