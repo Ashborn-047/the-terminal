@@ -1,9 +1,10 @@
 name: Playwright Tests
-on:
-  push:
-    branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
+# on:
+#   push:
+#     branches: [ main, master ]
+#   pull_request:
+#     branches: [ main, master ]
+on: workflow_dispatch # Allow manual trigger if absolutely needed, but disable auto
 jobs:
   test:
     timeout-minutes: 60

@@ -203,7 +203,10 @@ export function useTerminal() {
                     if (path.startsWith('/')) return path;
                     const base = context.cwd === '/' ? '/' : context.cwd + '/';
                     return base + path;
-                }
+                },
+                // Wave 2 Hardening: Provide default noop implementations to prevent runtime crashes
+                onSignal: (handler) => console.debug('[Terminal] Base context signal handler registered for command.'),
+                isInterrupted: () => false
             };
 
             result = await executorRef.current.execute(ast, context, shellEnvRef.current);

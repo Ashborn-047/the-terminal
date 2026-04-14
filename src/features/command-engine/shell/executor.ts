@@ -16,6 +16,7 @@ import { Parser } from './parser';
 import { CommandRegistry } from '../registry';
 import { CommandContext, CommandResult } from '../types';
 import { formatError } from '../../../utils/error_codes';
+import { useTerminalStore } from '../../../stores/terminalStore';
 
 export class ShellExecutor {
     private vfs: VFS;
@@ -275,7 +276,8 @@ export class ShellExecutor {
     
     private async launchBackgroundJob(node: CommandNode | PipelineNode, context: CommandContext, env: ShellEnvironment): Promise<CommandResult> {
         const commandText = this.getCommandText(node);
-        const pid = Math.floor(Math.random() * 9000) + 1000;
+        const terminalStore = useTerminalStore.getState();
+        const pid = terminalStore.getNextPid();
         
         const promise = node.type === NodeType.COMMAND 
             ? this.executeCommand(node as CommandNode, context, env)
