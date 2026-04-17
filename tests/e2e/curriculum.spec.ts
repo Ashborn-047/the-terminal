@@ -43,8 +43,8 @@ test.describe('Curriculum and Lab Flow', () => {
         // Step 1: Start at Home to ensure store hydration
         await page.goto('/');
         
-        // Wait for activity bar to be visible
-        const curriculumLink = page.getByRole('button', { name: /Curriculum/i });
+        // Wait for activity bar to be visible and select the specific navigation button
+        const curriculumLink = page.locator('aside').getByRole('button', { name: 'Curriculum' });
         await expect(curriculumLink).toBeVisible({ timeout: 15000 });
         await curriculumLink.click();
 
