@@ -1,6 +1,12 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('User Onboarding Flow', () => {
+    test.beforeEach(async ({ page }) => {
+        await page.addInitScript(() => {
+            (window as any).PLAYWRIGHT_TESTING = true;
+        });
+    });
+
     test('should complete the full onboarding journey', async ({ page }) => {
         // 1. Visit the landing page
         await page.goto('');

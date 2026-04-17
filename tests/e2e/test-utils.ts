@@ -22,6 +22,9 @@ export async function waitForEngineReady(page: Page) {
     // This prevents race conditions where 'ready' status fires before xterm flushes rows.
     await expect(terminal).toContainText(/linux-lab|[$#>]/, { timeout: 15000 });
     
+    // 4. Final 200ms grace period for Webkit font rendering stability
+    await page.waitForTimeout(200);
+    
     return terminal;
 }
 

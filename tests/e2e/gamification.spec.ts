@@ -27,21 +27,23 @@ test.describe('Gamification and Social Flow', () => {
                     labsCompleted: 0,
                     hintsUsed: 0,
                     dailyQuests: [],
-                    lastQuestGenerationDate: null,
                     version: '3.1'
                 },
                 version: 0
             }));
+            (window as any).PLAYWRIGHT_TESTING = true;
         });
 
         await page.goto('terminal');
         await page.waitForLoadState('networkidle');
 
-        // Wait for store hydration
+        // Wait for store hydration and engine readiness
         await page.waitForFunction(() => {
             const ui = localStorage.getItem('the-terminal-ui');
             return ui && JSON.parse(ui).state.onboardingComplete;
         });
+        const { waitForEngineReady } = require('./test-utils');
+        await waitForEngineReady(page);
     });
 
     test('should trigger level-up modal on XP threshold', async ({ page }) => {
