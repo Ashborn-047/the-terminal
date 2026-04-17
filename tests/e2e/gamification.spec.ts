@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { typeCommand } from './test-utils';
+import { typeCommand, waitForEngineReady } from './test-utils';
 
 test.describe('Gamification and Social Flow', () => {
     test.beforeEach(async ({ page }) => {
@@ -42,7 +42,6 @@ test.describe('Gamification and Social Flow', () => {
             const ui = localStorage.getItem('the-terminal-ui');
             return ui && JSON.parse(ui).state.onboardingComplete;
         });
-        const { waitForEngineReady } = require('./test-utils');
         await waitForEngineReady(page);
     });
 

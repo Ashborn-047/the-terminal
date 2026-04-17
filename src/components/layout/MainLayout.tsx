@@ -23,6 +23,7 @@ const ActivityBarItem: React.FC<SidebarItemProps> = ({ icon, label, path, active
     <div className="relative group w-full flex justify-center py-4">
         <button
             onClick={locked ? undefined : onClick}
+            aria-label={label}
             className={`relative p-2 transition-all ${locked
                 ? 'text-brutal-gray/30 cursor-not-allowed'
                 : active

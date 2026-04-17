@@ -20,8 +20,8 @@ test('homepage has correct title and renders terminal', async ({ page }) => {
     await page.goto('./');
     await page.waitForLoadState('networkidle');
 
-    // Robust link selection with forced click to bypass potential headless visibility issues
-    const terminalLink = page.getByRole('link', { name: /Terminal/i });
+    // Robust link selection using the newly added aria-label and correct role
+    const terminalLink = page.getByRole('button', { name: /Terminal/i });
     await terminalLink.click({ force: true });
     
     // Explicit wait for navigation completion
