@@ -206,10 +206,62 @@ export function useTerminal() {
                 },
                 // Wave 2 Hardening: Provide default noop implementations to prevent runtime crashes
                 onSignal: (handler) => console.debug('[Terminal] Base context signal handler registered for command.'),
-                isInterrupted: () => false
+                isInterrupted: () => false,
+                waitIfSuspended: async () => {}
             };
 
-            result = await executorRef.current.execute(ast, context, shellEnvRef.current);
+            const terminalStore = useTerminalStore.getState();
+            const pid = terminalStore.getNextPid();
+            
+            // Get first command name for job entry
+            const getFirstCmdName = (node: any): string | null => {
+                if (node.type === 0) return node.name; // NodeType.COMMAND
+                if (node.type === 1) return getFirstCmdName(node.commands[0]); // NodeType.PIPELINE
+                if (node.type === 2 || node.type === 3) return getFirstCmdName(node.left); // LOGICAL
+                if (node.type === 7) return getFirstCmdName(node.nodes[0]); // SEQUENCE
+                return null;
+            };
+            const cmdNameAttempt = getFirstCmdName(ast);
+
+            // Create the promise first
+            const executionPromise = executorRef.current.execute(ast, context, shellEnvRef.current);
+            
+            // Add to job manager as a foreground job
+            const job = jobManagerRef.current.addJob(trimmedInput, [{ 
+                pid, 
+                name: cmdNameAttempt || trimmedInput.split(' ')[0], 
+                promise: executionPromise 
+            }], true);
+
+            // Create a promise that resolves if the job is suspended
+            const suspensionPromise = new Promise<CommandResult>((resolve) => {
+                const checkSuspension = (updatedJobs: any[]) => {
+                    const currentJob = updatedJobs.find(j => j.id === job.id);
+                    if (currentJob && currentJob.state === 'STOPPED') {
+                        jobManagerRef.current.removeListener(checkSuspension);
+                        resolve({ output: '', exitCode: 148, suspended: true } as any);
+                    }
+                };
+                jobManagerRef.current.addListener(checkSuspension);
+                
+                // Cleanup listener if the execution finishes normally
+                executionPromise.finally(() => {
+                    jobManagerRef.current.removeListener(checkSuspension);
+                    // This resolve is just to unblock the race if the main promise wins
+                    resolve({ output: '', exitCode: 0 } as any); 
+                });
+            });
+
+            // Assign jobId to context so waitIfSuspended works
+            context.jobId = job.id;
+
+            result = await Promise.race([executionPromise, suspensionPromise]);
+            
+            if ((result as any).suspended) {
+                console.log(`[Terminal] Job ${job.id} suspended. Returning prompt.`);
+                setEngineStatus('ready');
+                return result; // Terminal.tsx handles the prompt
+            }
             console.log(`[Terminal] Result: exitCode=${result.exitCode}, outputLen=${result.output?.length}, error=${result.error}`);
 
             // Lab Verification Logic
@@ -259,14 +311,7 @@ export function useTerminal() {
             updateQuestProgress('execute_commands', 1);
             
             // Use AST for command detection
-            const getFirstCmdName = (node: any): string | null => {
-                if (node.type === 0) return node.name; // NodeType.COMMAND
-                if (node.type === 1) return getFirstCmdName(node.commands[0]); // NodeType.PIPELINE
-                if (node.type === 2 || node.type === 3) return getFirstCmdName(node.left); // LOGICAL
-                if (node.type === 7) return getFirstCmdName(node.nodes[0]); // SEQUENCE
-                return null;
-            };
-            const cmdName = getFirstCmdName(ast);
+            const cmdName = cmdNameAttempt;
 
             // Phase 3.3: Sudden Death (Hardcore Mode)
             if (cmdName === 'kill' && trimmedInput.match(/-9|-KILL/)) {

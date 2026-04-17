@@ -25,52 +25,79 @@ export class ShellExecutor {
         this.vfs = vfs;
     }
 
-    public async execute(node: ASTNode, context: CommandContext, env: ShellEnvironment): Promise<CommandResult> {
+    public async execute(node: ASTNode, context: CommandContext, env: ShellEnvironment, isRoot: boolean = true): Promise<CommandResult> {
         this.lastContext = context;
         if (context.isInterrupted()) {
             return { output: '', exitCode: 130 };
         }
 
+        let result: CommandResult;
         switch (node.type) {
             case NodeType.COMMAND: {
                 const cmdNode = node as CommandNode;
                 if (cmdNode.background) {
-                    return this.launchBackgroundJob(cmdNode, context, env);
+                    result = await this.launchBackgroundJob(cmdNode, context, env);
+                } else {
+                    result = await this.executeCommand(cmdNode, context, env);
                 }
-                return this.executeCommand(cmdNode, context, env);
+                break;
             }
             case NodeType.PIPELINE: {
                 const pipeNode = node as PipelineNode;
                 // If the last command in pipeline is backgrounded, the whole pipeline is
                 if (pipeNode.commands[pipeNode.commands.length - 1].background) {
-                    return this.launchBackgroundJob(pipeNode, context, env);
+                    result = await this.launchBackgroundJob(pipeNode, context, env);
+                } else {
+                    result = await this.executePipeline(pipeNode, context, env);
                 }
-                return this.executePipeline(pipeNode, context, env);
+                break;
             }
             case NodeType.LOGICAL_AND:
-                return this.executeLogical(node as LogicalNode, context, env, '&&');
+                result = await this.executeLogical(node as LogicalNode, context, env, '&&');
+                break;
             case NodeType.LOGICAL_OR:
-                return this.executeLogical(node as LogicalNode, context, env, '||');
+                result = await this.executeLogical(node as LogicalNode, context, env, '||');
+                break;
             case NodeType.IF:
-                return this.executeIf(node as IfNode, context, env);
+                result = await this.executeIf(node as IfNode, context, env);
+                break;
             case NodeType.FOR:
-                return this.executeFor(node as ForNode, context, env);
+                result = await this.executeFor(node as ForNode, context, env);
+                break;
             case NodeType.WHILE:
-                return this.executeWhile(node as WhileNode, context, env);
+                result = await this.executeWhile(node as WhileNode, context, env);
+                break;
             case NodeType.SUBSHELL:
-                return this.executeSubshell(node as SubshellNode, context, env);
+                result = await this.executeSubshell(node as SubshellNode, context, env);
+                break;
             case NodeType.SEQUENCE:
                 // For sequences at the root, we might have multiple nodes
                 const seq = (node as any).nodes as ASTNode[];
                 let lastResult: CommandResult = { output: '', exitCode: 0 };
                 for (const n of seq) {
-                    lastResult = await this.execute(n, context, env);
+                    lastResult = await this.execute(n, context, env, false);
                     if (context.isInterrupted()) break;
                 }
-                return lastResult;
+                result = lastResult;
+                break;
             default:
                 throw new Error(`Unsupported node type: ${NodeType[node.type]}`);
         }
+
+        // Exhaust stream at the top level for complete output reconciliation
+        if (isRoot && result.stream) {
+            result.output = result.output || '';
+            try {
+                for await (const chunk of result.stream) {
+                    result.output += chunk;
+                }
+            } catch (e) {
+                console.error("Error exhausting stream:", e);
+            }
+            result.stream = undefined;
+        }
+
+        return result;
     }
 
     private async executeCommand(node: CommandNode, context: CommandContext, env: ShellEnvironment, pipeInput?: string | AsyncGenerator<string>): Promise<CommandResult> {
@@ -114,15 +141,26 @@ export class ShellExecutor {
             }
         }
 
-        // 4. Run Command
+        // 4. Setup Signal Helpers & Context
+        // We capture the jobId for this command if it has one (or will have one)
+        let currentJobId: number | undefined = (node as any).jobId;
+
+        const waitIfSuspended = async () => {
+            if (!currentJobId) return;
+            const job = context.jobManager.getJob(currentJobId);
+            if (job && job.state === 'STOPPED') {
+                await context.jobManager.waitForResume(currentJobId);
+            }
+        };
+
+        // Run Command
         try {
-            // Ensure context has signal helpers if backgrounded
             const activeContext: CommandContext = {
                 ...context,
-                isInterrupted: () => context.jobManager.isJobInterrupted(expandedName),
+                isInterrupted: () => context.jobManager?.isJobInterrupted(expandedName) || context.isInterrupted?.() || false,
+                waitIfSuspended: waitIfSuspended,
                 onSignal: (handler) => {
                     // This is a proxy to the current foreground job if needed
-                    // For now, commands in background jobs don't easily get signals unless targeted
                 }
             };
             const result = await commandFn(expandedArgs, activeContext, inputOverwrite || pipeInput || '');
@@ -240,7 +278,7 @@ export class ShellExecutor {
 
     private async executeSubshell(node: SubshellNode, context: CommandContext, env: ShellEnvironment): Promise<CommandResult> {
         const childEnv = env.createChild();
-        return this.execute(node.pipeline, context, childEnv);
+        return this.execute(node.pipeline, context, childEnv, false);
     }
 
     private async expand(text: string, env: ShellEnvironment): Promise<string> {
@@ -279,6 +317,11 @@ export class ShellExecutor {
         const terminalStore = useTerminalStore.getState();
         const pid = terminalStore.getNextPid();
         
+        // Assign the ID to the node so executeCommand can use it
+        // We'll calculate the next job ID from the manager
+        const jobId = (context.jobManager as any).nextJobId; 
+        (node as any).jobId = jobId;
+
         const promise = node.type === NodeType.COMMAND 
             ? this.executeCommand(node as CommandNode, context, env)
             : this.executePipeline(node as PipelineNode, context, env);

@@ -8,6 +8,7 @@ import { spacetime } from '../lib/spacetime';
 import { logger } from '../utils/logger';
 import { HardcoreProfile, MasteryBadge } from '../features/lab-engine/hardcore';
 import { XP_BASE, XP_MULTIPLIER, STREAK_BONUS_TIERS, HARDCORE_XP_MULTIPLIER, BASE_LAB_XP } from '../config/progression';
+import { useQuestStore } from './questStore';
 import { useHardcoreStore } from './hardcoreStore';
 import { VFS } from '../features/vfs/vfs';
 import { VerificationEngine } from '../features/lab-engine/verification';
@@ -138,6 +139,13 @@ interface GamificationState {
     version: string;
     needsMigrationNotice: boolean;
     
+    questTemplates: {
+        type: QuestType;
+        title: string;
+        baseTarget: number;
+        xpReward: number;
+    }[];
+
     // Phase 3.3: Mastery
     masteryBadge: MasteryBadge;
     labCompletionHistory: Record<string, { completions: number; lastCompleted: number }>;
@@ -184,6 +192,15 @@ export const useGamificationStore = create<GamificationState>()(
             needsMigrationNotice: false,
             masteryBadge: 'novice',
             labCompletionHistory: {},
+
+            questTemplates: [
+                { type: 'earn_xp', title: 'Gain {{target}} XP', baseTarget: 250, xpReward: 50 },
+                { type: 'complete_labs', title: 'Complete {{target}} Labs', baseTarget: 1, xpReward: 100 },
+                { type: 'execute_commands', title: 'Execute {{target}} Commands', baseTarget: 20, xpReward: 40 },
+                { type: 'execute_commands', title: 'Terminal Mastery: {{target}} Commands', baseTarget: 50, xpReward: 100 },
+                { type: 'complete_labs', title: 'Lab Marathon: {{target}} Labs', baseTarget: 3, xpReward: 250 },
+                { type: 'earn_xp', title: 'XP Hunter: {{target}} XP', baseTarget: 1000, xpReward: 200 },
+            ],
 
             addXp: (amount) => {
                 set((state) => {
@@ -302,8 +319,9 @@ export const useGamificationStore = create<GamificationState>()(
                 const xpAfterDiminishing = get().calculateReplayXp(labId, baseXP);
                 const totalBase = xpAfterDiminishing + bonusXP;
 
-                // 4. Apply Multipliers (Hardcore + Streak)
-                const finalXpGain = get().calculateTotalXpGain(totalBase);
+                // 4. Apply Multipliers (Hardcore + Streak + Daily Quest)
+                const questMultiplier = useQuestStore.getState().getQuestMultiplier(labId);
+                const finalXpGain = Math.floor(get().calculateTotalXpGain(totalBase) * questMultiplier);
 
                 // 5. Update State
                 set((state) => ({
@@ -398,6 +416,9 @@ export const useGamificationStore = create<GamificationState>()(
             },
 
             incrementCounter: (target, amount = 1) => {
+                if (target === 'commands-executed') {
+                    get().updateQuestProgress('execute_commands', amount);
+                }
                 set((state) => ({
                     counters: {
                         ...state.counters,
@@ -456,13 +477,32 @@ export const useGamificationStore = create<GamificationState>()(
             generateDailyQuests: () => {
                 const today = new Date().toISOString().split('T')[0];
                 const state = get();
-                if (state.lastQuestGenerationDate === today) return;
+                if (state.lastQuestGenerationDate === today && state.dailyQuests.length > 0) return;
 
-                const newQuests: DailyQuest[] = [
-                    { id: `q1-${today}`, title: 'Gain 250 XP', type: 'earn_xp', target: 250, progress: 0, xpReward: 50, completed: false, claimed: false },
-                    { id: `q2-${today}`, title: 'Complete 2 Labs', type: 'complete_labs', target: 2, progress: 0, xpReward: 100, completed: false, claimed: false },
-                    { id: `q3-${today}`, title: 'Execute 50 Commands', type: 'execute_commands', target: 50, progress: 0, xpReward: 75, completed: false, claimed: false },
-                ];
+                const { questTemplates, level } = state;
+                const dailyCount = 3;
+                
+                // Shuffle and pick templates
+                const shuffled = [...questTemplates].sort(() => 0.5 - Math.random());
+                const selected = shuffled.slice(0, dailyCount);
+
+                const newQuests: DailyQuest[] = selected.map((template, index) => {
+                    // Scale target by level (roughly 10% increase per 5 levels)
+                    const levelScale = 1 + Math.floor(level / 5) * 0.1;
+                    const finalTarget = Math.round(template.baseTarget * levelScale);
+                    const finalReward = Math.round(template.xpReward * levelScale);
+
+                    return {
+                        id: `q${index}-${today}`,
+                        title: template.title.replace('{{target}}', finalTarget.toString()),
+                        type: template.type,
+                        target: finalTarget,
+                        progress: 0,
+                        xpReward: finalReward,
+                        completed: false,
+                        claimed: false
+                    };
+                });
 
                 set({ dailyQuests: newQuests, lastQuestGenerationDate: today });
             },

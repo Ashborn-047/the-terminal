@@ -3,6 +3,7 @@ import { VFS } from '../../vfs/vfs';
 import { CommandExecutor } from '../executor';
 import { CommandParser } from '../parser';
 import { CommandContext, Signal } from '../types';
+import { JobManager } from '../shell/jobManager';
 import '../commands'; // Register commands
 
 describe('Manual Smoke Tests — Architectural Hardening Verification', () => {
@@ -40,6 +41,12 @@ describe('Manual Smoke Tests — Architectural Hardening Verification', () => {
             removeSignalHandler: () => {},
             isInterrupted: () => false,
             resolvePath: (p: string) => p.startsWith('/') ? p : `/${p}`,
+            waitIfSuspended: async () => {},
+            jobManager: new JobManager((j) => {
+                terminalStore.setState({ jobs: j });
+                context.jobs = j;
+            }),
+            jobId: undefined
         };
     });
 

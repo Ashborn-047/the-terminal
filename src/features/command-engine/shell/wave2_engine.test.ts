@@ -75,7 +75,8 @@ describe('Wave 2 Engine Restoration', () => {
             await run('sleep 100 &');
             await run('kill %1');
             const jobs = jobManager.listJobs();
-            expect(jobs.length).toBe(0);
+            expect(jobs.length).toBe(1);
+            expect(jobs[0].state).toBe(JobState.TERMINATED);
         });
     });
 

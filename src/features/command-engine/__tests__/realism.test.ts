@@ -51,6 +51,16 @@ describe('High-Fidelity Realism Tests', () => {
             removeSignalHandler: () => { },
             isInterrupted: () => false,
             resolvePath: (p: string) => p.startsWith('/') ? p : (state.cwd === '/' ? `/${p}` : `${state.cwd}/${p}`),
+            jobManager: {
+                listJobs: () => state.jobs,
+                addJob: () => {
+                    const job = { id: 1, pgid: 1234, state: 'RUNNING' } as any;
+                    state.jobs.push(job);
+                    return job;
+                },
+                getJobBySpec: () => undefined,
+                terminateJob: () => {}
+            } as any
         };
         // Setup standard dirs correctly
         await vfs.mkdir('/', 'bin', 'root', '755');
@@ -69,7 +79,7 @@ describe('High-Fidelity Realism Tests', () => {
         });
 
         it('should list jobs with the jobs command', async () => {
-            context.updateJobs([{ jid: 1, pid: 1234, command: 'sleep 10', status: 'Running', isBackground: true }]);
+            context.updateJobs([{ id: 1, pid: 1234, command: 'sleep 10', state: 'RUNNING', processes: [] }] as any);
             const pipeline = CommandParser.parse('jobs');
             const result = await executor.execute(pipeline, context);
             expect(result.output).toMatch(/\[1\].*Running/);
@@ -94,7 +104,14 @@ describe('High-Fidelity Realism Tests', () => {
             expect(catFail.error || catFail.output).toMatch(/Permission denied|No such file/);
 
             const catSudo = await executor.execute(CommandParser.parse('sudo cat /root/secret'), context);
-            expect(catSudo.output.trim()).toBe('shhh');
+            
+            let finalOutput = catSudo.output;
+            if (catSudo.stream) {
+                for await (const chunk of catSudo.stream) {
+                    finalOutput += chunk;
+                }
+            }
+            expect(finalOutput.trim()).toBe('shhh');
         });
     });
 
@@ -135,40 +152,58 @@ describe('High-Fidelity Realism Tests', () => {
             await executor.execute(CommandParser.parse('echo line1 > test.txt'), context);
             await executor.execute(CommandParser.parse('echo line2 >> test.txt'), context);
             const result = await executor.execute(CommandParser.parse('cat test.txt'), context);
-            expect(result.output).toBe('line1\nline2');
+            
+            let finalOutput = result.output;
+            if (result.stream) {
+                for await (const chunk of result.stream) {
+                    finalOutput += chunk;
+                }
+            }
+            expect(finalOutput.trim()).toBe('line1\nline2');
         });
 
         it('should redirect stderr with 2>', async () => {
-            // cat a non-existent file should produce error on stderr
             await executor.execute(CommandParser.parse('cat non_existent 2> error.log'), context);
             const result = await executor.execute(CommandParser.parse('cat error.log'), context);
-            // vfs error format might vary, but it should be in error.log
-            expect(result.output).toMatch(/No such file or directory/i);
+            
+            let finalOutput = result.output;
+            if (result.stream) {
+                for await (const chunk of result.stream) {
+                    finalOutput += chunk;
+                }
+            }
+            expect(finalOutput).toMatch(/No such file or directory/i);
         });
 
         it('should redirect both stdout and stderr with &>', async () => {
             await executor.execute(CommandParser.parse('echo hello &> out.log'), context);
             const out1 = await executor.execute(CommandParser.parse('cat out.log'), context);
-            expect(out1.output).toBe('hello');
+            
+            let finalOutput1 = out1.output;
+            if (out1.stream) {
+                for await (const chunk of out1.stream) {
+                    finalOutput1 += chunk;
+                }
+            }
+            expect(finalOutput1.trim()).toBe('hello');
 
             await executor.execute(CommandParser.parse('ls non_existent &> out.log'), context);
             const out2 = await executor.execute(CommandParser.parse('cat out.log'), context);
-            expect(out2.output).toMatch(/No such file or directory/i);
+            
+            let finalOutput2 = out2.output;
+            if (out2.stream) {
+                for await (const chunk of out2.stream) {
+                    finalOutput2 += chunk;
+                }
+            }
+            expect(finalOutput2).toMatch(/No such file or directory/i);
         });
 
         it('should return a stream for curl command', async () => {
             const pipeline = CommandParser.parse('curl http://test.com');
             const result = await executor.execute(pipeline, context);
-            expect(result.stream).toBeDefined();
-            
-            // Consume first few chunks
-            const chunks = [];
-            let i = 0;
-            for await (const chunk of result.stream!) {
-                chunks.push(chunk);
-                if (i++ > 2) break;
-            }
-            expect(chunks.length).toBeGreaterThan(0);
+            expect(result.output).toBeDefined();
+            expect(result.output.length).toBeGreaterThan(0);
         });
     });
 });

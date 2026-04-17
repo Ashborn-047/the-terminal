@@ -112,6 +112,7 @@ export const brokenSystemLabs: Lab[] = [
         difficulty: 'EXPERT',
         xpReward: 250,
         prerequisites: ['bs-02'],
+        requiredLevel: 5,
         scenarioId: 'suid_shell_leak',
         verification: {
             conditions: [
@@ -248,5 +249,34 @@ export const brokenSystemLabs: Lab[] = [
         ],
         completionMessage: 'Key secured. SSH will no longer complain about insecure permissions.',
         tags: ['security', 'ssh']
+    },
+    {
+        id: 'bs-11',
+        module: 3,
+        title: 'Mastery Admin Challenge',
+        description: 'ULTIMATE EXAM: A composite scenario where permissions are ruined, paths are hijacked, and logs are spammed. Fix everything to prove you are a System Administrator.',
+        type: 'diy',
+        difficulty: 'MASTER',
+        xpReward: 1000,
+        prerequisites: ['bs-05', 'bs-09'],
+        requiredLevel: 15,
+        scenarioId: 'mastery_admin_challenge',
+        verification: {
+            conditions: [
+                {
+                    type: 'file_not_exists',
+                    path: '/usr/local/bin/ls',
+                    message: 'Remove the fake ls binary'
+                },
+                {
+                    type: 'permission_equals',
+                    path: '/etc/shadow',
+                    mode: '640',
+                    message: 'Secure /etc/shadow'
+                }
+            ]
+        },
+        completionMessage: 'INCREDIBLE! You survived the Mastery Admin Challenge. You are worthy of the root user.',
+        tags: ['mastery', 'hacker', 'admin']
     }
 ];

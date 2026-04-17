@@ -57,6 +57,7 @@ export interface Lab {
     parXpBonus?: number;
     tags?: string[];
     author?: string;
+    requiredLevel?: number;
 }
 
 export interface LabProgress {

@@ -9,10 +9,10 @@
 | **Unified Completion** | ✅ Complete | `gamificationStore.ts` (processLabCompletion) | Single atomic transaction for rewards and verification. |
 | **Mastery Badges** | ✅ Complete | `src/components/terminal/Terminal.tsx` | Dynamic PS1 prompt badges (e.g., [KERNEL]). |
 | **Streak Fire Emoji** | ✅ Complete | `Terminal.tsx` (getPrompt) | Dynamic fire emoji for streaks >= 3 days. |
-| **Protected Paths** | ❌ Missing | `vfs.ts` | VFS does not yet strictly block writes to `/bin`, `/etc` in Hardcore mode. |
-| **Daily Rotation** | ❌ Missing | N/A | Automated quest generation and daily refresh logic is pending. |
-| **Mentor Mode** | ❌ Missing | N/A | SpacetimeDB real-time terminal mirroring and observation UI. |
-| **Mastery Challenges** | ⚠️ Partial | `src/features/lab-engine/scenarios.ts` | Scenario composites exist, but UI level-gating is missing. |
+| **Protected Paths** | ✅ Complete | `vfs.ts`, `hardcoreStore.ts` | VFS `rm`/`mv`/`chmod`/`chown` enforce `checkDestructiveAction()` on protected system paths. |
+| **Daily Rotation** | ✅ Complete | `src/stores/questStore.ts` | Deterministic daily rotation via `seedrandom`, 2x XP multiplier wired into `gamificationStore`. |
+| **Mentor Mode** | ✅ Complete | `src/lib/spacetime/index.ts`, `src/features/multiplayer/MentorMode.tsx` | `broadcastTerminalStream` + `joinMentorSession` reducers, observer UI overlay. |
+| **Mastery Challenges** | ✅ Complete | `ChallengeArena.tsx`, `broken_systems.ts` | Per-lab `requiredLevel` gating, `bs-11` Mastery Admin Challenge at Level 15. |
 
 ---
 

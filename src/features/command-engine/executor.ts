@@ -14,6 +14,28 @@ export class CommandExecutor {
         this.vfs = vfs;
     }
 
+    private async exhaustStream(stream: ReadableStream<string> | any): Promise<string> {
+        let content = '';
+        if (!stream) return content;
+
+        if (typeof stream.getReader === 'function') {
+            const reader = stream.getReader();
+            try {
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    content += value;
+                }
+            } finally {
+                reader.releaseLock();
+            }
+        } else if (stream[Symbol.asyncIterator]) {
+            for await (const chunk of stream) {
+                content += chunk;
+            }
+        }
+        return content;
+    }
 
     public async execute(pipeline: CommandPipeline, context: CommandContext, abortController?: AbortController): Promise<CommandResult> {
         let lastOutput: string | AsyncGenerator<string> = '';
@@ -38,19 +60,54 @@ export class CommandExecutor {
                 if (!commandFn) {
                     // Script Fallback: If it's a file in VFS, interpret it line-by-line
                     const scriptPath = getAbsolutePath(action.name, context.cwd);
-                    const inode = this.vfs.getMetadata(scriptPath, context.userId, context.groups);
-                    if (typeof inode !== 'string' && inode.type === 'file') {
+                    const meta = this.vfs.getMetadata(scriptPath, context.userId, context.groups);
+                    
+                    if (typeof meta !== 'string' && meta.type === 'file') {
                         commandFn = async (args, ctx, input) => {
-                            const lines = (inode.content || '').split('\n').filter(l => l.trim() && !l.startsWith('#!'));
-                            let finalResult: CommandResult = { output: '', exitCode: 0 };
-                            for (const line of lines) {
-                                // Simple line-by-line execution
-                                const p = CommandParser.parse(line);
-                                // Pass current input only to the first command? 
-                                // Standard bash script doesn't pass stdin to every line.
-                                finalResult = await this.execute(p, ctx);
+                            // Re-fetch metadata inside the execution scope to ensure we have current content
+                            const currentMeta = this.vfs.getMetadata(scriptPath, ctx.userId, ctx.groups);
+                            if (typeof currentMeta === 'string' || currentMeta.type !== 'file') {
+                                return { output: '', error: `bash: ${scriptPath}: No such file or directory`, exitCode: 127 };
                             }
-                            return finalResult;
+
+                            const content = currentMeta.content || '';
+                            const lines = content.split('\n').filter(l => l.trim() && !l.startsWith('#!'));
+                            let finalOutput = '';
+                            let finalError = '';
+                            let lastExitCode = 0;
+                            
+                            for (const line of lines) {
+                                console.log(`[DEBUG SCRIPT] Executing line: "${line}" with userId: ${ctx.userId}`);
+                                // Support compound commands (;, &&, ||)
+                                try {
+                                    const segments = CommandParser.parseCompound(line);
+                                    for (const segment of segments) {
+                                        const result = await this.execute(segment.pipeline, ctx);
+                                        
+                                        let segmentOutput = result.output || '';
+                                        if (result.stream) {
+                                            segmentOutput += await this.exhaustStream(result.stream);
+                                        }
+                                        
+                                        console.log(`[DEBUG SCRIPT] Result for segment: "${segmentOutput}", error: "${result.error}", exitCode: ${result.exitCode}`);
+                                        finalOutput += segmentOutput;
+                                        if (result.error) {
+                                            finalError = (finalError || '') + (finalError ? '\n' : '') + result.error;
+                                        }
+                                        lastExitCode = result.exitCode;
+                                        
+                                        if (segment.operator === '&&' && lastExitCode !== 0) break;
+                                        if (segment.operator === '||' && lastExitCode === 0) break;
+                                    }
+                                } catch (e) {
+                                    finalError = (finalError || '') + (finalError ? '\n' : '') + (e as Error).message;
+                                    lastExitCode = 1;
+                                }
+                                
+                                if (lastExitCode !== 0) break;
+                            }
+                            console.log(`[DEBUG SCRIPT] Final script output: "${finalOutput}"`);
+                            return { output: finalOutput, error: finalError || undefined, exitCode: lastExitCode };
                         };
                     } else {
                         return { output: '', error: formatError('COMMAND_NOT_FOUND'), exitCode: 127 };
@@ -90,16 +147,12 @@ export class CommandExecutor {
                 }
 
                 const executionPid = initialPid;
-
-                // Add AbortController for true high-fidelity signal propagation
                 const commandAbortController = new AbortController();
 
-                // Tie standard DOM signal to context for commands that support it natively
                 if (signal) {
                     signal.addEventListener('abort', () => commandAbortController.abort());
                 }
 
-                // Track cleanup function for signal handler removal
                 let signalCleanup: (() => void) | null = null;
 
                 const enrichedContext: CommandContext = {
@@ -107,7 +160,6 @@ export class CommandExecutor {
                     abortSignal: commandAbortController.signal,
                     onSignal: (handler) => {
                         signalCleanup = terminalStore.onSignal(executionPid, (sig) => {
-                            // True kernel simulation: propagate SIGKILL/SIGTERM directly to the AbortController
                             if (sig === Signal.SIGKILL || sig === Signal.SIGTERM || sig === Signal.SIGINT) {
                                 commandAbortController.abort(sig);
                             }
@@ -115,7 +167,6 @@ export class CommandExecutor {
                         });
                     },
                     removeSignalHandler: () => {
-                        // Properly unbind the signal listener to prevent memory leaks
                         if (signalCleanup) {
                             signalCleanup();
                             signalCleanup = null;
@@ -123,6 +174,12 @@ export class CommandExecutor {
                     },
                     isInterrupted: () => signal?.aborted || commandAbortController.signal.aborted || false,
                     resolvePath: (path: string) => getAbsolutePath(path, context.cwd),
+                    waitIfSuspended: async () => {
+                        const jobId = context.jobId;
+                        if (jobId && context.jobManager) {
+                            await context.jobManager.waitForResume(jobId);
+                        }
+                    }
                 };
 
                 // SUID / SGID Check
@@ -145,59 +202,60 @@ export class CommandExecutor {
                 enrichedContext.groups = effectiveGroups;
 
                 if (isLast && action.background) {
-                    // Background job: generate a SINGLE PID used for BOTH the job table AND signal registry
                     const bgPid = terminalStore.getNextPid();
-                    const jid = context.jobs.length + 1;
-                    const newJob = { jid, pid: bgPid, command: action.name, status: 'Running' as const, isBackground: true };
-                    
-                    context.updateProcesses([
-                        ...context.processes,
-                        { pid: bgPid, name: action.name, user: context.userId, startTime: Date.now() }
-                    ]);
-                    context.updateJobs([...context.jobs, newJob]);
-
-                    // Create a dedicated AbortController for this background job
                     const bgAbortController = new AbortController();
-
-                    // Register signal handler with the SAME bgPid used in job table
+                    
                     const bgSignalCleanup = terminalStore.onSignal(bgPid, (sig) => {
                         if (sig === Signal.SIGKILL || sig === Signal.SIGTERM || sig === Signal.SIGINT) {
                             bgAbortController.abort(sig);
                         }
                     });
 
-                    // Override context for background execution with correct PID binding
                     const bgContext: CommandContext = {
                         ...enrichedContext,
                         abortSignal: bgAbortController.signal,
-                        onSignal: (handler) => {
-                            terminalStore.onSignal(bgPid, handler);
-                        },
+                        onSignal: (handler) => terminalStore.onSignal(bgPid, handler),
                         isInterrupted: () => bgAbortController.signal.aborted,
+                        processes: []
                     };
+                    
+                    const bgPromise = commandFn(expandedArgs, bgContext, input);
 
-                    // Run the command without awaiting it, with proper cleanup
-                    commandFn(expandedArgs, bgContext, input)
+                    const job = context.jobManager.addJob(action.name, [{
+                        pid: bgPid,
+                        name: action.name,
+                        promise: bgPromise
+                    }], false);
+
+                    context.updateProcesses([
+                        ...context.processes,
+                        { pid: bgPid, name: action.name, user: context.userId, startTime: Date.now() }
+                    ]);
+
+                    bgPromise
                         .catch(e => console.error('Background job error:', e))
                         .finally(() => {
-                            bgSignalCleanup(); // Clean up signal handler to prevent memory leak
+                            bgSignalCleanup();
                         });
-                    return { output: `[${jid}] ${bgPid}\n`, exitCode: 0 };
+
+                    return { output: `[${job.id}] ${bgPid}\n`, exitCode: 0 };
                 }
 
-                // Add foreground process to context list for visibility
                 const fgProcess = { pid: executionPid, name: action.name, user: context.userId, startTime: Date.now() };
                 context.updateProcesses([...context.processes, fgProcess]);
 
-                // Foreground execution with signal handler cleanup
+                const autoSignalCleanup = terminalStore.onSignal(executionPid, (sig) => {
+                    if (sig === Signal.SIGKILL || sig === Signal.SIGTERM || sig === Signal.SIGINT) {
+                        commandAbortController.abort(sig);
+                    }
+                });
+
                 try {
                     const result = await commandFn(expandedArgs, enrichedContext, input);
                     lastResult = result;
                 } finally {
-                    // Remove from process list
+                    autoSignalCleanup();
                     context.updateProcesses(context.processes.filter(p => p.pid !== executionPid));
-                    
-                    // Clean up signal handler after command finishes (success, error, or kill)
                     if (signalCleanup) {
                         (signalCleanup as () => void)();
                         signalCleanup = null;
@@ -209,17 +267,14 @@ export class CommandExecutor {
                 }
 
                 if (isLast) {
-                    // Only exhaust the stream if we have a redirection that needs the full output
-                    if (lastResult.stream && action.redirectionType !== 'none') {
-                        let finalOutput = '';
-                        for await (const chunk of lastResult.stream) {
-                            finalOutput += chunk;
-                        }
-                        lastResult.output = finalOutput;
+                    // Automatically exhaust stream for the final pipeline action for non-streaming callers
+                    if (lastResult.stream) {
+                        const finalOutput = await this.exhaustStream(lastResult.stream);
+                        lastResult.output = (lastResult.output || '') + finalOutput;
+                        lastResult.stream = null;
                     }
                 } else {
                     lastOutput = lastResult.stream || lastResult.output;
-
                 }
 
                 // Handle redirection
@@ -240,7 +295,7 @@ export class CommandExecutor {
                         lastResult.error = undefined;
                     }
 
-                    if (contentToRedir || action.redirectionType === 'overwrite' || action.redirectionType === 'append') {
+                    if (contentToRedir || action.redirectionType === 'overwrite' || action.redirectionType === 'append' || action.redirectionType === 'both') {
                         const writeResult = await this.vfs.writeFile(fullPath, contentToRedir, context.userId, context.groups, shouldAppend);
                         if (typeof writeResult === 'object' && writeResult !== null && 'error' in writeResult) {
                             return { output: lastResult.output, error: writeResult.error, exitCode: 1 };
@@ -267,10 +322,13 @@ export class CommandExecutor {
                 const subCommand = match[1];
                 const pipeline = CommandParser.parse(subCommand);
                 const result = await this.execute(pipeline, context);
-                const replacement = result.output.trim().replace(/\s+/g, ' ');
+                let finalOutput = result.output;
+                if (result.stream) {
+                    finalOutput += await this.exhaustStream(result.stream);
+                }
+                const replacement = finalOutput.trim().replace(/\s+/g, ' ');
                 current = current.replace(match[0], replacement);
             }
-            // Strip quotes
             if ((current.startsWith("'") && current.endsWith("'")) || (current.startsWith('"') && current.endsWith('"'))) {
                 current = current.substring(1, current.length - 1);
             }
@@ -290,8 +348,6 @@ export class CommandExecutor {
             try {
                 const scan = (pm as any).scan(arg);
                 const baseDir = getAbsolutePath(scan.base, context.cwd);
-                
-                // Recursive walker to handle ** patterns
                 const matches: string[] = [];
                 const walk = (currentPath: string) => {
                     const children = this.vfs.listChildren(currentPath, context.userId, context.groups);
@@ -319,7 +375,7 @@ export class CommandExecutor {
                 if (matches.length > 0) {
                     result.push(...matches.sort());
                 } else {
-                    result.push(arg); // Standard Bash: keep as-is if no match
+                    result.push(arg);
                 }
             } catch (e) {
                 result.push(arg);

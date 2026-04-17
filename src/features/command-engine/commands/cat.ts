@@ -30,16 +30,24 @@ export const cat = async (args: string[], context: CommandContext, input: string
             return { output: '', stream, exitCode: 0 };
         }
     } else {
-        // If multiple files, we'll return a stream even if they are local reads
+        // Validation check for the first file to provide immediate error feedback (Scenario 5 fix)
+        if (filePaths.length === 1) {
+            const fullPath = context.resolvePath(filePaths[0]);
+            const content = await context.vfs.readFile(fullPath, context.userId, context.groups);
+            if (typeof content === 'object' && 'error' in content) {
+                return { output: '', error: `cat: ${filePaths[0]}: ${content.error}\n`, exitCode: 1 };
+            }
+        }
+
+        // If multiple files, or passed validation, return a stream
         const stream = async function* () {
             let lineIdx = 0;
             for (const filePath of filePaths) {
                 if (context.isInterrupted()) break;
                 const fullPath = context.resolvePath(filePath);
-                const content = context.vfs.readFile(fullPath, context.userId, context.groups);
+                const content = await context.vfs.readFile(fullPath, context.userId, context.groups);
                 if (typeof content === 'object' && 'error' in content) {
-                    // We can't easily yield errors in the same stream without a custom protocol
-                    // so we'll just skip or handle errors before returning
+                    yield `cat: ${filePath}: ${content.error}\n`;
                     continue;
                 } else {
                     const lines = content.split('\n');

@@ -90,6 +90,21 @@ class SpacetimeService {
         return this.conn.reducers.completeLab({ labId, xpEarned });
     }
 
+    public async broadcastTerminalStream(streamChunk: string) {
+        if (this.isMock) {
+            // In mock mode, we could simulate local event bus, but SpacetimeDB won't be hit.
+            return;
+        }
+        if (!this.conn) throw new Error("Not connected");
+        return this.conn.reducers.broadcastTerminalStream({ streamChunk });
+    }
+
+    public async joinMentorSession(targetUsername: string) {
+        if (this.isMock) return;
+        if (!this.conn) throw new Error("Not connected");
+        return this.conn.reducers.joinMentorSession({ targetUsername });
+    }
+
     public async sendMessage(channel: string, content: string) {
         if (!this.conn) throw new Error("Not connected");
         return this.conn.reducers.sendMessage({ channel, content });

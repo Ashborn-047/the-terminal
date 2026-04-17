@@ -28,6 +28,8 @@ export interface CommandContext {
     abortSignal?: AbortSignal;
     onSignal: (handler: SignalHandler) => void;
     isInterrupted: () => boolean;
+    waitIfSuspended: () => Promise<void>;
+    jobId?: number;
 }
 
 export interface CommandResult {

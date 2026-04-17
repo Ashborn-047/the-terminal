@@ -12,17 +12,47 @@ export const wc = async (args: string[], context: CommandContext, input: string 
         c: txt.length
     });
 
+    const processStream = async (input: string | AsyncGenerator<string>) => {
+        let l = 0, w = 0, c = 0;
+        let inWord = false;
+
+        if (typeof input === 'string') {
+            c = input.length;
+            l = input.split('\n').filter(line => line.length > 0).length;
+            w = input.trim().split(/\s+/).filter(word => word.length > 0).length;
+        } else {
+            for await (const chunk of input) {
+                if (context.isInterrupted()) break;
+                await context.waitIfSuspended();
+                
+                c += chunk.length;
+                for (let i = 0; i < chunk.length; i++) {
+                    const char = chunk[i];
+                    if (char === '\n') l++;
+                    if (/\s/.test(char)) {
+                        inWord = false;
+                    } else if (!inWord) {
+                        inWord = true;
+                        w++;
+                    }
+                }
+            }
+        }
+        return { l, w, c };
+    };
+
     if (paths.length === 0) {
-        const { l, w, c } = process(await readStream(input));
+        const { l, w, c } = await processStream(input);
         return { output: `${countLines ? l : ''} ${countWords ? w : ''} ${countChars ? c : ''}`.trim(), exitCode: 0 };
     }
 
     const rows: string[] = [];
     let tl = 0, tw = 0, tc = 0;
     for (const p of paths) {
-        const content = context.vfs.readFile(p, context.userId, context.groups);
+        const fullPath = context.resolvePath(p);
+        const content = context.vfs.readFile(fullPath, context.userId, context.groups);
         if (typeof content === 'string') {
-            const { l, w, c } = process(content);
+            const { l, w, c } = await processStream(content);
             tl += l; tw += w; tc += c;
             rows.push(`${countLines ? l : ''} ${countWords ? w : ''} ${countChars ? c : ''} ${p}`.trim());
         } else {

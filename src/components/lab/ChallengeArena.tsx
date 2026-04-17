@@ -8,7 +8,7 @@ export const ChallengeArena: React.FC = () => {
     const navigate = useNavigate();
     const { level, masteryBadge } = useGamificationStore();
     
-    const isLocked = level < 20;
+
 
     return (
         <div className="flex flex-col gap-6 p-8 bg-brutal-dark h-full overflow-y-auto">
@@ -35,38 +35,42 @@ export const ChallengeArena: React.FC = () => {
                 </div>
             </div>
 
-            {isLocked ? (
-                <div className="flex-1 flex flex-col items-center justify-center border-4 border-dashed border-brutal-gray/30 p-12 text-center">
-                    <span className="text-6xl mb-4">🔒</span>
-                    <h2 className="text-2xl font-heading text-brutal-white uppercase">Arena Locked</h2>
-                    <p className="text-brutal-gray mt-2 max-w-sm">
-                        You must reach <span className="text-brutal-green underline">Level 20 (Hacker Rank)</span> to enter the Challenge Arena.
-                    </p>
-                    <div className="mt-8 flex gap-2 grayscale opacity-50 select-none">
-                        {[1, 2, 3].map(i => (
-                            <div key={i} className="w-48 h-32 bg-brutal-darkBorder border-3 border-brutal-white/20" />
-                        ))}
-                    </div>
-                </div>
-            ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {brokenSystemLabs.map((lab) => (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {brokenSystemLabs.map((lab) => {
+                    const isLabLocked = lab.requiredLevel && level < lab.requiredLevel;
+
+                    return (
                         <button
                             key={lab.id}
-                            onClick={() => navigate(`/labs/11?lab=${lab.id}`)}
-                            className="group flex flex-col text-left bg-brutal-black border-4 border-brutal-white p-6 transition-all hover:-translate-y-1 hover:shadow-brutal-lg active:translate-y-0"
+                            onClick={() => !isLabLocked && navigate(`/labs/11?lab=${lab.id}`)}
+                            disabled={isLabLocked}
+                            className={cn(
+                                "group flex flex-col text-left border-4 p-6 transition-all",
+                                isLabLocked
+                                    ? "bg-brutal-darkBorder border-brutal-gray/30 opacity-60 cursor-not-allowed grayscale"
+                                    : "bg-brutal-black border-brutal-white hover:-translate-y-1 hover:shadow-brutal-lg active:translate-y-0"
+                            )}
                         >
-                            <div className="flex justify-between items-start mb-4">
-                                <span className="text-3xl">🔥</span>
-                                <span className="text-xs font-mono text-brutal-green bg-brutal-green/10 px-2 py-1 border border-brutal-green/30">
-                                    +{lab.xpReward} XP
-                                </span>
+                            <div className="flex justify-between items-start mb-4 w-full">
+                                <span className="text-3xl">{isLabLocked ? '🔒' : '🔥'}</span>
+                                {isLabLocked ? (
+                                    <span className="text-xs font-heading text-brutal-red bg-brutal-red/10 px-2 py-1 border border-brutal-red/30">
+                                        REQUIRES Lvl {lab.requiredLevel}
+                                    </span>
+                                ) : (
+                                    <span className="text-xs font-mono text-brutal-green bg-brutal-green/10 px-2 py-1 border border-brutal-green/30">
+                                        +{lab.xpReward} XP
+                                    </span>
+                                )}
                             </div>
-                            <h3 className="text-xl font-heading text-brutal-white uppercase group-hover:text-brutal-red transition-colors">
+                            <h3 className={cn(
+                                "text-xl font-heading uppercase transition-colors",
+                                isLabLocked ? "text-brutal-gray" : "text-brutal-white group-hover:text-brutal-red"
+                            )}>
                                 {lab.title}
                             </h3>
                             <p className="text-sm text-brutal-gray mt-2 line-clamp-3">
-                                {lab.description}
+                                {isLabLocked ? "This high-level scenario is currently locked." : lab.description}
                             </p>
                             <div className="mt-auto pt-6 flex flex-wrap gap-2">
                                 {lab.tags?.map(tag => (
@@ -76,9 +80,9 @@ export const ChallengeArena: React.FC = () => {
                                 ))}
                             </div>
                         </button>
-                    ))}
-                </div>
-            )}
+                    );
+                })}
+            </div>
         </div>
     );
 };

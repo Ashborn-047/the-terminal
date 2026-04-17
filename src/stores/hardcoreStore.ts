@@ -9,6 +9,7 @@ interface HardcoreState {
     profile: HardcoreProfile | null;
     enableHardcore: () => void;
     registerDeath: (reason: string) => void;
+    checkDestructiveAction: (path: string) => boolean;
     disableHardcore: () => void;
 }
 
@@ -48,6 +49,22 @@ export const useHardcoreStore = create<HardcoreState>()(
                         }
                     };
                 });
+            },
+
+            checkDestructiveAction: (path: string) => {
+                const state = get();
+                if (!state.profile?.isActive) return false;
+                
+                const normalized = path.replace(/\/+$/, '') || '/';
+                const isCatastrophic = state.profile.protectedPaths.some(
+                    protectedPath => normalized === protectedPath || normalized.startsWith(`${protectedPath}/`)
+                );
+
+                if (isCatastrophic) {
+                    state.registerDeath(`Catastrophic system mutation: ${path}`);
+                    return true;
+                }
+                return false;
             },
 
             disableHardcore: () => set({ profile: null }),

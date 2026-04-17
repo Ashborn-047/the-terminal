@@ -35,7 +35,18 @@ describe('Job Control — Kill by PID and Job ID', () => {
             onSignal: () => {},
             removeSignalHandler: () => {},
             isInterrupted: () => false,
+            isInterrupted: () => false,
             resolvePath: (p: string) => p.startsWith('/') ? p : `/${p}`,
+            jobManager: {
+                listJobs: () => jobsList,
+                addJob: (cmd: string, procs: any[]) => {
+                    const job = { id: 1, pgid: procs[0]?.pid || 1234, state: 'RUNNING', pid: procs[0]?.pid || 1234 } as any;
+                    jobsList.push(job);
+                    return job;
+                },
+                getJobBySpec: () => undefined,
+                terminateJob: () => {}
+            } as any
         };
     });
 
@@ -49,7 +60,7 @@ describe('Job Control — Kill by PID and Job ID', () => {
 
         // The job should be registered in the jobs list
         expect(jobsList.length).toBe(1);
-        expect(jobsList[0].status).toBe('Running');
+        expect(jobsList[0].state).toBe('RUNNING');
     });
 
     it('should output the correct job ID in background job output', async () => {

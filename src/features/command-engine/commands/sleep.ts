@@ -5,41 +5,24 @@ export const sleep = async (args: string[], context: CommandContext): Promise<Co
     const seconds = parseFloat(args[0]);
     if (isNaN(seconds)) return { output: '', error: `sleep: invalid time interval '${args[0]}'`, exitCode: 1 };
 
-    return new Promise((resolve) => {
-        let timer: any;
-        const cleanup = () => clearTimeout(timer);
+    const durationMs = seconds * 1000;
+    const startTime = Date.now();
+    let elapsed = 0;
 
-        const abortHandler = () => {
-            cleanup();
-            if (context.abortSignal) {
-                context.abortSignal.removeEventListener('abort', abortHandler);
-            }
-            const reason = context.abortSignal?.reason;
-            // Distinguish exit codes based on signal (130 for SIGINT, 137 for SIGKILL, 143 for SIGTERM)
-            const exitCode = reason === Signal.SIGKILL ? 137 : (reason === Signal.SIGTERM ? 143 : 130);
-            resolve({ output: '', exitCode });
-        };
+    while (elapsed < durationMs) {
+        // Check for suspension first (will await if suspended)
+        await context.waitIfSuspended();
 
-        if (context.abortSignal) {
-            context.abortSignal.addEventListener('abort', abortHandler);
-            if (context.abortSignal.aborted) {
-                return abortHandler();
-            }
+        // Check for interruption (Ctrl+C)
+        if (context.isInterrupted()) {
+            return { output: '', exitCode: 130 };
         }
 
-        // Backward compatibility fallback
-        context.onSignal((sig) => {
-            if (!context.abortSignal && (sig === Signal.SIGINT || sig === Signal.SIGKILL || sig === Signal.SIGTERM)) {
-                 cleanup();
-                 resolve({ output: '', exitCode: 130 });
-            }
-        });
+        // Wait a bit
+        const chunk = Math.min(100, durationMs - elapsed);
+        await new Promise(r => setTimeout(r, chunk));
+        elapsed = Date.now() - startTime;
+    }
 
-        timer = setTimeout(() => {
-            if (context.abortSignal) {
-                context.abortSignal.removeEventListener('abort', abortHandler);
-            }
-            resolve({ output: '', exitCode: 0 });
-        }, seconds * 1000);
-    });
+    return { output: '', exitCode: 0 };
 };
