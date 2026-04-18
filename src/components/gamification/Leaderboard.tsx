@@ -3,16 +3,20 @@ import { Trophy, Medal, User, WifiOff } from 'lucide-react';
 import { useSubscription, useSpacetimeConnection } from '../../hooks/useSpacetime';
 import { spacetime } from '../../lib/spacetime';
 import { useGamificationStore } from '../../stores/gamificationStore';
+import { 
+    tokens, 
+    Card, 
+    Badge 
+} from '../ui/AshbornDesignSystem';
 
 /**
- * Leaderboard — per Doc 3 §6.6
- * Global rankings UI.
+ * Leaderboard — Global rankings UI.
  * Connects to SpacetimeDB for real-time ranking.
  */
 export const Leaderboard: React.FC = () => {
     const isConnected = useSpacetimeConnection();
     const liveRankings = useSubscription(() => spacetime.getLeaderboard());
-    const { xp, level, totalXpEarned } = useGamificationStore(); // Local user stats
+    const { level, totalXpEarned } = useGamificationStore();
 
     // Fallback data when offline
     const mockRankings = [
@@ -29,67 +33,126 @@ export const Leaderboard: React.FC = () => {
             name: r.username || 'Unknown',
             level: r.level ? Number(r.level) : 1,
             xp: r.totalXp ? Number(r.totalXp) : 0,
-            isSelf: false // We need a way to identify self from SpacetimeDB identity later
+            isSelf: false 
         }))
         : mockRankings;
 
     return (
-        <div className="bg-brutal-dark border-3 border-brutal-white p-6 shadow-brutal relative overflow-hidden">
+        <Card variant="default" style={{ padding: 0, overflow: 'hidden', position: 'relative' }}>
             {/* Grid background effect */}
-            <div className="absolute inset-0 opacity-10 pointer-events-none"
-                style={{ backgroundImage: 'radial-gradient(var(--color-brutal-white) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
+            <div style={{ 
+                position: 'absolute', 
+                inset: 0, 
+                opacity: 0.05, 
+                pointerEvents: 'none',
+                backgroundImage: `radial-gradient(${tokens.color.text.secondary} 1px, transparent 1px)`, 
+                backgroundSize: '20px 20px' 
+            }} />
 
-            <div className="relative z-10 flex items-center justify-between gap-3 mb-6 border-b-2 border-brutal-white pb-4">
-                <div className="flex items-center gap-3">
-                    <Trophy className="text-brutal-yellow" />
-                    <h2 className="font-heading text-xl uppercase text-brutal-white">Global Leaderboard</h2>
+            <div style={{ 
+                padding: tokens.space[5], 
+                borderBottom: `1px solid ${tokens.color.border.default}`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                position: 'relative',
+                zIndex: 1
+            }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <Trophy size={18} style={{ color: tokens.color.amber.base }} />
+                    <h2 style={{ 
+                        fontFamily: tokens.font.sans, 
+                        fontSize: tokens.fontSize.md, 
+                        fontWeight: 800, 
+                        textTransform: 'uppercase', 
+                        color: tokens.color.text.primary,
+                        margin: 0 
+                    }}>
+                        Global Ranking
+                    </h2>
                 </div>
                 {!isConnected && (
-                    <div className="flex items-center gap-2 text-[10px] font-mono bg-brutal-red text-brutal-white px-2 py-1 border border-brutal-black font-bold uppercase">
-                        <WifiOff size={10} /> Offline Mode
-                    </div>
+                    <Badge variant="amber">
+                        <WifiOff size={10} style={{ marginRight: 4 }} /> OFFLINE
+                    </Badge>
                 )}
             </div>
 
-            <div className="relative z-10 space-y-3 font-mono">
+            <div style={{ padding: tokens.space[4], display: 'flex', flexDirection: 'column', gap: 8, position: 'relative', zIndex: 1 }}>
                 {displayRankings.slice(0, 10).map((r) => (
                     <div
                         key={r.rank}
-                        className={`flex items-center gap-4 p-3 border-2 transition-all ${r.isSelf
-                            ? 'bg-brutal-yellow border-brutal-black text-brutal-black scale-[1.02] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'
-                            : 'bg-brutal-black border-brutal-white text-brutal-white opacity-80'
-                            }`}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 16,
+                            padding: '10px 16px',
+                            background: r.isSelf ? tokens.color.amber.alpha[8] : 'rgba(255,255,255,0.02)',
+                            border: `1px solid ${r.isSelf ? tokens.color.amber.base : tokens.color.border.default}`,
+                            borderRadius: 4,
+                            transition: 'all 0.15s'
+                        }}
                     >
-                        <div className="w-8 flex justify-center font-bold italic">
+                        <div style={{ 
+                            width: 24, 
+                            fontFamily: tokens.font.mono, 
+                            fontSize: 12, 
+                            fontWeight: 700, 
+                            color: r.rank <= 3 ? tokens.color.amber.base : tokens.color.text.tertiary,
+                            fontStyle: 'italic'
+                        }}>
                             #{r.rank}
                         </div>
 
-                        <div className="flex-1 flex items-center gap-3">
-                            {r.rank === 1 ? <Trophy size={16} className="text-brutal-yellow" /> :
-                                r.rank === 2 ? <Medal size={16} className="text-slate-300" /> :
-                                    r.rank === 3 ? <Medal size={16} className="text-amber-600" /> :
-                                        <User size={16} />}
-                            <span className="font-heading uppercase text-sm truncate">{r.name}</span>
+                        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 12 }}>
+                            {r.rank === 1 ? <Trophy size={14} style={{ color: tokens.color.amber.base }} /> :
+                                r.rank === 2 ? <Medal size={14} style={{ color: '#E2E8F0' }} /> :
+                                    r.rank === 3 ? <Medal size={14} style={{ color: '#F59E0B' }} /> :
+                                        <User size={14} style={{ color: tokens.color.text.tertiary }} />}
+                            <span style={{ 
+                                fontFamily: tokens.font.sans, 
+                                fontSize: tokens.fontSize.xs, 
+                                fontWeight: 600, 
+                                textTransform: 'uppercase', 
+                                color: r.isSelf ? tokens.color.amber.base : tokens.color.text.primary,
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap'
+                            }}>
+                                {r.name}
+                            </span>
                         </div>
 
-                        <div className="flex flex-col items-end min-w-[60px]">
-                            <span className="text-[10px] uppercase opacity-60">Level</span>
-                            <span className="text-sm font-bold">{r.level}</span>
-                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', minWidth: 40 }}>
+                                <span style={{ fontSize: 8, textTransform: 'uppercase', color: tokens.color.text.tertiary, fontWeight: 700 }}>LVL</span>
+                                <span style={{ fontFamily: tokens.font.mono, fontSize: 11, fontWeight: 700 }}>{r.level}</span>
+                            </div>
 
-                        <div className="flex flex-col items-end min-w-[70px] hidden sm:flex">
-                            <span className="text-[10px] uppercase opacity-60">XP</span>
-                            <span className="text-sm font-bold">{r.xp}</span>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', minWidth: 60 }} className="hidden sm:flex">
+                                <span style={{ fontSize: 8, textTransform: 'uppercase', color: tokens.color.text.tertiary, fontWeight: 700 }}>TOTAL XP</span>
+                                <span style={{ fontFamily: tokens.font.mono, fontSize: 11, fontWeight: 700 }}>{r.xp.toLocaleString()}</span>
+                            </div>
                         </div>
                     </div>
                 ))}
             </div>
 
             {!isConnected && (
-                <div className="relative z-10 mt-6 p-3 bg-brutal-blue/20 border-2 border-brutal-blue text-[10px] text-brutal-blue font-mono uppercase text-center">
-                    SpacetimeDB synchronization required for real-time rankings
+                <div style={{ 
+                    padding: '8px 16px', 
+                    background: tokens.color.bg.overlay, 
+                    borderTop: `1px solid ${tokens.color.border.default}`,
+                    fontSize: 9,
+                    fontFamily: tokens.font.mono,
+                    textTransform: 'uppercase',
+                    textAlign: 'center',
+                    color: tokens.color.text.tertiary,
+                    letterSpacing: 1
+                }}>
+                    REAL-TIME SYNC DISABLED — VIEWING LOCAL CACHE
                 </div>
             )}
-        </div>
+        </Card>
     );
 };

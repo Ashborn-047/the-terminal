@@ -1,29 +1,57 @@
 import React from 'react';
 import { TerminalComponent } from '../components/terminal/Terminal';
 import { ErrorBoundary } from '../components/ErrorBoundary';
+import { 
+    tokens, 
+    Badge 
+} from '../components/ui/AshbornDesignSystem';
 
 /**
- * TerminalPage — Standalone free-roam terminal, not tied to any lab.
- * Users can explore the VFS, practice commands, and experiment freely.
+ * TerminalPage — Standalone free-roam terminal.
  */
 const TerminalPage: React.FC = () => {
     return (
-        <div className="h-full flex flex-col">
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%', backgroundColor: tokens.color.bg.base }}>
             {/* Header */}
-            <div className="flex items-center justify-between border-b-3 border-brutal-green bg-brutal-black p-3 shrink-0">
+            <header style={{ 
+                height: 48, 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'space-between', 
+                padding: '0 16px', 
+                background: tokens.color.bg.surface, 
+                borderBottom: `1px solid ${tokens.color.border.default}`,
+                flexShrink: 0 
+            }}>
                 <div>
-                    <h2 className="font-heading uppercase text-sm text-brutal-green">Free Terminal</h2>
-                    <span className="text-[10px] text-brutal-gray">Sandbox mode — explore freely, no lab objectives</span>
-                </div>
-                <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 border border-brutal-green text-[10px] font-heading uppercase text-brutal-green">
-                        sandbox
+                    <h2 style={{ 
+                        fontFamily: tokens.font.sans, 
+                        fontSize: tokens.fontSize.sm, 
+                        fontWeight: 800, 
+                        textTransform: 'uppercase', 
+                        color: tokens.color.lime.base, 
+                        margin: 0,
+                        letterSpacing: tokens.letterSpacing.wide
+                    }}>
+                        Free Terminal
+                    </h2>
+                    <span style={{ 
+                        fontFamily: tokens.font.sans, 
+                        fontSize: 10, 
+                        color: tokens.color.text.tertiary,
+                        textTransform: 'uppercase',
+                        fontWeight: 500
+                    }}>
+                        Sandbox Mode — no active lab objectives
                     </span>
                 </div>
-            </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <Badge variant="lime">SANDBOX</Badge>
+                </div>
+            </header>
 
             {/* Full Terminal */}
-            <div className="flex-1 min-h-0">
+            <div style={{ flex: 1, minHeight: 0 }}>
                 <ErrorBoundary section="Terminal">
                     <TerminalComponent />
                 </ErrorBoundary>

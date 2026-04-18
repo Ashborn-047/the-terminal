@@ -1,6 +1,6 @@
 import React, { Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { MainLayout } from './components/layout/MainLayout';
+import { AshbornLayout as MainLayout } from './components/layout/AshbornLayout';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { WelcomeModal } from './components/onboarding/WelcomeModal';
 import { useUIStore } from './stores/uiStore';
@@ -14,6 +14,7 @@ import { ProtectedRoute } from './components/layout/ProtectedRoute';
 import { ConnectionBanner } from './components/ui/ConnectionBanner';
 import { spacetime } from './lib/spacetime';
 import { initSpacetimeSync } from './lib/spacetime/sync';
+import { globalStyles, tokens } from './components/ui/AshbornDesignSystem';
 
 // Lazy-loaded pages for code splitting
 const HomePage = React.lazy(() => import('./pages/HomePage'));
@@ -29,10 +30,20 @@ const ChallengeArenaPage = React.lazy(() => import('./pages/ChallengeArenaPage.t
 const PageLoader = () => (
   <div style={{
     display: 'flex', alignItems: 'center', justifyContent: 'center',
-    height: '60vh', color: '#00FF9D', fontFamily: 'JetBrains Mono, monospace',
-    fontSize: '1rem',
+    height: '100vh', width: '100vw', 
+    backgroundColor: tokens.color.bg.base,
+    color: tokens.color.lime.base, 
+    fontFamily: tokens.font.mono,
+    fontSize: tokens.fontSize.md,
+    letterSpacing: tokens.letterSpacing.widest,
+    textTransform: 'uppercase'
   }}>
-    Loading...
+    <div style={{ display: 'flex', flexDir: 'column', alignItems: 'center', gap: 16 }}>
+       <div className="animate-pulse">Initializing System...</div>
+       <div style={{ width: 200, height: 2, background: 'rgba(0, 255, 157, 0.1)' }}>
+          <div className="animate-shimmer" style={{ height: '100%', background: tokens.color.lime.base }} />
+       </div>
+    </div>
   </div>
 );
 
@@ -53,6 +64,17 @@ function AppContent() {
     // In MOCK mode (CI), services are nearly instantaneous, but we still wait
     if (import.meta.env.VITE_MOCK_SPACETIME === 'true') {
         setTimeout(() => setIsServicesStarted(true), 500);
+    }
+  }, []);
+
+  // Inject Ashborn Design System Global Styles
+  React.useEffect(() => {
+    const styleId = 'ashborn-design-system-styles';
+    if (!document.getElementById(styleId)) {
+      const style = document.createElement('style');
+      style.id = styleId;
+      style.textContent = globalStyles;
+      document.head.appendChild(style);
     }
   }, []);
 
@@ -78,9 +100,11 @@ function AppContent() {
     startWork();
 
     const interval = setInterval(() => {
-      spacetime.heartbeat(undefined).catch(err =>
-        logger.error('Heartbeat failed', { err })
-      );
+      if (spacetime.getIsConnected()) {
+        spacetime.heartbeat(undefined).catch(err =>
+          logger.error('Heartbeat failed', { err })
+        );
+      }
     }, 30000); // 30s heartbeat
 
     return () => clearInterval(interval);
@@ -107,7 +131,7 @@ function AppContent() {
   }
 
   return (
-    <div className="h-full w-full bg-brutal-dark overflow-hidden flex flex-col">
+    <div style={{ height: '100%', width: '100%', backgroundColor: tokens.color.bg.base, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
       <ConnectionBanner />
       <MainLayout>
         {onboardingStep === 0 && (

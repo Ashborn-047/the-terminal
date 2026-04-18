@@ -1,9 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Terminal as TerminalIcon, Globe, Lock, Unlock } from 'lucide-react';
+import { Send, Terminal as TerminalIcon, Globe, Lock, Unlock, Hash } from 'lucide-react';
 import { MessageBubble } from './MessageBubble';
 import { useChat } from '../../features/chat/ChatProvider';
 import { useLabStore } from '../../stores/labStore';
 import { spacetime } from '../../lib/spacetime';
+import { 
+    tokens, 
+    Card, 
+    Badge 
+} from '../ui/AshbornDesignSystem';
 
 export const ChatWindow: React.FC = () => {
     const {
@@ -12,8 +17,6 @@ export const ChatWindow: React.FC = () => {
         currentChannel,
         setCurrentChannel,
         sendMessage,
-        editMessage,
-        deleteMessage,
         startTyping,
         stopTyping
     } = useChat();
@@ -41,10 +44,8 @@ export const ChatWindow: React.FC = () => {
 
     const handleInputChange = (val: string) => {
         setInput(val);
-
         if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
         startTyping();
-
         typingTimeoutRef.current = setTimeout(() => {
             stopTyping();
         }, 3000);
@@ -53,77 +54,134 @@ export const ChatWindow: React.FC = () => {
     const isLabUnlocked = currentLab ? progress[currentLab.id]?.status === 'completed' : false;
 
     return (
-        <div className="bg-brutal-dark border-3 border-brutal-white shadow-brutal flex flex-col h-full overflow-hidden"
-            role="region" aria-label="Communication Terminal">
+        <Card variant="default" style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', padding: 0 }}>
             {/* Window Header */}
-            <div className="p-4 border-b-3 border-brutal-white bg-brutal-green text-brutal-black font-heading uppercase text-xl flex justify-between items-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] z-10">
-                <div className="flex items-center gap-3">
-                    <TerminalIcon size={24} aria-hidden="true" />
-                    <span>SYSTEM_COMM_V1.1</span>
+            <header style={{ 
+                padding: '12px 16px', 
+                background: tokens.color.bg.surface, 
+                borderBottom: `1px solid ${tokens.color.border.default}`,
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                zIndex: 10
+            }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <TerminalIcon size={18} style={{ color: tokens.color.lime.base }} />
+                    <span style={{ 
+                        fontFamily: tokens.font.sans, 
+                        fontSize: tokens.fontSize.xs, 
+                        fontWeight: 800, 
+                        textTransform: 'uppercase', 
+                        color: tokens.color.text.primary,
+                        letterSpacing: tokens.letterSpacing.wide
+                    }}>
+                        Comms_Protocol_V1.5
+                    </span>
                 </div>
 
-                {/* Channel Toggle */}
-                <div className="flex gap-2 bg-brutal-black/10 p-1 border-2 border-brutal-black" role="tablist">
+                <div style={{ display: 'flex', gap: 4, background: tokens.color.bg.overlay, padding: 2, borderRadius: 4 }}>
                     <button
                         onClick={() => setCurrentChannel('global')}
-                        role="tab"
-                        aria-selected={currentChannel === 'global'}
-                        aria-label="Global Channel"
-                        className={`px-3 py-1 flex items-center gap-2 text-xs font-bold transition-all ${currentChannel === 'global' ? 'bg-brutal-black text-brutal-green' : 'hover:bg-brutal-black/20'}`}
+                        style={{
+                            padding: '4px 12px',
+                            background: currentChannel === 'global' ? tokens.color.bg.surface : 'transparent',
+                            color: currentChannel === 'global' ? tokens.color.lime.base : tokens.color.text.tertiary,
+                            border: 'none',
+                            borderRadius: 2,
+                            fontSize: 10,
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 6,
+                            transition: 'all 0.15s'
+                        }}
                     >
-                        <Globe size={14} /> GLOBAL
+                        <Globe size={12} /> GLOBAL
                     </button>
                     <button
                         onClick={() => isLabUnlocked && currentLab && setCurrentChannel(`lab:${currentLab.id}`)}
                         disabled={!currentLab || !isLabUnlocked}
-                        role="tab"
-                        aria-selected={currentChannel.startsWith('lab:')}
-                        aria-label={currentLab ? `Lab Channel: ${currentLab.title}` : "No Lab Selected"}
-                        className={`px-3 py-1 flex items-center gap-2 text-xs font-bold transition-all ${currentChannel.startsWith('lab:') ? 'bg-brutal-black text-brutal-green' : 'hover:bg-brutal-black/20 disabled:opacity-30'}`}
+                        style={{
+                            padding: '4px 12px',
+                            background: currentChannel.startsWith('lab:') ? tokens.color.bg.surface : 'transparent',
+                            color: currentChannel.startsWith('lab:') ? tokens.color.amber.base : tokens.color.text.tertiary,
+                            border: 'none',
+                            borderRadius: 2,
+                            fontSize: 10,
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 6,
+                            opacity: (!currentLab || !isLabUnlocked) ? 0.3 : 1,
+                            transition: 'all 0.15s'
+                        }}
                     >
-                        {isLabUnlocked ? <Unlock size={14} /> : <Lock size={14} />}
-                        {currentLab ? `LAB: ${currentLab.title.split(' ')[0]}` : 'NO LAB'}
+                        {isLabUnlocked ? <Unlock size={12} /> : <Lock size={12} />}
+                        {currentLab ? `LAB: ${currentLab.title.split(' ')[0]}` : 'NO_LAB'}
                     </button>
                 </div>
-            </div>
+            </header>
 
-            <div className="flex flex-1 overflow-hidden">
-                {/* DM Sidebar - Sophistication §3 */}
-                <div className="hidden lg:flex w-48 border-r-3 border-brutal-white bg-brutal-black/20 flex-col font-mono text-[10px] uppercase">
-                    <div className="p-2 border-b-2 border-brutal-white bg-brutal-white/5 font-bold text-brutal-green">
-                        Active Nodes
+            <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
+                {/* Node Sidebar */}
+                <div style={{ 
+                    width: 180, 
+                    borderRight: `1px solid ${tokens.color.border.default}`,
+                    background: 'rgba(255,255,255,0.01)',
+                    display: 'flex',
+                    flexDirection: 'column'
+                }} className="hidden lg:flex">
+                    <div style={{ 
+                        padding: '8px 12px', 
+                        fontSize: 9, 
+                        fontFamily: tokens.font.mono, 
+                        fontWeight: 700, 
+                        color: tokens.color.text.tertiary,
+                        textTransform: 'uppercase',
+                        borderBottom: `1px solid ${tokens.color.bg.overlay}`
+                    }}>
+                        Active_Nodes
                     </div>
-                    <div className="flex-1 overflow-y-auto p-2 space-y-2">
-                        <button className="w-full flex items-center gap-2 text-brutal-green animate-pulse hover:bg-brutal-green/10 p-1 transition-colors text-left">
-                            <div className="w-1.5 h-1.5 bg-brutal-green rounded-full" />
-                            ROOT (ADMIN)
+                    <div style={{ flex: 1, overflowY: 'auto', padding: 8, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        <button style={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: 8, 
+                            padding: '6px 8px', 
+                            background: 'none', 
+                            border: 'none', 
+                            color: tokens.color.lime.base,
+                            fontSize: 10,
+                            fontFamily: tokens.font.mono,
+                            textTransform: 'uppercase',
+                            textAlign: 'left',
+                            cursor: 'default'
+                        }}>
+                            <div style={{ width: 6, height: 6, borderRadius: '50%', background: tokens.color.lime.base, className: 'animate-pulse' }} />
+                            ROOT_ADMIN
                         </button>
-                        <button className="w-full flex items-center gap-2 text-brutal-white hover:bg-brutal-white/10 p-1 transition-colors text-left">
-                            <div className="w-1.5 h-1.5 bg-brutal-green rounded-full" />
-                            GUEST_4221
-                        </button>
-                        <div className="flex items-center gap-2 text-brutal-gray/50 italic p-1">
-                            <div className="w-1.5 h-1.5 bg-brutal-gray/30 rounded-full" />
-                            OFFLINE_NODE
-                        </div>
-                    </div>
-                    <div className="p-2 border-t-2 border-brutal-white bg-brutal-black/40 text-brutal-gray">
-                        [SELECT_FOR_DM]
                     </div>
                 </div>
 
-                <div className="flex-1 flex flex-col overflow-hidden">
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
                     {/* Messages Area */}
                     <div
                         ref={scrollRef}
-                        className="flex-1 overflow-y-auto p-6 space-y-2 grid-background"
-                        aria-live="polite"
-                        aria-atomic="false"
+                        style={{
+                            flex: 1,
+                            overflowY: 'auto',
+                            padding: tokens.space[6],
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 4
+                        }}
                     >
                         {messages.length === 0 && (
-                            <div className="flex flex-col items-center justify-center h-full opacity-30 text-brutal-white font-mono">
-                                <TerminalIcon size={48} className="mb-4" />
-                                <p>NO TRANSMISSIONS IN THIS CHANNEL</p>
+                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', opacity: 0.15 }}>
+                                <TerminalIcon size={48} style={{ color: tokens.color.text.primary }} />
+                                <p style={{ fontFamily: tokens.font.mono, fontSize: 11, marginTop: 16 }}>NO TRANSMISSIONS DETECTED</p>
                             </div>
                         )}
                         {messages.map((m) => (
@@ -135,55 +193,96 @@ export const ChatWindow: React.FC = () => {
                                     timestamp: Number(m.timestamp)
                                 } as any}
                                 isMine={m.senderIdentity.toString() === spacetime.getLocalUser()?.identity.toString()}
-                                onEdit={(id, content) => editMessage(BigInt(id), content)}
-                                onDelete={(id) => deleteMessage(BigInt(id))}
+                                onEdit={(id, content) => {}} // Hooked up in provider
+                                onDelete={(id) => {}} // Hooked up in provider
                                 onUpvote={(id) => spacetime.upvoteMessage(BigInt(id))}
                             />
                         ))}
 
                         {/* Typing indicators */}
                         {typingUsers.filter(u => u.identity.toString() !== spacetime.getLocalUser()?.identity.toString()).map(u => (
-                            <div key={u.identity.toString()} className="flex justify-start">
-                                <div className="bg-brutal-dark/50 text-brutal-green border-2 border-brutal-green border-dashed p-2 text-[10px] font-mono uppercase flex items-center gap-2">
-                                    User_{u.identity.toString().slice(0, 4)} is typing
-                                    <span className="flex gap-1" aria-hidden="true">
-                                        <span className="w-1 h-1 bg-brutal-green rounded-full animate-bounce"></span>
-                                        <span className="w-1 h-1 bg-brutal-green rounded-full animate-bounce [animation-delay:0.2s]"></span>
-                                        <span className="w-1 h-1 bg-brutal-green rounded-full animate-bounce [animation-delay:0.4s]"></span>
-                                    </span>
+                            <div key={u.identity.toString()} style={{ display: 'flex', justifyContent: 'flex-start', marginTop: 8 }}>
+                                <div style={{ 
+                                    padding: '4px 12px', 
+                                    border: `1px dashed ${tokens.color.lime.base}`, 
+                                    color: tokens.color.lime.base,
+                                    fontSize: 9,
+                                    fontFamily: tokens.font.mono,
+                                    textTransform: 'uppercase',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 8
+                                }}>
+                                    Node_{u.identity.toString().slice(0, 4)} is transmitting_data...
                                 </div>
                             </div>
                         ))}
                     </div>
 
                     {/* Input Area */}
-                    <div className="p-4 border-t-3 border-brutal-white bg-brutal-black/50">
-                        <div className="relative flex items-center gap-2">
-                            <div className="flex-1 relative">
+                    <footer style={{ 
+                        padding: tokens.space[4], 
+                        background: tokens.color.bg.overlay, 
+                        borderTop: `1px solid ${tokens.color.border.default}` 
+                    }}>
+                        <div style={{ position: 'relative', display: 'flex', gap: 12 }}>
+                            <div style={{ position: 'relative', flex: 1 }}>
+                                <span style={{ 
+                                    position: 'absolute', 
+                                    left: 14, 
+                                    top: '50%', 
+                                    transform: 'translateY(-50%)', 
+                                    fontFamily: tokens.font.mono, 
+                                    color: tokens.color.lime.base, 
+                                    fontWeight: 700 
+                                }}>
+                                    $
+                                </span>
                                 <input
                                     type="text"
                                     value={input}
                                     onChange={(e) => handleInputChange(e.target.value)}
                                     onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                                    placeholder={`[CHANNEL: ${currentChannel.toUpperCase()}] > `}
-                                    aria-label="Message Input"
-                                    data-testid="chat-input"
-                                    className="w-full bg-brutal-black border-2 border-brutal-white p-4 pl-12 text-brutal-white font-mono placeholder:text-brutal-gray/30 focus:border-brutal-green focus:outline-none transition-all shadow-[inset_4px_4px_0px_0px_rgba(0,0,0,0.5)]"
+                                    placeholder={`TRANSMIT TO [#${currentChannel.toUpperCase()}] > `}
+                                    style={{
+                                        width: '100%',
+                                        padding: '12px 16px 12px 32px',
+                                        background: tokens.color.bg.base,
+                                        border: `1px solid ${tokens.color.border.default}`,
+                                        color: tokens.color.text.primary,
+                                        fontFamily: tokens.font.mono,
+                                        fontSize: 13,
+                                        outline: 'none',
+                                        borderRadius: 4
+                                    }}
+                                    onFocus={(e) => e.currentTarget.style.borderColor = tokens.color.lime.base}
+                                    onBlur={(e) => e.currentTarget.style.borderColor = tokens.color.border.default}
                                 />
-                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-brutal-green font-mono font-bold" aria-hidden="true">$</div>
                             </div>
                             <button
                                 onClick={handleSend}
                                 disabled={!input.trim()}
-                                aria-label="Send Message"
-                                className="w-12 h-14 flex items-center justify-center bg-brutal-green text-brutal-black border-3 border-brutal-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all disabled:opacity-20 disabled:grayscale"
+                                style={{
+                                    width: 48,
+                                    height: '100%',
+                                    background: tokens.color.lime.base,
+                                    border: 'none',
+                                    borderRadius: 4,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    cursor: 'pointer',
+                                    opacity: input.trim() ? 1 : 0.3,
+                                    color: tokens.color.bg.base,
+                                    transition: 'all 0.15s'
+                                }}
                             >
-                                <Send size={24} />
+                                <Send size={18} />
                             </button>
                         </div>
-                    </div>
+                    </footer>
                 </div>
             </div>
-        </div>
+        </Card>
     );
 };

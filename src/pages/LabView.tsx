@@ -12,10 +12,15 @@ import { VFS } from '../features/vfs/vfs';
 import { CelebrationModal } from '../components/onboarding/CelebrationModal';
 import { SuccessAnimation } from '../components/ui/SuccessAnimation';
 import { ArrowLeft, RotateCcw } from 'lucide-react';
+import { 
+    tokens, 
+    Badge, 
+    Button, 
+    Card 
+} from '../components/ui/AshbornDesignSystem';
 
 /**
  * LabView — Terminal + Lab instructions side by side.
- * Only renders when a lab is active. Accessed via /lab/:labId.
  */
 const LabView: React.FC = () => {
     const { labId } = useParams<{ labId: string }>();
@@ -25,7 +30,6 @@ const LabView: React.FC = () => {
     const { username } = useUIStore();
     const { snapshot } = useVFSStore();
 
-    // Create a live VFS instance from the persisted snapshot for DIY verification
     const vfsForVerification = React.useMemo(() => {
         if (!snapshot) return null;
         return new VFS(snapshot);
@@ -42,39 +46,26 @@ const LabView: React.FC = () => {
 
     const { setSnapshot } = useVFSStore();
 
-    // Auto-start lab if not already in progress
     useEffect(() => {
         if (!labId || !lab) return;
-
-        // Security check: Redirect if the lab is locked
         if (labProgress?.status === 'locked' && !lab.prerequisites.every(p => progress[p]?.status === 'completed')) {
-            console.warn(`SECURITY: Attempted access to locked lab ${labId}. Redirecting...`);
             navigate('/labs');
             return;
         }
-
         if (!labProgress || labProgress.status === 'available') {
             if (lab.initialVFS) {
-                // Pre-seed VFS snapshot for the lab
                 setSnapshot(getVFSSnapshot(lab.initialVFS));
             }
             startLab(labId);
         }
     }, [labId, lab, labProgress, startLab, setSnapshot, navigate, progress]);
 
-    // Check for guided lab completion
     useEffect(() => {
         if (lab?.type === 'guided' && labProgress && lab.steps && labProgress.currentStepIndex >= lab.steps.length && labProgress.status !== 'completed') {
-            console.log('LAB_DEBUG: Conditions met, triggering handleComplete()', {
-                currentStepIndex: labProgress.currentStepIndex,
-                totalSteps: lab.steps.length,
-                status: labProgress.status
-            });
             handleComplete();
         }
     }, [labProgress?.currentStepIndex]);
 
-    // Timer for UI display
     useEffect(() => {
         if (labProgress?.status !== 'in-progress') return;
         const interval = setInterval(() => {
@@ -87,43 +78,27 @@ const LabView: React.FC = () => {
 
     if (!lab) {
         return (
-            <div className="h-full flex items-center justify-center">
-                <div className="border-3 border-brutal-red bg-brutal-black p-8 text-center">
-                    <p className="font-heading text-xl uppercase text-brutal-red mb-4">Lab Not Found</p>
-                    <button
-                        onClick={() => navigate('/labs')}
-                        className="border-2 border-brutal-white text-brutal-white px-4 py-2 font-heading uppercase text-xs hover:bg-brutal-white hover:text-brutal-black transition-colors"
-                    >
-                        ← Back to Curriculum
-                    </button>
-                </div>
+            <div style={{ display: 'flex', height: '100%', alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.color.bg.base }}>
+                <Card style={{ padding: 32, textAlign: 'center', border: `1px solid ${tokens.color.amber.base}` }}>
+                    <p style={{ fontFamily: tokens.font.sans, fontSize: tokens.fontSize.lg, fontWeight: 800, textTransform: 'uppercase', color: tokens.color.amber.base, marginBottom: 16 }}>Lab Not Found</p>
+                    <Button variant="outline" onClick={() => navigate('/labs')}>← BACK TO CURRICULUM</Button>
+                </Card>
             </div>
         );
     }
 
     const handleComplete = () => {
         if (labProgress?.status === 'completed') return;
-
         const currentLevel = useGamificationStore.getState().level;
         const prevLabsCompleted = useGamificationStore.getState().labsCompleted;
-
-        // Finalize store state (computes final totalTimeSpent)
         completeLab(lab.id);
-
-        // Re-fetch latest progress state for processing rewards
         const finalProgress = useLabStore.getState().progress[lab.id];
-
-        // Process rewards and achievements using the new exponential economy
         if (vfsForVerification) {
             processLabCompletion(lab.id, lab, vfsForVerification);
         }
-
         const newLabsCompleted = prevLabsCompleted + 1;
-        console.log('LAB_DEBUG: handleComplete', { prevLabsCompleted, newLabsCompleted, labId: lab.id });
-
-        // If first lab, show celebration
         if (newLabsCompleted === 1) {
-            setXpAwarded(lab.xpReward); // Approximate for summary
+            setXpAwarded(lab.xpReward);
             const finalLevel = useGamificationStore.getState().level;
             if (finalLevel > currentLevel) {
                 setLeveledUp(finalLevel);
@@ -133,7 +108,7 @@ const LabView: React.FC = () => {
             setIsSuccessActive(true);
             setTimeout(() => {
                 navigate('/labs');
-            }, 3000); // Wait for animation
+            }, 3000);
         }
     };
 
@@ -146,7 +121,9 @@ const LabView: React.FC = () => {
     };
 
     const handleReset = () => {
-        if (labId) resetLab(labId);
+        if (labId && window.confirm("Reset the lab environment? All current terminal work will be lost.")) {
+            resetLab(labId);
+        }
     };
 
     const handleExit = () => {
@@ -155,68 +132,123 @@ const LabView: React.FC = () => {
     };
 
     return (
-        <div className="flex flex-col h-full w-full bg-brutal-black">
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%', backgroundColor: tokens.color.bg.base }}>
             {/* Lab Header Strip */}
-            <div className="flex items-center justify-between p-3 border-b-2 border-brutal-white/20 shrink-0 bg-brutal-dark">
-                <div className="flex items-center gap-3">
+            <header style={{ 
+                height: 44, 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'space-between', 
+                padding: '0 12px', 
+                background: tokens.color.bg.surface, 
+                borderBottom: `1px solid ${tokens.color.border.default}`,
+                flexShrink: 0 
+            }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                     <button
                         onClick={handleExit}
-                        className="text-brutal-gray hover:text-brutal-white transition-colors"
-                        title="Back to Curriculum"
+                        style={{ 
+                            background: 'none', 
+                            border: 'none', 
+                            padding: 4, 
+                            cursor: 'pointer', 
+                            color: tokens.color.text.tertiary,
+                            display: 'flex',
+                            alignItems: 'center'
+                        }}
+                        onMouseOver={(e) => e.currentTarget.style.color = tokens.color.text.primary}
+                        onMouseOut={(e) => e.currentTarget.style.color = tokens.color.text.tertiary}
                     >
-                        <ArrowLeft size={18} />
+                        <ArrowLeft size={16} />
                     </button>
-                    <div className="flex items-center gap-2">
-                        <span className="font-heading uppercase text-brutal-yellow font-bold text-sm tracking-wider">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <span style={{ 
+                            fontFamily: tokens.font.sans, 
+                            fontSize: tokens.fontSize.xs, 
+                            fontWeight: 800, 
+                            textTransform: 'uppercase', 
+                            color: tokens.color.amber.base, 
+                            letterSpacing: tokens.letterSpacing.wide 
+                        }}>
                             {lab.title}
                         </span>
-                        <span className="font-mono text-[10px] text-brutal-green border border-brutal-green/50 px-1.5 py-0.5 uppercase tracking-widest hidden sm:inline-block">
-                            {lab.type}
-                        </span>
+                        <Badge variant={lab.type === 'guided' ? 'lime' : 'amber'}>
+                            {lab.type.toUpperCase()}
+                        </Badge>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                     {/* Time Tracker */}
-                    <div className="flex items-center gap-2 mr-4 text-brutal-gray font-mono text-[10px] hidden sm:flex">
-                        <span className="uppercase">Time</span>
-                        <span className="text-brutal-white text-xs">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginRight: 8 }} className="hidden sm:flex">
+                        <span style={{ fontFamily: tokens.font.sans, fontSize: 9, fontWeight: 700, textTransform: 'uppercase', color: tokens.color.text.tertiary }}>Session Time</span>
+                        <span style={{ fontFamily: tokens.font.mono, fontSize: 11, fontWeight: 600, color: tokens.color.lime.base }}>
                             {Math.floor(seconds / 60)}:{(seconds % 60).toString().padStart(2, '0')}
                         </span>
                     </div>
 
+                    <div style={{ width: 1, height: 16, background: tokens.color.border.default }} />
+
                     {/* Progress Indicator */}
                     {lab.type === 'guided' && labProgress && lab.steps && (
-                        <div className="flex items-center gap-2 font-mono text-[10px] uppercase text-brutal-white">
-                            <span>Step</span>
-                            <span className="text-brutal-yellow">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: tokens.font.mono, fontSize: 10, textTransform: 'uppercase' }}>
+                            <span style={{ color: tokens.color.text.tertiary }}>Progress</span>
+                            <span style={{ color: tokens.color.text.primary, fontWeight: 800 }}>
                                 {Math.min(labProgress.currentStepIndex + 1, lab.steps.length)}
                             </span>
-                            <span className="text-brutal-gray">/ {lab.steps.length}</span>
+                            <span style={{ color: tokens.color.text.tertiary }}>/ {lab.steps.length}</span>
                         </div>
                     )}
 
                     <button
                         onClick={handleReset}
-                        className="p-1 border border-brutal-yellow/50 text-brutal-yellow hover:bg-brutal-yellow hover:text-brutal-black transition-colors rounded-sm"
+                        style={{
+                            padding: 4,
+                            background: 'none',
+                            border: `1px solid ${tokens.color.amber.alpha[24]}`,
+                            color: tokens.color.amber.base,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            transition: 'all 0.15s'
+                        }}
+                        onMouseOver={(e) => {
+                            e.currentTarget.style.backgroundColor = tokens.color.amber.alpha[8];
+                            e.currentTarget.style.borderColor = tokens.color.amber.base;
+                        }}
+                        onMouseOut={(e) => {
+                            e.currentTarget.style.backgroundColor = 'transparent';
+                            e.currentTarget.style.borderColor = tokens.color.amber.alpha[24];
+                        }}
                         title="Reset Lab Environment"
                     >
                         <RotateCcw size={14} />
                     </button>
                 </div>
-            </div>
+            </header>
 
-            {/* Terminal + Instructions Split - Exact layout matching Stitch mock */}
-            <div className="flex-1 flex flex-col lg:flex-row min-h-0 bg-brutal-black">
-                {/* Terminal — Left Side (or Top on small screens) */}
-                <div className="flex-[3] min-h-0 border-b-2 lg:border-b-0 lg:border-r-3 border-brutal-white/20">
+            {/* Terminal + Instructions Split */}
+            <div style={{ flex: 1, display: 'flex', minHeight: 0 }} className="flex-col lg:flex-row">
+                {/* Terminal Area */}
+                <div style={{ 
+                    flex: 3, 
+                    minHeight: 0, 
+                    borderRight: `1px solid ${tokens.color.border.default}`,
+                    backgroundColor: tokens.color.bg.base 
+                }}>
                     <ErrorBoundary section="Terminal">
                         <TerminalComponent />
                     </ErrorBoundary>
                 </div>
 
-                {/* Lab Instructions — Right Side (or Bottom) */}
-                <div className="flex-[2] min-h-0 overflow-y-auto bg-brutal-dark">
+                {/* Instructions Area */}
+                <div style={{ 
+                    flex: 2, 
+                    minHeight: 0, 
+                    overflowY: 'auto', 
+                    padding: tokens.space[6],
+                    backgroundColor: tokens.color.bg.surface 
+                }}>
                     <ErrorBoundary section="Lab Instructions">
                         {lab.type === 'guided' && labProgress ? (
                             <GuidedLabInstructions

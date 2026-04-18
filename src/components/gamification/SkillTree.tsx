@@ -2,42 +2,46 @@ import React, { useMemo } from 'react';
 import { useLabStore } from '../../stores/labStore';
 import { Network, Circle, CheckCircle2, Shield, FolderGit2, TerminalSquare, Globe } from 'lucide-react';
 import { Lab } from '../../features/lab-engine/types';
+import { 
+    tokens, 
+    Card, 
+    Badge 
+} from '../ui/AshbornDesignSystem';
 
 const SKILL_BRANCHES = [
     {
         id: 'filesystem',
         name: 'Filesystem & Core',
-        icon: <FolderGit2 className="text-brutal-green" size={24} />,
+        icon: <FolderGit2 style={{ color: tokens.color.lime.base }} size={24} />,
         modules: [1, 2, 3, 8],
-        color: 'border-brutal-green'
+        color: tokens.color.lime.base
     },
     {
         id: 'permissions',
         name: 'Permissions & Security',
-        icon: <Shield className="text-brutal-yellow" size={24} />,
+        icon: <Shield style={{ color: tokens.color.amber.base }} size={24} />,
         modules: [4, 6, 15],
-        color: 'border-brutal-yellow'
+        color: tokens.color.amber.base
     },
     {
         id: 'networking',
         name: 'Networking & Services',
-        icon: <Globe className="text-brutal-blue" size={24} />,
+        icon: <Globe style={{ color: '#60A5FA' }} size={24} />,
         modules: [9, 10],
-        color: 'border-brutal-blue'
+        color: '#60A5FA'
     },
     {
         id: 'scripting',
         name: 'Scripting & Automation',
-        icon: <TerminalSquare className="text-brutal-pink" size={24} />,
+        icon: <TerminalSquare style={{ color: '#F472B6' }} size={24} />,
         modules: [5, 7, 11, 12, 13, 14],
-        color: 'border-brutal-pink'
+        color: '#F472B6'
     }
 ];
 
 export const SkillTree: React.FC = () => {
     const { labs, progress } = useLabStore();
 
-    // Group labs by module (assuming lab IDs start with M1-, M2-, etc.)
     const processModules = () => {
         const moduleMap: Record<number, { id: number, name: string, labs: Lab[], completedCount: number, totalCount: number }> = {};
 
@@ -59,66 +63,137 @@ export const SkillTree: React.FC = () => {
     const moduleData = useMemo(() => processModules(), [labs, progress]);
 
     return (
-        <div className="bg-brutal-black border-3 border-brutal-white p-6 shadow-brutal overflow-hidden">
-            <div className="flex items-center gap-3 mb-6 border-b-2 border-brutal-white pb-4">
-                <Network className="text-brutal-green" />
-                <h2 className="font-heading text-xl uppercase text-brutal-white">System Skill Tree</h2>
+        <Card variant="default" style={{ padding: tokens.space[6], backgroundColor: tokens.color.bg.surface, overflow: 'hidden', position: 'relative' }}>
+            {/* Context Header */}
+            <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 12, 
+                marginBottom: tokens.space[8],
+                borderBottom: `1px solid ${tokens.color.border.default}`,
+                paddingBottom: tokens.space[4]
+            }}>
+                <Network size={20} style={{ color: tokens.color.lime.base }} />
+                <h2 style={{ 
+                    fontFamily: tokens.font.sans, 
+                    fontSize: tokens.fontSize.md, 
+                    fontWeight: 800, 
+                    textTransform: 'uppercase', 
+                    color: tokens.color.text.primary,
+                    margin: 0,
+                    letterSpacing: tokens.letterSpacing.widest
+                }}>
+                    System Advancement Tree
+                </h2>
             </div>
 
-            <div className="space-y-8">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 40 }}>
                 {SKILL_BRANCHES.map((branch) => {
                     const branchModules = branch.modules.map(id => moduleData[id]);
 
                     return (
-                        <div key={branch.id} className="relative">
+                        <div key={branch.id} style={{ position: 'relative' }}>
                             {/* Branch Info */}
-                            <div className="flex items-center gap-3 mb-4">
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: tokens.space[6] }}>
                                 {branch.icon}
-                                <h3 className="font-heading text-lg uppercase text-brutal-white">{branch.name}</h3>
+                                <h3 style={{ 
+                                    fontFamily: tokens.font.sans, 
+                                    fontSize: tokens.fontSize.sm, 
+                                    fontWeight: 700, 
+                                    textTransform: 'uppercase', 
+                                    color: tokens.color.text.secondary,
+                                    margin: 0,
+                                    letterSpacing: tokens.letterSpacing.wide
+                                }}>
+                                    {branch.name}
+                                </h3>
                             </div>
 
                             {/* Node Path Container */}
-                            <div className={`flex flex-wrap gap-4 p-4 border-l-4 ${branch.color} bg-brutal-dark/50 relative overflow-hidden backdrop-blur-sm`}>
-                                {/* Grid background effect */}
-                                <div className="absolute inset-0 opacity-10 pointer-events-none"
-                                    style={{ backgroundImage: 'radial-gradient(var(--color-brutal-white) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
-
+                            <div style={{ 
+                                display: 'flex', 
+                                flexWrap: 'wrap', 
+                                gap: 24, 
+                                padding: tokens.space[6], 
+                                borderLeft: `2px solid ${branch.color}`, 
+                                backgroundColor: 'rgba(255,255,255,0.01)',
+                                position: 'relative',
+                                borderRadius: '0 4px 4px 0'
+                            }}>
                                 {branchModules.map((m, index) => {
                                     if (!m) return null;
 
                                     const isFullyCompleted = m.totalCount > 0 && m.completedCount === m.totalCount;
-                                    // Unlock condition: First module in branch is unlocked, or previous module in branch is completed/started.
-                                    // For simplicity, unlocking if previous module in the same branch has at least 1 completion.
                                     const prevModuleIdx = index - 1;
                                     const prevModule = prevModuleIdx >= 0 ? branchModules[prevModuleIdx] : null;
                                     const isUnlocked = index === 0 || (prevModule && prevModule.completedCount > 0);
-
                                     const isBossNode = index === branchModules.length - 1;
 
                                     return (
-                                        <div key={m.id} className="relative flex items-center">
+                                        <div key={m.id} style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                                             <div
-                                                className={`relative p-3 w-28 h-28 border-2 flex flex-col items-center justify-center transition-all z-10 ${isBossNode
-                                                        ? (isFullyCompleted ? 'bg-brutal-yellow border-brutal-black text-brutal-black scale-110 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] -rotate-3' : isUnlocked ? 'bg-brutal-dark border-brutal-yellow text-brutal-yellow' : 'bg-brutal-dark border-brutal-gray text-brutal-gray opacity-40')
-                                                        : (isFullyCompleted
-                                                            ? 'bg-brutal-green border-brutal-black text-brutal-black scale-105 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'
-                                                            : isUnlocked
-                                                                ? 'bg-brutal-dark border-brutal-white text-brutal-white'
-                                                                : 'bg-brutal-dark border-brutal-gray text-brutal-gray opacity-40')
-                                                    }`}
+                                                style={{
+                                                    position: 'relative',
+                                                    width: 96,
+                                                    height: 96,
+                                                    border: `1px solid ${
+                                                        isFullyCompleted ? tokens.color.lime.base : 
+                                                        isUnlocked ? (isBossNode ? tokens.color.amber.base : tokens.color.text.secondary) : 
+                                                        tokens.color.border.default
+                                                    }`,
+                                                    background: isFullyCompleted ? tokens.color.lime.base : (isBossNode && isUnlocked ? tokens.color.amber.alpha[8] : 'transparent'),
+                                                    display: 'flex',
+                                                    flexDirection: 'column',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    gap: 6,
+                                                    transition: 'all 0.3s ease',
+                                                    opacity: isUnlocked ? 1 : 0.3,
+                                                    boxShadow: (isBossNode && isUnlocked) ? `0 0 15px ${tokens.color.amber.alpha[16]}` : 'none',
+                                                    zIndex: 10
+                                                }}
                                             >
-                                                <div className={`text-[10px] font-mono mb-1 bg-brutal-black px-1 ${isBossNode && !isFullyCompleted ? 'text-brutal-yellow border-brutal-yellow/50' : 'text-brutal-white border-brutal-gray/30'} border`}>
-                                                    {isBossNode ? 'BOSS' : `M${m.id}`}
+                                                <div style={{ 
+                                                    fontSize: 8, 
+                                                    fontFamily: tokens.font.mono, 
+                                                    fontWeight: 700,
+                                                    padding: '1px 4px',
+                                                    background: isFullyCompleted ? 'rgba(0,0,0,0.8)' : tokens.color.bg.overlay,
+                                                    color: isFullyCompleted ? tokens.color.lime.base : (isBossNode && isUnlocked ? tokens.color.amber.base : tokens.color.text.tertiary),
+                                                    borderRadius: 2
+                                                }}>
+                                                    {isBossNode ? 'OS_CORE' : `M${m.id.toString().padStart(2, '0')}`}
                                                 </div>
-                                                {isFullyCompleted ? <CheckCircle2 size={isBossNode ? 28 : 24} className="text-brutal-black" /> : <Circle size={isBossNode ? 28 : 24} className={isBossNode && isUnlocked ? "text-brutal-yellow animate-pulse" : ""} />}
-                                                <div className="mt-2 text-[10px] font-heading uppercase text-center leading-tight">
-                                                    {m.completedCount}/{m.totalCount} Labs
+                                                
+                                                {isFullyCompleted ? (
+                                                    <CheckCircle2 size={24} style={{ color: '#000' }} />
+                                                ) : (
+                                                    <Circle size={24} style={{ 
+                                                        color: isBossNode && isUnlocked ? tokens.color.amber.base : tokens.color.text.tertiary,
+                                                        opacity: isUnlocked ? 1 : 0.5 
+                                                    }} className={isBossNode && isUnlocked ? "animate-pulse" : ""} />
+                                                )}
+
+                                                <div style={{ 
+                                                    fontSize: 9, 
+                                                    fontFamily: tokens.font.sans, 
+                                                    fontWeight: 700,
+                                                    textTransform: 'uppercase',
+                                                    color: isFullyCompleted ? '#000' : tokens.color.text.tertiary,
+                                                    textAlign: 'center'
+                                                }}>
+                                                    {m.completedCount} / {m.totalCount} labs
                                                 </div>
                                             </div>
 
                                             {/* Branch Connector Line */}
                                             {index < branchModules.length - 1 && (
-                                                <div className={`w-8 h-[2px] z-0 ${isFullyCompleted ? 'bg-brutal-green' : 'bg-brutal-gray opacity-40'}`} />
+                                                <div style={{ 
+                                                    width: 24, 
+                                                    height: 1, 
+                                                    background: isFullyCompleted ? tokens.color.lime.base : tokens.color.border.default,
+                                                    opacity: isUnlocked ? 0.6 : 0.2
+                                                }} />
                                             )}
                                         </div>
                                     );
@@ -129,21 +204,32 @@ export const SkillTree: React.FC = () => {
                 })}
             </div>
 
-            <div className="mt-8 pt-4 border-t-2 border-brutal-white/20 flex gap-4 text-[10px] font-mono uppercase text-brutal-white/80">
-                <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-brutal-green border-2 border-brutal-black" />
+            {/* Legend */}
+            <div style={{ 
+                marginTop: 40, 
+                paddingTop: 20, 
+                borderTop: `1px solid ${tokens.color.border.default}`,
+                display: 'flex',
+                gap: 24,
+                fontSize: 9,
+                fontFamily: tokens.font.mono,
+                textTransform: 'uppercase',
+                color: tokens.color.text.tertiary,
+                letterSpacing: 0.5
+            }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ width: 8, height: 8, backgroundColor: tokens.color.lime.base }} />
                     <span>Mastered</span>
                 </div>
-                <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-brutal-dark border-2 border-brutal-white" />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ width: 8, height: 8, border: `1px solid ${tokens.color.text.secondary}` }} />
                     <span>Active</span>
                 </div>
-                <div className="flex items-center gap-2 opacity-40">
-                    <div className="w-3 h-3 bg-brutal-dark border-2 border-brutal-gray" />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, opacity: 0.4 }}>
+                    <div style={{ width: 8, height: 8, border: `1px solid ${tokens.color.border.default}` }} />
                     <span>Locked</span>
                 </div>
             </div>
-        </div>
+        </Card>
     );
 };
-

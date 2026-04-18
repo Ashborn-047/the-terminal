@@ -1,14 +1,19 @@
 import React, { useState } from 'react';
-import { Lab, LabProgress, LabStep } from '../../features/lab-engine/types';
-import { useLabStore } from '../../stores/labStore';
-import { useGamificationStore } from '../../stores/gamificationStore';
+import { Lab, VFS } from '../../features/lab-engine/types';
 import { VerificationEngine } from '../../features/lab-engine/verification';
-import { VFS } from '../../features/vfs/vfs';
 import { useTerminalStore } from '../../stores/terminalStore';
 import { Lock, CheckCircle, Play, HelpCircle, Award, ChevronRight, AlertTriangle } from 'lucide-react';
+import { 
+    tokens, 
+    Card, 
+    Badge, 
+    Button, 
+    ProgressBar,
+    Divider
+} from '../ui/AshbornDesignSystem';
 
 // ======================================================================
-//  LabCard — per lab_engine_documentation.md §7.1
+//  LabCard 
 // ======================================================================
 interface LabCardProps {
     lab: Lab;
@@ -17,81 +22,111 @@ interface LabCardProps {
     onStart: (labId: string) => void;
 }
 
-export const LabCard: React.FC<LabCardProps> = ({ lab, status, progress, onStart }) => {
+export const LabCard: React.FC<LabCardProps> = ({ lab, status, onStart }) => {
     return (
-        <div
-            data-testid={`lab-card-${lab.id}`}
-            className={`border-2 border-brutal-white/20 p-6 bg-brutal-black text-brutal-white transition-all relative flex flex-col h-full
-            ${status === 'locked' ? 'opacity-40 grayscale pointer-events-none' : 'hover:border-brutal-white'} 
-            ${status === 'completed' ? 'border-brutal-green' : ''}`}
-            role="article"
-            aria-labelledby={`lab-title-${lab.id}`}
+        <Card
+            variant={status === 'locked' ? 'default' : 'default'}
+            style={{ 
+                opacity: status === 'locked' ? 0.4 : 1,
+                cursor: status === 'locked' ? 'not-allowed' : 'default',
+                display: 'flex',
+                flexDirection: 'column',
+                height: '100%',
+                transition: 'border-color 0.2s ease',
+                borderColor: status === 'completed' ? tokens.color.lime.base : tokens.color.border.default
+            }}
         >
-            <div className="flex justify-between items-start mb-4">
-                <h3 id={`lab-title-${lab.id}`} className="font-heading uppercase text-xl max-w-[80%]">{lab.title}</h3>
-                <span
-                    className={`px-2 py-0.5 text-[10px] tracking-widest font-heading uppercase border
-                    ${lab.type === 'guided' ? 'text-brutal-green border-brutal-green' : 'text-brutal-yellow border-brutal-yellow'}`}
-                    aria-label={`Lab type: ${lab.type}`}
-                >
-                    {lab.type}
-                </span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: tokens.space[4] }}>
+                <h3 style={{ 
+                    fontFamily: tokens.font.sans, 
+                    fontSize: tokens.fontSize.lg, 
+                    fontWeight: 700, 
+                    textTransform: 'uppercase', 
+                    color: tokens.color.text.primary,
+                    margin: 0,
+                    maxWidth: '75%'
+                }}>
+                    {lab.title}
+                </h3>
+                <Badge variant={lab.type === 'guided' ? 'lime' : 'amber'}>
+                    {lab.type.toUpperCase()}
+                </Badge>
             </div>
 
-            <p className="text-sm mb-6 font-body text-brutal-gray flex-1 leading-relaxed line-clamp-3">{lab.description}</p>
+            <p style={{ 
+                fontFamily: tokens.font.sans, 
+                fontSize: tokens.fontSize.xs, 
+                color: tokens.color.text.secondary, 
+                marginBottom: tokens.space[6],
+                flex: 1,
+                lineHeight: 1.5
+            }}>
+                {lab.description}
+            </p>
 
-            <div className="flex justify-between items-end mt-auto pt-4 border-t border-brutal-white/10">
-                <div className="flex flex-col">
-                    <span className="text-[10px] text-brutal-gray font-mono uppercase tracking-widest mb-1">Reward</span>
-                    <span className="font-heading text-lg text-brutal-yellow leading-none" aria-label="Reward">
+            <Divider style={{ margin: '0 0 16px 0', opacity: 0.3 }} />
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' }}>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ 
+                        fontFamily: tokens.font.mono, 
+                        fontSize: 8, 
+                        color: tokens.color.text.tertiary, 
+                        textTransform: 'uppercase', 
+                        letterSpacing: tokens.letterSpacing.widest,
+                        marginBottom: 4
+                    }}>
+                        Reward
+                    </span>
+                    <span style={{ 
+                        fontFamily: tokens.font.sans, 
+                        fontSize: tokens.fontSize.md, 
+                        fontWeight: 700, 
+                        color: tokens.color.amber.base 
+                    }}>
                         {lab.xpReward} XP
                     </span>
                 </div>
 
                 {status === 'completed' && (
-                    <span
-                        className="flex items-center gap-1 text-brutal-green font-heading uppercase text-xs"
-                        aria-label="Status: Completed"
-                    >
-                        <CheckCircle size={16} aria-hidden="true" /> COMPLETED
-                    </span>
+                    <Badge variant="lime">
+                        <CheckCircle size={10} style={{ marginRight: 4 }} /> COMPLETED
+                    </Badge>
                 )}
 
                 {status === 'in-progress' && (
-                    <button
+                    <Button
+                        variant="amber"
+                        size="sm"
                         onClick={() => onStart(lab.id)}
-                        aria-label="Continue Lab"
-                        className="px-6 py-2 font-heading uppercase text-sm border-2 border-brutal-yellow bg-brutal-yellow text-brutal-black hover:bg-transparent hover:text-brutal-yellow transition-colors"
+                        icon={<Play size={10} />}
                     >
                         CONTINUE
-                    </button>
+                    </Button>
                 )}
 
                 {status === 'available' && (
-                    <button
+                    <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => onStart(lab.id)}
-                        aria-label="Start Lab"
-                        className="px-6 py-2 font-heading tracking-widest uppercase text-sm border-2 border-brutal-white bg-brutal-white text-brutal-black hover:bg-transparent hover:text-brutal-white transition-colors"
                     >
-                        START
-                    </button>
+                        START LAB
+                    </Button>
                 )}
 
                 {status === 'locked' && (
-                    <span
-                        className="flex items-center gap-1 text-brutal-gray font-heading uppercase text-xs"
-                        aria-label="Status: Locked"
-                    >
-                        <Lock size={16} aria-hidden="true" /> LOCKED
-                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: tokens.color.text.tertiary, fontSize: 10, fontFamily: tokens.font.sans, fontWeight: 700, textTransform: 'uppercase' }}>
+                        <Lock size={12} /> LOCKED
+                    </div>
                 )}
             </div>
-        </div>
+        </Card>
     );
 };
 
 // ======================================================================
-//  GuidedLabInstructions — per lab_engine_documentation.md §7.2
+//  GuidedLabInstructions
 // ======================================================================
 interface GuidedLabProps {
     lab: Lab;
@@ -104,62 +139,80 @@ interface GuidedLabProps {
 export const GuidedLabInstructions: React.FC<GuidedLabProps> = ({ lab, currentStepIndex, onHintUsed, onRevealSolution, solutionRevealed }) => {
     const [showHint, setShowHint] = useState(false);
 
-    if (!lab.steps || currentStepIndex >= lab.steps.length) {
+    const isComplete = !lab.steps || currentStepIndex >= lab.steps.length;
+
+    if (isComplete) {
         return (
-            <div className="border-3 border-brutal-black p-4 bg-brutal-green text-brutal-black shadow-brutal">
-                <div className="flex items-center gap-2 mb-2">
-                    <Award size={20} />
-                    <h4 className="font-heading uppercase text-lg">Lab Complete!</h4>
+            <Card variant="default" style={{ background: tokens.color.lime.base, color: tokens.color.bg.base, padding: tokens.space[6] }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: tokens.space[2] }}>
+                    <Award size={24} />
+                    <h4 style={{ fontFamily: tokens.font.sans, fontSize: tokens.fontSize.lg, fontWeight: 800, textTransform: 'uppercase', margin: 0 }}>Lab Complete!</h4>
                 </div>
-                <p>{lab.completionMessage}</p>
-            </div>
+                <p style={{ fontFamily: tokens.font.sans, fontSize: tokens.fontSize.sm, fontWeight: 500, margin: 0 }}>{lab.completionMessage}</p>
+            </Card>
         );
     }
 
     const step = lab.steps[currentStepIndex];
 
-    if (!step) {
-        return (
-            <div className="border-3 border-brutal-black p-4 bg-brutal-green text-brutal-black shadow-brutal">
-                <div className="flex items-center gap-2 mb-2">
-                    <Award size={20} />
-                    <h4 className="font-heading uppercase text-lg">Lab Complete!</h4>
-                </div>
-                <p>{lab.completionMessage}</p>
-            </div>
-        );
-    }
-
     return (
-        <div className="flex flex-col h-full bg-brutal-dark text-brutal-white">
-            <div className="flex justify-between items-center mb-6 pb-2 border-b-2 border-brutal-white/20">
-                <h4 className="font-heading uppercase text-xl text-brutal-yellow">
-                    Step {currentStepIndex + 1} <span className="text-brutal-gray text-sm">/ {lab.steps.length}</span>
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', color: tokens.color.text.primary }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: tokens.space[6], paddingBottom: tokens.space[2], borderBottom: `1px solid ${tokens.color.border.default}` }}>
+                <h4 style={{ fontFamily: tokens.font.sans, fontSize: tokens.fontSize.md, fontWeight: 800, textTransform: 'uppercase', color: tokens.color.lime.base, margin: 0 }}>
+                    Step {currentStepIndex + 1} <span style={{ color: tokens.color.text.tertiary, fontSize: tokens.fontSize.xs, fontWeight: 500 }}>/ {lab.steps.length}</span>
                 </h4>
-                <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-brutal-black bg-brutal-green px-1.5 py-0.5 font-heading tracking-widest uppercase">GUIDED LAB</span>
-                </div>
+                <Badge variant="lime">GUIDED LAB</Badge>
             </div>
 
-            <p className="text-base mb-8 border-l-4 border-brutal-green pl-4 leading-relaxed font-body text-brutal-white/90">
+            <p style={{ 
+                fontFamily: tokens.font.sans, 
+                fontSize: tokens.fontSize.md, 
+                marginBottom: tokens.space[8], 
+                paddingLeft: tokens.space[4],
+                borderLeft: `2px solid ${tokens.color.lime.base}`,
+                lineHeight: 1.6,
+                color: tokens.color.text.primary
+            }}>
                 {step.instruction}
             </p>
 
-            <div className="flex flex-col gap-2">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {step.hint && (
-                    <div className="flex items-center justify-between gap-4">
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
                         {!showHint ? (
                             <button
                                 onClick={() => {
                                     setShowHint(true);
                                     onHintUsed?.(currentStepIndex);
                                 }}
-                                className="flex items-center gap-1 text-[10px] text-brutal-yellow hover:text-brutal-green font-bold uppercase border-b-2 border-brutal-yellow transition-all"
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 6,
+                                    fontSize: 10,
+                                    fontWeight: 700,
+                                    textTransform: 'uppercase',
+                                    color: tokens.color.amber.base,
+                                    background: 'none',
+                                    border: 'none',
+                                    borderBottom: `1px solid ${tokens.color.amber.base}`,
+                                    padding: '2px 0',
+                                    cursor: 'pointer',
+                                    fontFamily: tokens.font.mono
+                                }}
                             >
                                 <HelpCircle size={10} /> [GET_HINT]
                             </button>
                         ) : (
-                            <div className="bg-brutal-black border border-brutal-yellow p-1.5 text-[10px] text-brutal-yellow flex-1">
+                            <div style={{ 
+                                background: 'rgba(245,166,35,0.05)', 
+                                border: `1px solid ${tokens.color.amber.base}`, 
+                                padding: '8px 12px', 
+                                fontSize: 11, 
+                                color: tokens.color.amber.base,
+                                flex: 1,
+                                fontFamily: tokens.font.mono
+                            }}>
                                 💡 {step.hint}
                             </div>
                         )}
@@ -171,7 +224,21 @@ export const GuidedLabInstructions: React.FC<GuidedLabProps> = ({ lab, currentSt
                                         onRevealSolution?.();
                                     }
                                 }}
-                                className="flex items-center gap-1 text-[10px] text-brutal-red hover:text-brutal-white font-bold uppercase border-b-2 border-brutal-red transition-all"
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 6,
+                                    fontSize: 10,
+                                    fontWeight: 700,
+                                    textTransform: 'uppercase',
+                                    color: "rgb(239, 68, 68)",
+                                    background: 'none',
+                                    border: 'none',
+                                    borderBottom: "1px solid rgb(239, 68, 68)",
+                                    padding: '2px 0',
+                                    cursor: 'pointer',
+                                    fontFamily: tokens.font.mono
+                                }}
                             >
                                 <AlertTriangle size={10} /> [SHOW_SOLUTION]
                             </button>
@@ -180,22 +247,32 @@ export const GuidedLabInstructions: React.FC<GuidedLabProps> = ({ lab, currentSt
                 )}
 
                 {solutionRevealed && step.solution && (
-                    <div className="bg-brutal-red/10 border-2 border-brutal-red p-2 text-xs text-brutal-red font-mono">
-                        <span className="uppercase text-[8px] font-heading block mb-1 opacity-70">Solution:</span>
+                    <div style={{ 
+                        background: 'rgba(239, 68, 68, 0.05)', 
+                        border: "1px solid rgb(239, 68, 68)", 
+                        padding: '12px', 
+                        fontSize: 11, 
+                        color: "rgb(239, 68, 68)",
+                        fontFamily: tokens.font.mono 
+                    }}>
+                        <span style={{ textTransform: 'uppercase', fontSize: 9, fontWeight: 700, display: 'block', marginBottom: 4, opacity: 0.7 }}>Solution:</span>
                         {step.solution}
                     </div>
                 )}
             </div>
 
-            {/* Step progress dots - moved to bottom */}
-            <div className="mt-auto pt-8 flex gap-2 w-full">
+            {/* Step progress dots - replaced with atomic progress bar or multi-dots */}
+            <div style={{ marginTop: 'auto', paddingTop: tokens.space[8], display: 'flex', gap: 6, width: '100%' }}>
                 {lab.steps.map((_, i) => (
                     <div
                         key={i}
-                        className={`flex-1 h-1.5 
-                            ${i < currentStepIndex ? 'bg-brutal-green'
-                                : i === currentStepIndex ? 'bg-brutal-yellow border-t border-b border-brutal-yellow/50 shadow-[0_0_10px_rgba(250,255,0,0.3)]'
-                                    : 'bg-brutal-black border border-brutal-white/20'}`}
+                        style={{
+                            flex: 1,
+                            height: 4,
+                            backgroundColor: i < currentStepIndex ? tokens.color.lime.base : i === currentStepIndex ? tokens.color.amber.base : "rgba(255,255,255,0.05)",
+                            boxShadow: i === currentStepIndex ? `0 0 8px ${tokens.color.amber.alpha[48]}` : 'none',
+                            transition: 'all 0.3s ease'
+                        }}
                     />
                 ))}
             </div>
@@ -204,7 +281,7 @@ export const GuidedLabInstructions: React.FC<GuidedLabProps> = ({ lab, currentSt
 };
 
 // ======================================================================
-//  DIYLabInstructions — per lab_engine_documentation.md §7.3
+//  DIYLabInstructions
 // ======================================================================
 interface DIYLabProps {
     lab: Lab;
@@ -235,90 +312,128 @@ export const DIYLabInstructions: React.FC<DIYLabProps> = ({ lab, vfs, userId, on
 
     if (verified) {
         return (
-            <div className="border-3 border-brutal-black p-4 bg-brutal-green text-brutal-black shadow-brutal">
-                <div className="flex items-center gap-2 mb-2">
-                    <Award size={20} />
-                    <h4 className="font-heading uppercase text-lg">Lab Complete!</h4>
+            <Card variant="default" style={{ background: tokens.color.lime.base, color: tokens.color.bg.base, padding: tokens.space[6] }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: tokens.space[2] }}>
+                    <Award size={24} />
+                    <h4 style={{ fontFamily: tokens.font.sans, fontSize: tokens.fontSize.lg, fontWeight: 800, textTransform: 'uppercase', margin: 0 }}>Lab Complete!</h4>
                 </div>
-                <p>{lab.completionMessage}</p>
-                <p className="mt-2 font-heading text-sm">+{lab.xpReward} XP earned!</p>
-            </div>
+                <p style={{ fontFamily: tokens.font.sans, fontSize: tokens.fontSize.sm, fontWeight: 500, margin: 0 }}>{lab.completionMessage}</p>
+                <div style={{ marginTop: 12, fontFamily: tokens.font.mono, fontSize: 11, fontWeight: 700, textTransform: 'uppercase' }}>
+                    +{lab.xpReward} XP earned!
+                </div>
+            </Card>
         );
     }
 
     return (
-        <div className="flex flex-col h-full bg-brutal-dark text-brutal-white">
-            <div className="flex justify-between items-center mb-6 pb-2 border-b-2 border-brutal-white/20">
-                <h4 className="font-heading uppercase text-xl text-brutal-yellow tracking-tight">Objective</h4>
-                <span className="text-[10px] text-brutal-black bg-brutal-yellow px-1.5 py-0.5 font-heading tracking-widest uppercase">DIY LAB</span>
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', color: tokens.color.text.primary }}>
+            <div style={{ display: 'flex', justifyBetween: 'space-between', alignItems: 'center', marginBottom: tokens.space[6], paddingBottom: tokens.space[2], borderBottom: `1px solid ${tokens.color.border.default}`, justifyContent: 'space-between' }}>
+                <h4 style={{ fontFamily: tokens.font.sans, fontSize: tokens.fontSize.md, fontWeight: 800, textTransform: 'uppercase', color: tokens.color.amber.base, margin: 0 }}>Objective</h4>
+                <Badge variant="amber">DIY LAB</Badge>
             </div>
 
-            <p className="text-base mb-8 leading-relaxed font-body text-brutal-white/90">
+            <p style={{ 
+                fontFamily: tokens.font.sans, 
+                fontSize: tokens.fontSize.md, 
+                marginBottom: tokens.space[8], 
+                lineHeight: 1.6,
+                color: tokens.color.text.primary
+            }}>
                 {lab.description}
             </p>
 
             {lab.verification && (
-                <>
-                    <h5 className="font-heading text-sm uppercase mb-2">Requirements:</h5>
-                    <ul className="space-y-1 mb-4">
+                <div style={{ marginBottom: tokens.space[4] }}>
+                    <h5 style={{ fontFamily: tokens.font.sans, fontSize: 11, fontWeight: 700, textTransform: 'uppercase', marginBottom: 12, color: tokens.color.text.secondary }}>Requirements:</h5>
+                    <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
                         {lab.verification.conditions.map((cond, i) => (
                             <li
                                 key={i}
-                                className={`text-sm flex items-center gap-2 ${failedMessages.includes(cond.message) ? 'text-brutal-red' : 'text-brutal-gray'
-                                    }`}
+                                style={{
+                                    fontFamily: tokens.font.mono,
+                                    fontSize: 11,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 8,
+                                    color: failedMessages.includes(cond.message) ? "rgb(239, 68, 68)" : tokens.color.text.tertiary
+                                }}
                             >
-                                <ChevronRight size={12} />
+                                <ChevronRight size={10} />
                                 {cond.message}
                             </li>
                         ))}
                     </ul>
-                </>
+                </div>
             )}
 
-            <div className="mt-auto pt-6">
-                <button
+            <div style={{ marginTop: 'auto', paddingTop: tokens.space[6] }}>
+                <Button
+                    variant="lime"
+                    size="md"
                     onClick={handleVerify}
-                    className="w-full py-4 font-heading uppercase tracking-widest text-sm bg-brutal-green text-brutal-black border-2 border-brutal-black hover:bg-brutal-yellow hover:translate-x-[2px] hover:translate-y-[2px] transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[4px] active:translate-y-[4px]"
+                    style={{ width: '100%' }}
                 >
                     VERIFY LAB
-                </button>
+                </Button>
 
                 {failedMessages.length > 0 && (
-                    <p className="mt-2 text-xs text-brutal-red">
+                    <p style={{ marginTop: 8, textAlign: 'center', fontSize: 10, color: "rgb(239, 68, 68)", fontFamily: tokens.font.mono }}>
                         {failedMessages.length} requirement{failedMessages.length > 1 ? 's' : ''} not met yet.
                     </p>
                 )}
 
                 {/* Hints */}
                 {lab.hints && lab.hints.length > 0 && (
-                    <div className="mt-4">
+                    <div style={{ marginTop: 16 }}>
                         {hintIndex < 0 ? (
                             <button
                                 onClick={() => {
                                     setHintIndex(0);
                                     onHintUsed?.(0);
                                 }}
-                                className="flex items-center gap-1 text-xs text-brutal-yellow hover:underline"
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 6,
+                                    fontSize: 11,
+                                    color: tokens.color.amber.base,
+                                    background: 'none',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    fontFamily: tokens.font.sans,
+                                    fontWeight: 500
+                                }}
+                                onMouseOver={(e) => e.currentTarget.style.textDecoration = 'underline'}
+                                onMouseOut={(e) => e.currentTarget.style.textDecoration = 'none'}
                             >
                                 <HelpCircle size={14} /> Need a hint?
                             </button>
                         ) : (
-                            <div className="space-y-2">
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                                 {lab.hints.slice(0, hintIndex + 1).map((hint, i) => (
-                                    <div key={i} className="bg-brutal-black border-2 border-brutal-yellow p-2 text-xs text-brutal-yellow">
+                                    <div key={i} style={{ 
+                                        background: 'rgba(245,166,35,0.05)', 
+                                        border: `1px solid ${tokens.color.amber.base}`, 
+                                        padding: '8px 12px', 
+                                        fontSize: 11, 
+                                        color: tokens.color.amber.base,
+                                        fontFamily: tokens.font.mono
+                                    }}>
                                         💡 Hint {i + 1}: {hint}
                                     </div>
                                 ))}
                                 {hintIndex < lab.hints.length - 1 && (
-                                    <button
+                                    <Button
+                                        variant="outline"
+                                        size="xs"
                                         onClick={() => {
                                             setHintIndex(hintIndex + 1);
                                             onHintUsed?.(hintIndex + 1);
                                         }}
-                                        className="font-heading tracking-widest uppercase text-xs text-brutal-black bg-brutal-yellow px-4 py-2 hover:bg-brutal-white transition-colors border-2 border-brutal-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[2px] active:translate-y-[2px]"
+                                        style={{ alignSelf: 'flex-start' }}
                                     >
                                         MORE HELP
-                                    </button>
+                                    </Button>
                                 )}
                             </div>
                         )}

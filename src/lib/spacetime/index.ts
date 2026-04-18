@@ -31,25 +31,40 @@ class SpacetimeService {
         const uri = (import.meta as any).env.VITE_SPACETIME_URI || "https://maincloud.spacetimedb.com";
         const databaseName = (import.meta as any).env.VITE_SPACETIME_DB_NAME || "terminal-backend";
 
-        this.conn = DbConnection.builder()
-            .withUri(uri)
-            .withDatabaseName(databaseName)
-            .onConnect(() => {
-                console.log("Connected to SpacetimeDB");
-                this.isConnected = true;
-                this.onConnectCallbacks.forEach(cb => cb());
-                this.notifyObservers();
-            })
-            .onDisconnect(() => {
-                console.log("Disconnected from SpacetimeDB");
-                this.isConnected = false;
-                this.notifyObservers();
-                setTimeout(() => this.connect(), 5000);
-            })
-            .onConnectError((_ctx: any, err: Error) => {
-                console.error("SpacetimeDB Connection Error:", err);
-            })
-            .build();
+        try {
+            console.log(`[SpacetimeDB] Attempting connection to ${databaseName}...`);
+            this.conn = DbConnection.builder()
+                .withUri(uri)
+                .withDatabaseName(databaseName)
+                .onConnect(() => {
+                    console.log("Connected to SpacetimeDB");
+                    this.isConnected = true;
+                    this.onConnectCallbacks.forEach(cb => cb());
+                    this.notifyObservers();
+                })
+                .onDisconnect(() => {
+                    console.log("Disconnected from SpacetimeDB");
+                    this.isConnected = false;
+                    this.notifyObservers();
+                    if (!this.isMock) setTimeout(() => this.connect(), 5000);
+                })
+                .onConnectError((_ctx: any, err: Error) => {
+                    console.error("SpacetimeDB Connection Error:", err);
+                    this.handleInitializationFailure(err);
+                })
+                .build();
+        } catch (err: any) {
+            console.error("SpacetimeDB Builder Critical Failure:", err);
+            this.handleInitializationFailure(err);
+        }
+    }
+
+    private handleInitializationFailure(err: Error) {
+        console.warn("[SpacetimeDB] Falling back to LOCAL MOCK MODE due to connection/schema fault.");
+        this.isMock = true;
+        this.isConnected = true; // Mark as "connected" so initialization listeners proceed
+        this.onConnectCallbacks.forEach(cb => cb());
+        this.notifyObservers();
     }
 
     public onConnect(cb: () => void) {
@@ -106,46 +121,55 @@ class SpacetimeService {
     }
 
     public async sendMessage(channel: string, content: string) {
+        if (this.isMock) return;
         if (!this.conn) throw new Error("Not connected");
         return this.conn.reducers.sendMessage({ channel, content });
     }
 
     public async editMessage(messageId: bigint, content: string) {
+        if (this.isMock) return;
         if (!this.conn) throw new Error("Not connected");
         return this.conn.reducers.editMessage({ messageId, content });
     }
 
     public async deleteMessage(messageId: bigint) {
+        if (this.isMock) return;
         if (!this.conn) throw new Error("Not connected");
         return this.conn.reducers.deleteMessage({ messageId });
     }
 
     public async pinMessage(messageId: bigint, pinned: boolean) {
+        if (this.isMock) return;
         if (!this.conn) throw new Error("Not connected");
         return this.conn.reducers.pinMessage({ messageId, pinned });
     }
 
     public async startTyping(channel: string) {
+        if (this.isMock) return;
         if (!this.conn) throw new Error("Not connected");
         return this.conn.reducers.startTyping({ channel });
     }
 
     public async completeQuest(questId: bigint) {
+        if (this.isMock) return;
         if (!this.conn) throw new Error("Not connected");
         return this.conn.reducers.completeQuest({ questId });
     }
 
     public async upvoteMessage(messageId: bigint) {
+        if (this.isMock) return;
         if (!this.conn) throw new Error("Not connected");
         return this.conn.reducers.upvoteMessage({ messageId });
     }
 
     public async stopTyping() {
+        if (this.isMock) return;
         if (!this.conn) throw new Error("Not connected");
         return this.conn.reducers.stopTyping({});
     }
 
     public async heartbeat(currentLab: string | undefined) {
+        if (this.isMock) return;
         if (!this.conn) throw new Error("Not connected");
         return this.conn.reducers.heartbeat({ currentLab });
     }

@@ -1,5 +1,10 @@
 import React from 'react';
 import { useGamificationStore } from '../../stores/gamificationStore';
+import { 
+    tokens, 
+    Card, 
+    Badge 
+} from '../ui/AshbornDesignSystem';
 
 export const StreakHeatmap: React.FC = () => {
     const { streak, activityHistory } = useGamificationStore();
@@ -13,46 +18,89 @@ export const StreakHeatmap: React.FC = () => {
 
         const xpEarned = activityHistory?.[dateStr] || 0;
 
-        let intensityClass = 'bg-brutal-gray/10';
+        let bgColor = "rgba(255,255,255,0.03)";
+        let borderColor = tokens.color.border.subtle;
+        let glow = "none";
+
         if (xpEarned > 0) {
-            if (xpEarned >= 500) intensityClass = 'bg-[#00ff9d] shadow-[0_0_8px_rgba(0,255,157,0.8)] border-[#00ff9d]';
-            else if (xpEarned >= 200) intensityClass = 'bg-[#00cc7d] border-[#00cc7d]';
-            else if (xpEarned >= 50) intensityClass = 'bg-[#00995e] border-[#00995e]';
-            else intensityClass = 'bg-[#00663f] border-[#00663f]';
+            borderColor = "transparent";
+            if (xpEarned >= 500) {
+                bgColor = tokens.color.lime.base;
+                glow = `0 0 10px ${tokens.color.lime.alpha[48]}`;
+            } else if (xpEarned >= 200) {
+                bgColor = tokens.color.lime.alpha[72];
+            } else if (xpEarned >= 50) {
+                bgColor = tokens.color.lime.alpha[48];
+            } else {
+                bgColor = tokens.color.lime.alpha[24];
+            }
         }
 
-        return { date: dateStr, xp: xpEarned, intensityClass };
+        return { date: dateStr, xp: xpEarned, bgColor, borderColor, glow };
     });
 
     return (
-        <div className="bg-brutal-black border-3 border-brutal-green p-4 shadow-brutal">
-            <h3 className="font-heading text-brutal-green text-sm uppercase mb-4 flex items-center justify-between">
+        <Card variant="default" style={{ padding: tokens.space[4] }}>
+            <h3 style={{ 
+                fontFamily: tokens.font.sans, 
+                fontSize: tokens.fontSize.xs, 
+                fontWeight: tokens.fontWeight.bold,
+                textTransform: 'uppercase', 
+                color: tokens.color.text.secondary,
+                marginBottom: tokens.space[4],
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between'
+            }}>
                 <span>Persistence Heatmap</span>
-                <span className="text-[10px] bg-brutal-green text-brutal-black px-1 leading-none">{streak.current} DAY STREAK</span>
+                <Badge variant="amber" style={{ fontSize: 9 }}>
+                    {streak.current} DAY STREAK
+                </Badge>
             </h3>
 
-            <div className="grid grid-cols-7 gap-1 lg:gap-1.5 md:grid-cols-7">
+            <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(7, 1fr)', 
+                gap: 4 
+            }}>
                 {days.map((day, i) => (
                     <div
                         key={i}
                         title={`${day.date}: ${day.xp} XP`}
-                        className={`aspect-square border border-brutal-gray/30 transition-transform hover:scale-110 ${day.intensityClass}`}
+                        style={{
+                            aspectRatio: '1/1',
+                            backgroundColor: day.bgColor,
+                            border: `1px solid ${day.borderColor}`,
+                            boxShadow: day.glow,
+                            transition: 'transform 0.15s',
+                        }}
+                        onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.15)'}
+                        onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
                     />
                 ))}
             </div>
 
-            <div className="mt-4 flex items-center justify-between text-[10px] text-brutal-gray uppercase font-mono">
-                <span>35 Days Ago</span>
-                <div className="flex items-center gap-1">
+            <div style={{ 
+                marginTop: 16, 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'space-between', 
+                fontSize: 9, 
+                color: tokens.color.text.tertiary, 
+                textTransform: 'uppercase', 
+                fontFamily: tokens.font.mono 
+            }}>
+                <span>Past 35 Days</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                     <span>Less</span>
-                    <div className="w-2 h-2 bg-brutal-gray/10 border border-brutal-gray/30" />
-                    <div className="w-2 h-2 bg-[#00663f] border border-[#00663f]" />
-                    <div className="w-2 h-2 bg-[#00995e] border border-[#00995e]" />
-                    <div className="w-2 h-2 bg-[#00cc7d] border border-[#00cc7d]" />
-                    <div className="w-2 h-2 bg-[#00ff9d] shadow-[0_0_4px_rgba(0,255,157,0.8)] border-[#00ff9d]" />
+                    <div style={{ width: 8, height: 8, background: "rgba(255,255,255,0.03)", border: `1px solid ${tokens.color.border.subtle}` }} />
+                    <div style={{ width: 8, height: 8, background: tokens.color.lime.alpha[24] }} />
+                    <div style={{ width: 8, height: 8, background: tokens.color.lime.alpha[48] }} />
+                    <div style={{ width: 8, height: 8, background: tokens.color.lime.alpha[72] }} />
+                    <div style={{ width: 8, height: 8, background: tokens.color.lime.base, boxShadow: `0 0 4px ${tokens.color.lime.alpha[48]}` }} />
                     <span>More</span>
                 </div>
             </div>
-        </div>
+        </Card>
     );
 };

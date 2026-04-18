@@ -1,5 +1,12 @@
 import React, { useState, useMemo } from 'react';
-import { COMMAND_DOCS, CommandDoc } from '../data/commandDocs';
+import { COMMAND_DOCS } from '../data/commandDocs';
+import { 
+    tokens, 
+    Card, 
+    Badge, 
+    Divider 
+} from '../components/ui/AshbornDesignSystem';
+import { Search, ChevronRight, BookOpen, Hash, Code } from 'lucide-react';
 
 const CATEGORIES: Record<string, string[]> = {
     'Navigation': ['cd', 'pwd', 'ls', 'find'],
@@ -36,240 +43,287 @@ export default function CommandReferencePage() {
 
     return (
         <div style={{
-            padding: '2rem',
-            minHeight: '100vh',
-            color: '#F0F0F0',
-            fontFamily: 'Inter, sans-serif',
+            padding: tokens.space[8],
+            height: '100%',
+            overflowY: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
+            backgroundColor: tokens.color.bg.base,
+            color: tokens.color.text.primary,
         }}>
-            {/* Header */}
-            <h1 style={{
-                fontFamily: 'Archivo Black, sans-serif',
-                fontSize: '2rem',
-                textTransform: 'uppercase',
-                marginBottom: '0.5rem',
-                color: '#00FF9D',
-            }}>
-                Command Reference
-            </h1>
-            <p style={{ color: '#A0A0A0', marginBottom: '1.5rem' }}>
-                {allCommands.length} commands available — click any command for full documentation.
-            </p>
-
-            {/* Search */}
-            <input
-                type="text"
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                placeholder="Search commands..."
-                style={{
-                    width: '100%',
-                    maxWidth: '400px',
-                    padding: '0.75rem 1rem',
-                    background: '#1E1E1E',
-                    border: '2px solid #FFFFFF',
-                    color: '#F0F0F0',
-                    fontFamily: 'JetBrains Mono, monospace',
-                    fontSize: '0.875rem',
-                    marginBottom: '1.5rem',
-                    outline: 'none',
-                }}
-                onFocus={e => (e.target.style.borderColor = '#00FF9D')}
-                onBlur={e => (e.target.style.borderColor = '#FFFFFF')}
-            />
-
-            {/* Category Filters */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1.5rem' }}>
-                <button
-                    onClick={() => setActiveCategory(null)}
-                    style={{
-                        padding: '0.4rem 0.75rem',
-                        background: !activeCategory ? '#00FF9D' : '#1E1E1E',
-                        color: !activeCategory ? '#0A0A0A' : '#F0F0F0',
-                        border: '2px solid #FFFFFF',
-                        fontFamily: 'Inter, sans-serif',
-                        fontWeight: 700,
-                        fontSize: '0.75rem',
+            {/* Header Area */}
+            <div style={{ marginBottom: tokens.space[8], maxWidth: 1024 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 8 }}>
+                    <BookOpen size={32} style={{ color: tokens.color.amber.base }} />
+                    <h1 style={{
+                        fontFamily: tokens.font.sans,
+                        fontSize: tokens.fontSize['3xl'],
+                        fontWeight: 900,
                         textTransform: 'uppercase',
-                        cursor: 'pointer',
-                    }}
-                >
-                    ALL
-                </button>
-                {Object.keys(CATEGORIES).map(cat => (
-                    <button
-                        key={cat}
-                        onClick={() => setActiveCategory(activeCategory === cat ? null : cat)}
-                        style={{
-                            padding: '0.4rem 0.75rem',
-                            background: activeCategory === cat ? '#00FF9D' : '#1E1E1E',
-                            color: activeCategory === cat ? '#0A0A0A' : '#F0F0F0',
-                            border: '2px solid #FFFFFF',
-                            fontFamily: 'Inter, sans-serif',
-                            fontWeight: 700,
-                            fontSize: '0.75rem',
-                            textTransform: 'uppercase',
-                            cursor: 'pointer',
-                        }}
-                    >
-                        {cat}
-                    </button>
-                ))}
+                        color: tokens.color.text.primary,
+                        margin: 0,
+                        letterSpacing: tokens.letterSpacing.widest
+                    }}>
+                        Command Reference
+                    </h1>
+                </div>
+                <p style={{ fontFamily: tokens.font.sans, fontSize: tokens.fontSize.sm, color: tokens.color.text.tertiary, margin: 0 }}>
+                    {allCommands.length} essential binaries identified in the terminal environment.
+                </p>
             </div>
 
-            {/* Main Content */}
-            <div style={{ display: 'grid', gridTemplateColumns: selectedDoc ? '1fr 1.5fr' : '1fr', gap: '1.5rem' }}>
-                {/* Command List - Scrollable */}
-                <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
-                    gap: '0.5rem',
-                    alignContent: 'start',
-                    maxHeight: 'calc(100vh - 250px)',
+            {/* Toolbar */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 24 }}>
+                <div style={{ position: 'relative', maxWidth: 400 }}>
+                    <Search size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: tokens.color.text.tertiary }} />
+                    <input
+                        type="text"
+                        value={search}
+                        onChange={e => setSearch(e.target.value)}
+                        placeholder="SEARCH_BINARIES..."
+                        style={{
+                            width: '100%',
+                            padding: '10px 16px 10px 40px',
+                            background: tokens.color.bg.overlay,
+                            border: `1px solid ${tokens.color.border.default}`,
+                            color: tokens.color.lime.base,
+                            fontFamily: tokens.font.mono,
+                            fontSize: 12,
+                            outline: 'none',
+                            borderRadius: 4,
+                            transition: 'border-color 0.2s'
+                        }}
+                        onFocus={e => (e.currentTarget.style.borderColor = tokens.color.lime.base)}
+                        onBlur={e => (e.currentTarget.style.borderColor = tokens.color.border.default)}
+                    />
+                </div>
+
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                    <button
+                        onClick={() => setActiveCategory(null)}
+                        style={{
+                            padding: '6px 12px',
+                            background: !activeCategory ? tokens.color.lime.base : tokens.color.bg.surface,
+                            color: !activeCategory ? tokens.color.bg.base : tokens.color.text.secondary,
+                            border: `1px solid ${!activeCategory ? tokens.color.lime.base : tokens.color.border.default}`,
+                            fontFamily: tokens.font.sans,
+                            fontWeight: 700,
+                            fontSize: 10,
+                            textTransform: 'uppercase',
+                            cursor: 'pointer',
+                            borderRadius: 2
+                        }}
+                    >
+                        ALL_INDEX
+                    </button>
+                    {Object.keys(CATEGORIES).map(cat => (
+                        <button
+                            key={cat}
+                            onClick={() => setActiveCategory(activeCategory === cat ? null : cat)}
+                            style={{
+                                padding: '6px 12px',
+                                background: activeCategory === cat ? tokens.color.amber.base : tokens.color.bg.surface,
+                                color: activeCategory === cat ? tokens.color.bg.base : tokens.color.text.secondary,
+                                border: `1px solid ${activeCategory === cat ? tokens.color.amber.base : tokens.color.border.default}`,
+                                fontFamily: tokens.font.sans,
+                                fontWeight: 700,
+                                fontSize: 10,
+                                textTransform: 'uppercase',
+                                cursor: 'pointer',
+                                borderRadius: 2
+                            }}
+                        >
+                            {cat.toUpperCase()}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            {/* Content Layout */}
+            <div style={{ flex: 1, display: 'flex', gap: 24, minHeight: 0 }}>
+                {/* List Container */}
+                <div style={{ 
+                    flex: selectedDoc ? 1 : 1, 
+                    display: 'grid', 
+                    gridTemplateColumns: selectedDoc ? '1fr' : 'repeat(auto-fill, minmax(160px, 1fr))',
+                    gap: 8, 
                     overflowY: 'auto',
-                    paddingRight: '0.5rem'
-                }} className="scrollbar-brutal">
+                    paddingRight: 8,
+                    alignContent: 'start'
+                }}>
                     {filteredCommands.map(cmd => (
                         <button
                             key={cmd}
                             onClick={() => setSelectedCmd(selectedCmd === cmd ? null : cmd)}
-                            className="transition-all duration-100"
                             style={{
-                                padding: '0.5rem 0.75rem',
-                                background: selectedCmd === cmd ? '#00FF9D' : '#1E1E1E',
-                                color: selectedCmd === cmd ? '#0A0A0A' : '#00FF9D',
-                                border: selectedCmd === cmd ? '2px solid #00FF9D' : '2px solid #333',
-                                fontFamily: 'JetBrains Mono, monospace',
-                                fontSize: '0.875rem',
+                                padding: '12px 16px',
+                                background: selectedCmd === cmd ? tokens.color.lime.alpha[8] : tokens.color.bg.surface,
+                                color: selectedCmd === cmd ? tokens.color.lime.base : tokens.color.text.primary,
+                                border: `1px solid ${selectedCmd === cmd ? tokens.color.lime.base : tokens.color.border.default}`,
+                                fontFamily: tokens.font.mono,
+                                fontSize: 13,
                                 fontWeight: 700,
                                 textAlign: 'left',
                                 cursor: 'pointer',
+                                position: 'relative',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between'
                             }}
                         >
                             {cmd}
+                            {selectedCmd === cmd && <ChevronRight size={14} />}
                         </button>
                     ))}
-                    {filteredCommands.length === 0 && (
-                        <p style={{ color: '#A0A0A0', gridColumn: '1 / -1' }}>No commands match your search.</p>
-                    )}
                 </div>
 
-                {/* Detail Panel - Scrollable */}
+                {/* Detail Panel */}
                 {selectedDoc && (
-                    <div style={{
-                        background: '#1E1E1E',
-                        border: '3px solid #FFFFFF',
-                        padding: '1.5rem',
-                        maxHeight: 'calc(100vh - 250px)',
-                        overflowY: 'auto'
-                    }} className="scrollbar-brutal">
-                        <h2 style={{
-                            fontFamily: 'JetBrains Mono, monospace',
-                            fontSize: '1.5rem',
-                            color: '#00FF9D',
-                            marginBottom: '0.25rem',
-                        }}>
-                            {selectedDoc.name}
-                        </h2>
-                        <p style={{
-                            fontFamily: 'JetBrains Mono, monospace',
-                            color: '#A0A0A0',
-                            fontSize: '0.875rem',
-                            marginBottom: '1rem',
-                        }}>
-                            {selectedDoc.synopsis}
-                        </p>
-
-                        <h3 style={{
-                            fontFamily: 'Archivo Black, sans-serif',
-                            fontSize: '0.875rem',
-                            textTransform: 'uppercase',
-                            color: '#FFE600',
-                            marginBottom: '0.5rem',
-                        }}>
-                            Description
-                        </h3>
-                        <p style={{ marginBottom: '1rem', lineHeight: '1.6' }}>
-                            {selectedDoc.description}
-                        </p>
-
-                        {selectedDoc.options.length > 0 && (
-                            <>
-                                <h3 style={{
-                                    fontFamily: 'Archivo Black, sans-serif',
-                                    fontSize: '0.875rem',
-                                    textTransform: 'uppercase',
-                                    color: '#FFE600',
-                                    marginBottom: '0.5rem',
+                    <div style={{ flex: 1.5, overflowY: 'auto' }}>
+                        <Card variant="default" style={{ padding: tokens.space[6], borderLeft: `2px solid ${tokens.color.lime.base}` }}>
+                            <div style={{ marginBottom: 24 }}>
+                                <Badge variant="lime" style={{ marginBottom: 12 }}>BINARY_DOC</Badge>
+                                <h2 style={{
+                                    fontFamily: tokens.font.mono,
+                                    fontSize: tokens.fontSize.xl,
+                                    fontWeight: 900,
+                                    color: tokens.color.lime.base,
+                                    margin: 0,
+                                    letterSpacing: 1
                                 }}>
-                                    Options
+                                    {selectedDoc.name.toUpperCase()}
+                                </h2>
+                                <p style={{
+                                    fontFamily: tokens.font.mono,
+                                    color: tokens.color.text.tertiary,
+                                    fontSize: 11,
+                                    margin: '8px 0 0 0',
+                                    fontStyle: 'italic'
+                                }}>
+                                    {selectedDoc.synopsis}
+                                </p>
+                            </div>
+
+                            <Divider style={{ margin: '24px 0' }} />
+
+                            <div style={{ marginBottom: 32 }}>
+                                <h3 style={{
+                                    fontFamily: tokens.font.sans,
+                                    fontSize: 10,
+                                    fontWeight: 900,
+                                    textTransform: 'uppercase',
+                                    color: tokens.color.amber.base,
+                                    marginBottom: 12,
+                                    letterSpacing: 1
+                                }}>
+                                    Executive Summary
                                 </h3>
-                                <div style={{ marginBottom: '1rem' }}>
-                                    {selectedDoc.options.map((opt, i) => (
-                                        <div key={i} style={{
-                                            display: 'flex',
-                                            gap: '1rem',
-                                            padding: '0.25rem 0',
-                                            borderBottom: '1px solid #333',
-                                        }}>
-                                            <code style={{
-                                                fontFamily: 'JetBrains Mono, monospace',
-                                                color: '#00CCFF',
-                                                minWidth: '80px',
-                                                flexShrink: 0,
+                                <p style={{ margin: 0, lineHeight: '1.7', fontSize: 13, color: tokens.color.text.secondary }}>
+                                    {selectedDoc.description}
+                                </p>
+                            </div>
+
+                            {selectedDoc.options.length > 0 && (
+                                <div style={{ marginBottom: 32 }}>
+                                    <h3 style={{
+                                        fontFamily: tokens.font.sans,
+                                        fontSize: 10,
+                                        fontWeight: 900,
+                                        textTransform: 'uppercase',
+                                        color: tokens.color.amber.base,
+                                        marginBottom: 12,
+                                        letterSpacing: 1
+                                    }}>
+                                        Available Flags
+                                    </h3>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                        {selectedDoc.options.map((opt, i) => (
+                                            <div key={i} style={{
+                                                display: 'flex',
+                                                gap: 16,
+                                                padding: '10px 0',
+                                                borderBottom: `1px solid ${tokens.color.bg.overlay}`,
                                             }}>
-                                                {opt.flag}
-                                            </code>
-                                            <span style={{ color: '#A0A0A0' }}>{opt.desc}</span>
-                                        </div>
-                                    ))}
+                                                <code style={{
+                                                    fontFamily: tokens.font.mono,
+                                                    color: tokens.color.lime.base,
+                                                    fontSize: 12,
+                                                    minWidth: 80,
+                                                    fontWeight: 700
+                                                }}>
+                                                    {opt.flag}
+                                                </code>
+                                                <span style={{ color: tokens.color.text.secondary, fontSize: 12 }}>{opt.desc}</span>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
-                            </>
-                        )}
+                            )}
 
-                        {selectedDoc.examples.length > 0 && (
-                            <>
-                                <h3 style={{
-                                    fontFamily: 'Archivo Black, sans-serif',
-                                    fontSize: '0.875rem',
-                                    textTransform: 'uppercase',
-                                    color: '#FFE600',
-                                    marginBottom: '0.5rem',
-                                }}>
-                                    Examples
-                                </h3>
-                                <div style={{
-                                    background: '#0A0A0A',
-                                    border: '1px solid #333',
-                                    padding: '0.75rem',
-                                    fontFamily: 'JetBrains Mono, monospace',
-                                    fontSize: '0.875rem',
-                                    marginBottom: '1rem',
-                                }}>
-                                    {selectedDoc.examples.map((ex, i) => (
-                                        <div key={i} style={{ color: '#00FF9D', padding: '0.15rem 0' }}>
-                                            $ {ex}
-                                        </div>
-                                    ))}
+                            {selectedDoc.examples.length > 0 && (
+                                <div style={{ marginBottom: 32 }}>
+                                    <h3 style={{
+                                        fontFamily: tokens.font.sans,
+                                        fontSize: 10,
+                                        fontWeight: 900,
+                                        textTransform: 'uppercase',
+                                        color: tokens.color.amber.base,
+                                        marginBottom: 12,
+                                        letterSpacing: 1
+                                    }}>
+                                        Execution Examples
+                                    </h3>
+                                    <div style={{
+                                        background: tokens.color.bg.overlay,
+                                        border: `1px solid ${tokens.color.border.default}`,
+                                        padding: tokens.space[4],
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        gap: 8,
+                                        borderRadius: 4
+                                    }}>
+                                        {selectedDoc.examples.map((ex, i) => (
+                                            <div key={i} style={{ 
+                                                fontFamily: tokens.font.mono, 
+                                                fontSize: 12, 
+                                                color: tokens.color.lime.base,
+                                                display: 'flex',
+                                                gap: 8
+                                            }}>
+                                                <span style={{ opacity: 0.5 }}>$</span>
+                                                {ex}
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
-                            </>
-                        )}
+                            )}
 
-                        {selectedDoc.seeAlso.length > 0 && (
-                            <p style={{ color: '#A0A0A0', fontSize: '0.875rem' }}>
-                                See also:{' '}
-                                {selectedDoc.seeAlso.map((s, i) => (
-                                    <span key={s}>
-                                        <span
-                                            style={{ color: '#00CCFF', cursor: 'pointer', textDecoration: 'underline' }}
-                                            onClick={() => COMMAND_DOCS[s] && setSelectedCmd(s)}
+                            {selectedDoc.seeAlso.length > 0 && (
+                                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                                    <span style={{ fontSize: 9, fontFamily: tokens.font.mono, color: tokens.color.text.tertiary, textTransform: 'uppercase' }}>SYMLINKED:</span>
+                                    {selectedDoc.seeAlso.map((s) => (
+                                        <button
+                                            key={s}
+                                            onClick={() => setSelectedCmd(s)}
+                                            style={{
+                                                background: tokens.color.bg.overlay,
+                                                border: `1px solid ${tokens.color.border.default}`,
+                                                color: tokens.color.lime.base,
+                                                fontFamily: tokens.font.mono,
+                                                fontSize: 10,
+                                                padding: '2px 6px',
+                                                cursor: 'pointer',
+                                                borderRadius: 2
+                                            }}
+                                            onMouseOver={(e) => e.currentTarget.style.borderColor = tokens.color.lime.base}
+                                            onMouseOut={(e) => e.currentTarget.style.borderColor = tokens.color.border.default}
                                         >
                                             {s}
-                                        </span>
-                                        {i < selectedDoc.seeAlso.length - 1 ? ', ' : ''}
-                                    </span>
-                                ))}
-                            </p>
-                        )}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </Card>
                     </div>
                 )}
             </div>

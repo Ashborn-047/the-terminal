@@ -1,19 +1,27 @@
 import React from 'react';
-import { useGamificationStore, getLevelTitle, xpForLevel, ACHIEVEMENTS } from '../stores/gamificationStore';
+import { useGamificationStore, getLevelTitle, ACHIEVEMENTS } from '../stores/gamificationStore';
 import { useLabStore } from '../stores/labStore';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, Trophy, Flame, Zap, ChevronRight, Terminal } from 'lucide-react';
+import { BookOpen, Trophy, Zap, Terminal as TerminalIcon } from 'lucide-react';
 import { StreakHeatmap } from '../components/gamification/StreakHeatmap';
 import { SkillTree } from '../components/gamification/SkillTree';
 import { QuestList } from '../components/gamification/QuestList';
+import { 
+    tokens, 
+    StatCard, 
+    ProgressBar, 
+    Button, 
+    Badge, 
+    Card,
+    Divider
+} from '../components/ui/AshbornDesignSystem';
 
 /**
  * HomePage — Dashboard: stats overview, recent activity, quick actions.
- * NO terminal here. Terminal lives at /lab/:id when a lab is active.
  */
 const HomePage: React.FC = () => {
     const navigate = useNavigate();
-    const { level, totalXpEarned, streak, labsCompleted, unlockedAchievements, getXPProgress } = useGamificationStore();
+    const { level, totalXpEarned, streak, unlockedAchievements, getXPProgress } = useGamificationStore();
     const { labs, progress } = useLabStore();
     const { current, needed, percent } = getXPProgress();
     const title = getLevelTitle(level);
@@ -21,51 +29,100 @@ const HomePage: React.FC = () => {
     const labList = Object.values(labs);
     const inProgressLabs = labList.filter(l => progress[l.id]?.status === 'in-progress');
     const completedLabs = labList.filter(l => progress[l.id]?.status === 'completed');
-    const availableLabs = labList.filter(l => !progress[l.id] || progress[l.id]?.status === 'available');
 
     return (
-        <div className="h-full w-full overflow-y-auto p-4 md:p-6 lg:p-8">
+        <div 
+            className="h-full w-full overflow-y-auto"
+            style={{ 
+                padding: tokens.space[6],
+                backgroundColor: tokens.color.bg.base,
+                color: tokens.color.text.primary,
+            }}
+        >
             {/* Hero Banner */}
-            <div className="border-3 border-brutal-green bg-brutal-black p-8 mb-6 shadow-brutal relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-48 h-48 bg-brutal-green/5 rotate-45 translate-x-16 -translate-y-16" />
-                <h1 className="font-heading text-4xl uppercase text-brutal-green mb-2">
+            <div 
+                style={{
+                    background: tokens.color.bg.surface,
+                    border: `1px solid ${tokens.color.border.default}`,
+                    padding: tokens.space[8],
+                    marginBottom: tokens.space[6],
+                    position: 'relative',
+                    overflow: 'hidden'
+                }}
+            >
+                <div 
+                    style={{
+                        position: 'absolute',
+                        top: 0,
+                        right: 0,
+                        width: 192,
+                        height: 192,
+                        background: tokens.color.lime.alpha[8],
+                        transform: 'rotate(45deg) translate(64px, -64px)',
+                        pointerEvents: 'none'
+                    }} 
+                />
+                
+                <h1 style={{ 
+                    fontFamily: tokens.font.sans, 
+                    fontSize: tokens.fontSize['3xl'], 
+                    fontWeight: tokens.fontWeight.black,
+                    textTransform: 'uppercase', 
+                    color: tokens.color.lime.base, 
+                    marginBottom: tokens.space[1],
+                    letterSpacing: tokens.letterSpacing.widest
+                }}>
                     Command Center
                 </h1>
-                <p className="text-brutal-gray text-sm max-w-lg">
-                    Welcome back, <span className="text-brutal-white font-bold">{title}</span>.
-                    You're on Level {level} with {totalXpEarned} total XP earned.
+                
+                <p style={{ 
+                    fontFamily: tokens.font.sans, 
+                    fontSize: tokens.fontSize.md, 
+                    color: tokens.color.text.secondary,
+                    maxWidth: 512
+                }}>
+                    Welcome back, <span style={{ color: tokens.color.text.primary, fontWeight: tokens.fontWeight.bold }}>{title}</span>.
+                    You're on Level {level} with {totalXpEarned.toLocaleString()} total XP earned.
                 </p>
-                <div className="mt-4 flex gap-3">
-                    <button
+                
+                <div style={{ marginTop: tokens.space[4], display: 'flex', gap: tokens.space[3] }}>
+                    <Button 
+                        variant="lime" 
+                        icon={<BookOpen size={14} />}
                         onClick={() => navigate('/labs')}
-                        className="border-2 border-brutal-green text-brutal-green px-5 py-2 font-heading uppercase text-sm hover:bg-brutal-green hover:text-brutal-black transition-colors flex items-center gap-2"
                     >
-                        <BookOpen size={16} /> Start a Lab
-                    </button>
+                        Start a Lab
+                    </Button>
                 </div>
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <StatCard icon={<Zap size={20} />} label="Level" value={String(level)} accent="green" />
-                <StatCard icon={<Trophy size={20} />} label="Total XP" value={String(totalXpEarned)} accent="yellow" />
-                <StatCard icon={<Flame size={20} />} label="Day Streak" value={String(streak.current)} accent="red" />
-                <StatCard icon={<BookOpen size={20} />} label="Labs Done" value={`${completedLabs.length}/${labList.length}`} accent="white" />
+            <div 
+                style={{ 
+                    display: 'grid', 
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+                    gap: tokens.space[4], 
+                    marginBottom: tokens.space[6] 
+                }}
+            >
+                <StatCard label="Current Level" value={String(level)} accent="lime" icon={<Zap size={16} />} />
+                <StatCard label="Total XP" value={totalXpEarned.toLocaleString()} accent="amber" icon={<Trophy size={16} />} />
+                <StatCard label="Day Streak" value={String(streak.current)} accent="amber" unit="DAYS" />
+                <StatCard label="Labs Completed" value={`${completedLabs.length}/${labList.length}`} accent="neutral" />
             </div>
 
             {/* XP Progress */}
-            <div className="border-3 border-brutal-white bg-brutal-black p-4 mb-6 shadow-brutal">
-                <div className="flex justify-between items-center mb-2">
-                    <span className="font-heading uppercase text-xs text-brutal-gray">Progress to Level {level + 1}</span>
-                    <span className="font-heading text-sm text-brutal-green">{current}/{needed} XP</span>
+            <Card style={{ marginBottom: tokens.space[6] }}>
+                <ProgressBar 
+                    value={percent} 
+                    label={`Progress to Level ${level + 1}`} 
+                    showValue 
+                    height={4} 
+                />
+                <div style={{ marginTop: 8, textAlign: 'right', fontFamily: tokens.font.mono, fontSize: tokens.fontSize.xs, color: tokens.color.text.tertiary }}>
+                    {current.toLocaleString()} / {needed.toLocaleString()} XP
                 </div>
-                <div className="w-full h-3 bg-brutal-dark border border-brutal-white/20">
-                    <div
-                        className="h-full bg-brutal-green transition-all duration-500"
-                        style={{ width: `${percent}%` }}
-                    />
-                </div>
-            </div>
+            </Card>
 
             {/* Heatmap & Quests */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
@@ -81,12 +138,23 @@ const HomePage: React.FC = () => {
             {/* Two Column: In Progress + Achievements */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Continue Learning */}
-                <div className="border-3 border-brutal-white bg-brutal-black p-5 shadow-brutal">
-                    <h2 className="font-heading uppercase text-sm text-brutal-white mb-4 flex items-center gap-2">
-                        <Terminal size={16} className="text-brutal-green" /> Continue Learning
+                <Card variant="default" style={{ padding: tokens.space[5] }}>
+                    <h2 style={{ 
+                        fontFamily: tokens.font.sans,
+                        fontSize: tokens.fontSize.sm,
+                        fontWeight: tokens.fontWeight.bold,
+                        textTransform: 'uppercase',
+                        color: tokens.color.text.primary,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        marginBottom: tokens.space[4]
+                    }}>
+                        <TerminalIcon size={16} style={{ color: tokens.color.lime.base }} /> Continue Learning
                     </h2>
+                    
                     {inProgressLabs.length > 0 ? (
-                        <div className="space-y-3">
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                             {inProgressLabs.slice(0, 3).map(lab => (
                                 <button
                                     key={lab.id}
@@ -94,56 +162,89 @@ const HomePage: React.FC = () => {
                                         useLabStore.getState().startLab(lab.id);
                                         navigate(`/lab/${lab.id}`);
                                     }}
-                                    className="w-full text-left border-2 border-brutal-gray p-3 hover:border-brutal-green transition-colors flex items-center justify-between group"
+                                    style={{
+                                        width: '100%',
+                                        textAlign: 'left',
+                                        background: tokens.color.bg.surface,
+                                        border: `1px solid ${tokens.color.border.default}`,
+                                        padding: 12,
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center',
+                                        transition: 'border-color 0.15s'
+                                    }}
+                                    onMouseOver={(e) => e.currentTarget.style.borderColor = tokens.color.lime.base}
+                                    onMouseOut={(e) => e.currentTarget.style.borderColor = tokens.color.border.default}
                                 >
                                     <div>
-                                        <p className="font-heading uppercase text-xs text-brutal-white">{lab.title}</p>
-                                        <p className="text-[10px] text-brutal-gray mt-1">+{lab.xpReward} XP • {lab.type}</p>
+                                        <p style={{ 
+                                            fontFamily: tokens.font.sans, 
+                                            fontSize: tokens.fontSize.xs, 
+                                            fontWeight: tokens.fontWeight.bold,
+                                            textTransform: 'uppercase', 
+                                            color: tokens.color.text.primary,
+                                            margin: 0
+                                        }}>
+                                            {lab.title}
+                                        </p>
+                                        <p style={{ 
+                                            fontFamily: tokens.font.mono, 
+                                            fontSize: 9, 
+                                            color: tokens.color.text.tertiary, 
+                                            marginTop: 4,
+                                            margin: 0
+                                        }}>
+                                            +{lab.xpReward} XP • {lab.type.toUpperCase()}
+                                        </p>
                                     </div>
-                                    <ChevronRight size={14} className="text-brutal-gray group-hover:text-brutal-green transition-colors" />
+                                    <div style={{ color: tokens.color.text.tertiary }}>→</div>
                                 </button>
                             ))}
                         </div>
                     ) : (
-                        <p className="text-brutal-gray text-xs">
-                            No labs in progress. <button onClick={() => navigate('/labs')} className="text-brutal-green underline">Browse curriculum →</button>
+                        <p style={{ fontFamily: tokens.font.sans, fontSize: tokens.fontSize.xs, color: tokens.color.text.tertiary }}>
+                            No labs in progress. <button onClick={() => navigate('/labs')} style={{ background: 'none', border: 'none', padding: 0, color: tokens.color.lime.base, cursor: 'pointer', textDecoration: 'underline' }}>Browse curriculum →</button>
                         </p>
                     )}
-                </div>
+                </Card>
 
                 {/* Recent Achievements */}
-                <div className="border-3 border-brutal-white bg-brutal-black p-5 shadow-brutal">
-                    <h2 className="font-heading uppercase text-sm text-brutal-white mb-4 flex items-center gap-2">
-                        <Trophy size={16} className="text-brutal-yellow" /> Achievements
+                <Card variant="default" style={{ padding: tokens.space[5] }}>
+                    <h2 style={{ 
+                        fontFamily: tokens.font.sans,
+                        fontSize: tokens.fontSize.sm,
+                        fontWeight: tokens.fontWeight.bold,
+                        textTransform: 'uppercase',
+                        color: tokens.color.text.primary,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        marginBottom: tokens.space[4]
+                    }}>
+                        <Trophy size={16} style={{ color: tokens.color.amber.base }} /> Achievements
                     </h2>
+                    
                     {unlockedAchievements.length > 0 ? (
-                        <div className="flex flex-wrap gap-2">
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                             {unlockedAchievements.slice(0, 6).map(achId => {
                                 const ach = ACHIEVEMENTS.find(a => a.id === achId);
                                 return ach ? (
-                                    <div key={achId} className="border border-brutal-yellow px-3 py-1 text-sm" title={ach.description}>
+                                    <Badge key={achId} variant="amber">
                                         {ach.icon} {ach.name}
-                                    </div>
+                                    </Badge>
                                 ) : null;
                             })}
                         </div>
                     ) : (
-                        <p className="text-brutal-gray text-xs">
+                        <p style={{ fontFamily: tokens.font.sans, fontSize: tokens.fontSize.xs, color: tokens.color.text.tertiary }}>
                             No achievements unlocked yet. Complete labs to earn your first! 🏆
                         </p>
                     )}
-                </div>
+                </Card>
             </div>
         </div>
     );
 };
-
-const StatCard: React.FC<{ icon: React.ReactNode; label: string; value: string; accent: string }> = ({ icon, label, value, accent }) => (
-    <div className={`border-3 border-brutal-${accent} bg-brutal-black p-4 shadow-brutal`}>
-        <div className={`text-brutal-${accent} mb-2`}>{icon}</div>
-        <p className="font-heading text-2xl text-brutal-white">{value}</p>
-        <p className="font-heading uppercase text-[10px] text-brutal-gray">{label}</p>
-    </div>
-);
 
 export default HomePage;

@@ -1,24 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import { spacetime } from '../../lib/spacetime';
-import { Wifi, WifiOff, RefreshCw } from 'lucide-react';
+import { WifiOff, RefreshCw } from 'lucide-react';
+import { 
+    tokens 
+} from '../ui/AshbornDesignSystem';
 
 export const ConnectionBanner: React.FC = () => {
     const [isConnected, setIsConnected] = useState(true); // Assume connected initially
     const [isConnecting, setIsConnecting] = useState(false);
 
     useEffect(() => {
-        // Simple polling/event check for connection status
-        // In a real SpacetimeDB app, we'd listen to onConnect/onDisconnect
         const checkStatus = () => {
-            // @ts-ignore - access private isConnected for UI purposes if needed, 
-            // or better yet, add a public getter to SpacetimeService
             const status = (spacetime as any).isConnected;
             setIsConnected(status);
         };
 
         const interval = setInterval(checkStatus, 2000);
 
-        // Listen for specific spacetime events if we added them
         spacetime.onConnect(() => {
             setIsConnected(true);
             setIsConnecting(false);
@@ -29,21 +27,36 @@ export const ConnectionBanner: React.FC = () => {
 
     if (isConnected && !isConnecting) return null;
 
+    const bannerColor = isConnecting ? tokens.color.amber.base : "rgb(239, 68, 68)";
+    const textColor = isConnecting ? tokens.color.bg.base : tokens.color.text.primary;
+
     return (
-        <div className={`relative w-full z-[100] border-b-4 border-brutal-black p-2 flex items-center justify-center gap-4 transition-all duration-500 ${isConnecting ? 'bg-brutal-yellow' : 'bg-brutal-red'
-            } animate-in slide-in-from-top`}>
+        <div style={{ 
+            position: 'relative', 
+            width: '100%', 
+            zIndex: 1000, 
+            borderBottom: `1px solid ${tokens.color.border.default}`, 
+            padding: '8px 16px', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            gap: 16, 
+            backgroundColor: bannerColor,
+            color: textColor,
+            transition: 'all 0.5s'
+        }}>
             {isConnecting ? (
                 <>
-                    <RefreshCw size={20} className="animate-spin text-brutal-black" />
-                    <span className="font-heading uppercase text-sm tracking-wider text-brutal-black">
-                        Reconnecting to SpacetimeDB...
+                    <RefreshCw size={16} className="animate-spin" />
+                    <span style={{ fontFamily: tokens.font.sans, fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1 }}>
+                        Re-integrating with Spacetime Grid...
                     </span>
                 </>
             ) : (
                 <>
-                    <WifiOff size={20} className="text-brutal-white animate-pulse" />
-                    <span className="font-heading uppercase text-sm tracking-wider text-brutal-white">
-                        Connection Lost. Using Offline Cache.
+                    <WifiOff size={16} className="animate-pulse" />
+                    <span style={{ fontFamily: tokens.font.sans, fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1 }}>
+                        Grid Connection Interrupted. Local Cache Active.
                     </span>
                     <button
                         onClick={() => {
@@ -51,9 +64,23 @@ export const ConnectionBanner: React.FC = () => {
                             // @ts-ignore
                             spacetime.connect();
                         }}
-                        className="ml-4 bg-brutal-white border-2 border-brutal-black px-3 py-1 text-xs font-bold uppercase hover:bg-brutal-green transition-colors"
+                        style={{
+                            marginLeft: 16,
+                            background: 'rgba(0,0,0,0.2)',
+                            border: `1px solid rgba(255,b255,255,0.3)`,
+                            color: '#fff',
+                            padding: '4px 12px',
+                            fontSize: 10,
+                            fontWeight: 700,
+                            textTransform: 'uppercase',
+                            cursor: 'pointer',
+                            fontFamily: tokens.font.sans,
+                            borderRadius: 2
+                        }}
+                        onMouseOver={(e) => e.currentTarget.style.background = 'rgba(0,0,0,0.4)'}
+                        onMouseOut={(e) => e.currentTarget.style.background = 'rgba(0,0,0,0.2)'}
                     >
-                        Retry Now
+                        [RETRY_SYNC]
                     </button>
                 </>
             )}
