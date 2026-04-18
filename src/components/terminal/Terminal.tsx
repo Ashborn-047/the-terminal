@@ -101,10 +101,7 @@ export const TerminalComponent: React.FC = () => {
             });
         }
 
-        // Welcome message
-        term.writeln('\x1b[1;32mWelcome to the Linux Simulator (Engine Wave 2)\x1b[0m');
-        term.writeln('Type \x1b[1;36mhelp\x1b[0m to see available commands.');
-        term.writeln('');
+        // Welcome message removed as per request
         
         // WAVE 3: Level Migration & Notice
         const gamification = useGamificationStore.getState();
@@ -126,14 +123,13 @@ export const TerminalComponent: React.FC = () => {
         const checkVisualReadiness = () => {
             const text = terminalRef.current?.innerText || '';
             const promptExists = text.includes('linux-lab');
-            const welcomeExists = text.includes('Welcome to the Linux Simulator');
 
             // Log polling status for CI diagnostics
             if (Date.now() % 500 === 0) { // Log every ~500ms
-                console.debug(`[Terminal] Polling Readiness... TextLen: ${text.length}, Prompt: ${promptExists}, Welcome: ${welcomeExists}`);
+                console.debug(`[Terminal] Polling Readiness... TextLen: ${text.length}, Prompt: ${promptExists}`);
             }
 
-            if (promptExists && welcomeExists) {
+            if (promptExists) {
                 useTerminalStore.getState().setEngineStatus('ready');
                 console.info('[Terminal] Visual readiness confirmed. Engine is READY.');
             } else {
@@ -143,7 +139,6 @@ export const TerminalComponent: React.FC = () => {
                 } else {
                     console.warn('[Terminal] Visual readiness timeout. Forcing READY signal.', {
                         prompt: promptExists,
-                        welcome: welcomeExists,
                         text: text.substring(0, 100)
                     });
                     useTerminalStore.getState().setEngineStatus('ready');
