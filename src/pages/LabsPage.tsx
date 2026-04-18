@@ -58,11 +58,15 @@ const LabsPage: React.FC = () => {
             backgroundColor: tokens.color.bg.base 
         }}>
             {/* Context Panel (Secondary Sidebar) */}
-            <div style={{ 
-                width: 250, 
-                flexShrink: 0, 
-                display: 'none' 
-            }} className="md:block">
+            <div 
+                style={{ 
+                    width: 250, 
+                    flexShrink: 0,
+                    borderRight: `1px solid ${tokens.color.border.default}`,
+                    display: 'var(--module-nav-display, block)'
+                }}
+                className="module-nav-container"
+            >
                 <ModuleNavBar />
             </div>
 
@@ -85,15 +89,18 @@ const LabsPage: React.FC = () => {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 24, marginBottom: 16 }}>
                         <span style={{ fontSize: 48 }}>{activeModule?.icon}</span>
                         <div>
-                            <h1 style={{ 
-                                fontFamily: tokens.font.sans, 
-                                fontSize: tokens.fontSize['3xl'], 
-                                fontWeight: 900, 
-                                color: tokens.color.amber.base, 
-                                textTransform: 'uppercase', 
-                                margin: 0,
-                                letterSpacing: tokens.letterSpacing.tighter
-                            }}>
+                            <h1 
+                                data-testid="lab-module-title"
+                                style={{ 
+                                    fontFamily: tokens.font.sans, 
+                                    fontSize: tokens.fontSize['3xl'], 
+                                    fontWeight: 900, 
+                                    color: tokens.color.amber.base, 
+                                    textTransform: 'uppercase', 
+                                    margin: 0,
+                                    letterSpacing: tokens.letterSpacing.tighter
+                                }}
+                            >
                                 {activeModule?.title || 'Curriculum'}
                             </h1>
                             <div style={{ marginTop: 8 }}>

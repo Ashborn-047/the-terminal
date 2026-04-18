@@ -50,7 +50,7 @@ test.describe('Curriculum and Lab Flow', () => {
 
         // Step 2: Verify Foundations module is active
         await expect(page).toHaveURL(/\/labs/);
-        await expect(page.getByText(/Foundations/i).first()).toBeVisible({ timeout: 25000 });
+        await expect(page.getByTestId('lab-module-title')).toContainText(/Foundations/i);
 
         // Step 3: Start "Your First Command" (lab-1-1)
         const startBtn = page.locator('[data-testid="lab-card-lab-1-1"]').getByRole('button', { name: /Start/i });

@@ -71,6 +71,7 @@ export const tokens = {
                 8: "rgba(200,241,53,0.08)",
                 12: "rgba(200,241,53,0.12)",
                 20: "rgba(200,241,53,0.20)",
+                24: "rgba(200,241,53,0.24)",
             },
         },
 
@@ -87,6 +88,7 @@ export const tokens = {
                 8: "rgba(245,166,35,0.08)",
                 12: "rgba(245,166,35,0.12)",
                 20: "rgba(245,166,35,0.20)",
+                24: "rgba(245,166,35,0.24)",
             },
         },
 
@@ -235,6 +237,15 @@ export const tokens = {
         modal: 200,
         toast: 300,
     },
+
+    // ── SHADOWS ───────────────────────────────────────────────
+    shadow: {
+        sm: "0 1px 2px rgba(0,0,0,0.4)",
+        md: "0 4px 12px rgba(0,0,0,0.5)",
+        lg: "0 12px 32px rgba(0,0,0,0.6)",
+        lime: "0 0 20px rgba(200,241,53,0.15)",
+        amber: "0 0 20px rgba(245,166,35,0.15)",
+    },
 };
 
 // ════════════════════════════════════════════════════════════════
@@ -339,7 +350,7 @@ const buttonStyles = {
     },
 };
 
-export const Button = ({ variant = "secondary", size = "md", disabled = false, loading = false, icon, onClick, children }) => {
+export const Button = ({ variant = "secondary", size = "md", disabled = false, loading = false, icon, onClick, children, ...props }) => {
     const [hovered, setHovered] = useState(false);
     const [pressed, setPressed] = useState(false);
 
@@ -362,6 +373,7 @@ export const Button = ({ variant = "secondary", size = "md", disabled = false, l
             onMouseLeave={() => { setHovered(false); setPressed(false); }}
             onMouseDown={() => setPressed(true)}
             onMouseUp={() => setPressed(false)}
+            {...props}
         >
             {loading && (
                 <span style={{ width: 10, height: 10, border: `2px solid currentColor`, borderTopColor: "transparent", borderRadius: "50%", animation: "al-spin 0.7s linear infinite", display: "inline-block" }} />
@@ -394,10 +406,11 @@ const badgeConfig = {
     level: { bg: tokens.color.amber.base, border: "none", color: tokens.color.text.inverse },
 };
 
-export const Badge = ({ variant = "ghost", children, dot = false }) => {
-    const cfg = badgeConfig[variant];
+export const Badge = ({ variant = "ghost", children, dot = false, ...props }) => {
+    const cfg = badgeConfig[variant] || badgeConfig.ghost;
     return (
-        <span style={{
+        <span 
+          style={{
             display: "inline-flex", alignItems: "center", gap: 5,
             padding: "2px 7px",
             background: cfg.bg,
@@ -409,7 +422,9 @@ export const Badge = ({ variant = "ghost", children, dot = false }) => {
             letterSpacing: tokens.letterSpacing.wider,
             textTransform: "uppercase",
             borderRadius: tokens.radius.none,
-        }}>
+          }}
+          {...props}
+        >
             {dot && (
                 <span style={{ width: 5, height: 5, borderRadius: "50%", background: cfg.color, animation: "al-pulse 2s infinite", flexShrink: 0 }} />
             )}
@@ -428,7 +443,7 @@ export const Badge = ({ variant = "ghost", children, dot = false }) => {
  *
  * Props: placeholder, value, onChange, prefix, suffix, disabled, error
  */
-export const Input = ({ placeholder, value, onChange, prefix, suffix, disabled = false, error = false, mono = false }) => {
+export const Input = ({ placeholder, value, onChange, prefix, suffix, disabled = false, error = false, mono = false, ...props }) => {
     const [focused, setFocused] = useState(false);
     return (
         <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
@@ -461,6 +476,7 @@ export const Input = ({ placeholder, value, onChange, prefix, suffix, disabled =
                     borderRadius: tokens.radius.none,
                     caretColor: tokens.color.lime.base,
                 }}
+                {...props}
             />
             {suffix && (
                 <span style={{
@@ -483,23 +499,26 @@ export const Input = ({ placeholder, value, onChange, prefix, suffix, disabled =
  * locked     — greyed out, reduced opacity, lock indicator
  * objective  — amber-accented, used in objective/mission panels
  */
-export const Card = ({ variant = "default", children, style: extraStyle }) => {
+export const Card = ({ variant = "default", children, style: extraStyle, ...props }) => {
     const variants = {
         default: { bg: tokens.color.bg.raised, border: tokens.color.border.default, opacity: 1 },
         active: { bg: "rgba(200,241,53,0.04)", border: tokens.color.lime.alpha[20], opacity: 1 },
         locked: { bg: tokens.color.bg.surface, border: tokens.color.border.subtle, opacity: 0.45 },
         objective: { bg: "rgba(245,166,35,0.04)", border: tokens.color.amber.alpha[12], opacity: 1 },
     };
-    const v = variants[variant];
+    const v = variants[variant] || variants.default;
     return (
-        <div style={{
+        <div 
+          style={{
             background: v.bg,
             border: `1px solid ${v.border}`,
             opacity: v.opacity,
             padding: `${tokens.space[3]} ${tokens.space[4]}`,
             borderRadius: tokens.radius.none,
             ...extraStyle,
-        }}>
+          }}
+          {...props}
+        >
             {children}
         </div>
     );
@@ -516,14 +535,14 @@ export const Card = ({ variant = "default", children, style: extraStyle }) => {
  *
  * Props: value (0–100), variant, label, showValue
  */
-export const ProgressBar = ({ value = 0, variant = "default", label, showValue = false, height = 4 }) => {
+export const ProgressBar = ({ value = 0, variant = "default", label, showValue = false, height = 4, ...props }) => {
     const clampedValue = Math.min(100, Math.max(0, value));
     const fillColor = variant === "health"
         ? (value > 70 ? tokens.color.semantic.error : value > 40 ? tokens.color.amber.base : tokens.color.lime.base)
         : tokens.color.lime.base;
 
     return (
-        <div>
+        <div {...props}>
             {(label || showValue) && (
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
                     {label && <span style={{ fontFamily: tokens.font.sans, fontSize: tokens.fontSize.xs, color: tokens.color.text.tertiary, textTransform: "uppercase", letterSpacing: tokens.letterSpacing.widest, fontWeight: tokens.fontWeight.bold }}>{label}</span>}
@@ -555,15 +574,18 @@ export const ProgressBar = ({ value = 0, variant = "default", label, showValue =
  * Props: label, value, unit, accent ("lime" | "amber" | "neutral"), delta
  * delta — optional string like "+12%" shown in accent color
  */
-export const StatCard = ({ label, value, unit, accent = "neutral", delta }) => {
+export const StatCard = ({ label, value, unit, accent = "neutral", delta, ...props }) => {
     const accentColor = accent === "lime" ? tokens.color.lime.base : accent === "amber" ? tokens.color.amber.base : tokens.color.text.secondary;
     return (
-        <div style={{
+        <div 
+          style={{
             background: tokens.color.bg.surface,
             border: `1px solid ${tokens.color.border.default}`,
             padding: `${tokens.space[3]} ${tokens.space[4]}`,
             display: "flex", flexDirection: "column", gap: 6,
-        }}>
+          }}
+          {...props}
+        >
             <span style={{ fontFamily: tokens.font.sans, fontSize: tokens.fontSize.xs, color: tokens.color.text.tertiary, textTransform: "uppercase", letterSpacing: tokens.letterSpacing.widest, fontWeight: tokens.fontWeight.bold }}>
                 {label}
             </span>
@@ -586,8 +608,9 @@ export const StatCard = ({ label, value, unit, accent = "neutral", delta }) => {
  *
  * Usage: <Kbd>Ctrl</Kbd> + <Kbd>C</Kbd>
  */
-export const Kbd = ({ children }) => (
-    <kbd style={{
+export const Kbd = ({ children, ...props }) => (
+    <kbd 
+      style={{
         display: "inline-flex", alignItems: "center", justifyContent: "center",
         padding: "2px 6px",
         background: tokens.color.bg.raised,
@@ -599,7 +622,9 @@ export const Kbd = ({ children }) => (
         lineHeight: 1.4,
         borderRadius: tokens.radius.none,
         userSelect: "none",
-    }}>
+      }}
+      {...props}
+    >
         {children}
     </kbd>
 );
@@ -613,10 +638,11 @@ export const Kbd = ({ children }) => (
  * Smaller and less prominent than Badge.
  * Tags label content; Badges label status.
  */
-export const Tag = ({ variant = "ghost", children, onRemove }) => {
-    const cfg = badgeConfig[variant];
+export const Tag = ({ variant = "ghost", children, onRemove, ...props }) => {
+    const cfg = badgeConfig[variant] || badgeConfig.ghost;
     return (
-        <span style={{
+        <span 
+          style={{
             display: "inline-flex", alignItems: "center", gap: 4,
             padding: "1px 6px",
             background: cfg.bg,
@@ -625,7 +651,9 @@ export const Tag = ({ variant = "ghost", children, onRemove }) => {
             fontFamily: tokens.font.mono,
             fontSize: tokens.fontSize.xs,
             borderRadius: tokens.radius.none,
-        }}>
+          }}
+          {...props}
+        >
             {children}
             {onRemove && (
                 <span onClick={onRemove} style={{ cursor: "pointer", opacity: 0.6, fontSize: 10, lineHeight: 1 }}>×</span>
@@ -642,7 +670,7 @@ export const Tag = ({ variant = "ghost", children, onRemove }) => {
  *
  * Props: variant, title, description, onDismiss
  */
-export const Alert = ({ variant = "info", title, description, onDismiss }) => {
+export const Alert = ({ variant = "info", title, description, onDismiss, ...props }) => {
     const configs = {
         success: { bg: "rgba(200,241,53,0.05)", border: "rgba(200,241,53,0.15)", color: tokens.color.lime.base, icon: "▲" },
         warning: { bg: "rgba(245,166,35,0.05)", border: "rgba(245,166,35,0.18)", color: tokens.color.amber.base, icon: "!" },
@@ -651,13 +679,16 @@ export const Alert = ({ variant = "info", title, description, onDismiss }) => {
     };
     const cfg = configs[variant];
     return (
-        <div style={{
-            display: "flex", alignItems: "flex-start", gap: 10,
-            padding: `${tokens.space[3]} ${tokens.space[4]}`,
-            background: cfg.bg,
-            border: `1px solid ${cfg.border}`,
-            animation: "al-fadeIn 0.2s ease",
-        }}>
+        <div 
+            style={{
+                display: "flex", alignItems: "flex-start", gap: 10,
+                padding: `${tokens.space[3]} ${tokens.space[4]}`,
+                background: cfg.bg,
+                border: `1px solid ${cfg.border}`,
+                animation: "al-fadeIn 0.2s ease",
+            }}
+            {...props}
+        >
             <span style={{ fontFamily: tokens.font.mono, fontSize: 11, color: cfg.color, fontWeight: 800, flexShrink: 0, marginTop: 1 }}>
                 {cfg.icon}
             </span>
@@ -759,16 +790,18 @@ export const Toast = ({ variant = "success", message, onDone }) => {
     };
 
     return (
-        <div style={{
-            display: "flex", alignItems: "center", gap: 10,
-            padding: "10px 14px",
-            background: tokens.color.bg.overlay,
-            border: `1px solid ${colors[variant]}`,
-            borderLeft: `3px solid ${colors[variant]}`,
-            fontFamily: tokens.font.sans, fontSize: tokens.fontSize.sm,
-            color: tokens.color.text.primary,
-            animation: "al-slideUp 0.25s ease",
-            minWidth: 240,
+        <div 
+            data-testid="toast"
+            style={{
+                display: "flex", alignItems: "center", gap: 10,
+                padding: "10px 14px",
+                background: tokens.color.bg.overlay,
+                border: `1px solid ${colors[variant]}`,
+                borderLeft: `3px solid ${colors[variant]}`,
+                fontFamily: tokens.font.sans, fontSize: tokens.fontSize.sm,
+                color: tokens.color.text.primary,
+                animation: "al-slideUp 0.25s ease",
+                minWidth: 240,
         }}>
             <span style={{ color: colors[variant], fontFamily: tokens.font.mono, fontWeight: 800, fontSize: 11, flexShrink: 0 }}>
                 {variant === "success" ? "OK" : variant === "warning" ? "!" : variant === "error" ? "ERR" : "i"}

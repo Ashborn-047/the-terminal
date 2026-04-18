@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useUIStore } from '../../stores/uiStore';
 import { trackEvent } from '../../utils/analytics';
+import { tokens, Card, Input, Button, Alert } from '../ui/AshbornDesignSystem';
 
 /**
  * WelcomeModal — per user_onboarding.md §5.1
- * First-time experience: username input + welcome message.
- * Since we don't have SpacetimeDB yet, we store locally.
+ * Harmonized with Ashborn Design System.
  */
 interface WelcomeModalProps {
     onComplete: (username: string) => void;
@@ -50,10 +50,21 @@ export const WelcomeModal: React.FC<WelcomeModalProps> = ({ onComplete }) => {
     };
 
     return (
-        <div className="fixed inset-0 bg-brutal-black/95 flex items-center justify-center z-50 p-4">
-            <div className="bg-brutal-dark border-3 border-brutal-white p-8 max-w-lg w-full shadow-brutal">
+        <div style={{
+            position: "fixed", inset: 0,
+            background: "rgba(13,13,15,0.95)",
+            backdropFilter: "blur(4px)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            zIndex: tokens.z.modal,
+            padding: tokens.space[4]
+        }}>
+            <Card style={{ maxWidth: 480, width: "100%", padding: tokens.space[8] }}>
                 {/* ASCII Art Logo */}
-                <pre className="text-brutal-green font-mono text-xs mb-6 leading-tight">
+                <pre style={{ 
+                    fontFamily: tokens.font.mono, fontSize: 10, 
+                    color: tokens.color.lime.base, marginBottom: tokens.space[6], 
+                    lineHeight: 1.2, opacity: 0.8 
+                }}>
                     {`  _____ _            _____                   _             _ 
  |_   _| |__   ___  |_   _|__ _ __ _ __ ___ (_)_ __   __ _| |
    | | | '_ \\ / _ \\   | |/ _ \\ '__| '_ \` _ \\| | '_ \\ / _\` | |
@@ -61,47 +72,56 @@ export const WelcomeModal: React.FC<WelcomeModalProps> = ({ onComplete }) => {
    |_| |_| |_|\\___|   |_|\\___|_|  |_| |_| |_|_|_| |_|\\__,_|_|`}
                 </pre>
 
-                <h1 className="font-heading text-3xl uppercase mb-2 text-brutal-white">
+                <h1 style={{ 
+                    fontFamily: tokens.font.sans, fontSize: tokens.fontSize["2xl"], 
+                    fontWeight: 800, textTransform: "uppercase", 
+                    color: tokens.color.text.primary, marginBottom: tokens.space[2] 
+                }}>
                     Welcome, Learner
                 </h1>
-                <p className="mb-6 text-brutal-gray text-sm">
+                
+                <p style={{ 
+                    fontFamily: tokens.font.sans, fontSize: tokens.fontSize.sm, 
+                    color: tokens.color.text.secondary, marginBottom: tokens.space[6] 
+                }}>
                     You're about to begin your journey to Linux mastery. Choose a name to get started.
                 </p>
 
-                <div className="mb-4">
-                    <input
-                        type="text"
+                <div style={{ marginBottom: tokens.space[6] }}>
+                    <Input
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
-                        onKeyDown={handleKeyDown}
                         placeholder="enter_username"
                         data-testid="welcome-input"
-                        className="w-full bg-brutal-black border-2 border-brutal-white p-3 text-brutal-green font-mono placeholder:text-brutal-gray/40 focus:border-brutal-green focus:outline-none"
-                        autoFocus
-                        maxLength={20}
+                        mono
                     />
-                    {error && <p className="text-brutal-red text-xs mt-1">{error}</p>}
+                    {error && (
+                        <div style={{ marginTop: tokens.space[2] }}>
+                             <Alert variant="error" description={error} />
+                        </div>
+                    )}
                 </div>
 
-                <button
+                <Button
+                    variant="lime"
+                    size="lg"
                     onClick={handleSubmit}
                     disabled={!username.trim() || isVerifying}
-                    className="w-full border-3 border-brutal-green text-brutal-green py-3 font-heading uppercase hover:bg-brutal-green hover:text-brutal-black transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    loading={isVerifying}
+                    style={{ width: "100%" }}
                 >
-                    {isVerifying ? (
-                        <>
-                            <span className="animate-spin text-xl">◌</span>
-                            Verifying...
-                        </>
-                    ) : (
-                        'Initialize Session →'
-                    )}
-                </button>
+                    Initialize Session →
+                </Button>
 
-                <p className="mt-4 text-[10px] text-brutal-gray text-center">
-                    Your progress is saved locally. No account required.
+                <p style={{ 
+                    marginTop: tokens.space[4], textAlign: "center",
+                    fontFamily: tokens.font.mono, fontSize: tokens.fontSize["2xs"], 
+                    color: tokens.color.text.tertiary, textTransform: "uppercase",
+                    letterSpacing: tokens.letterSpacing.widest
+                }}>
+                    Progress saved to local subsystem. No auth required.
                 </p>
-            </div>
+            </Card>
         </div>
     );
 };

@@ -15,6 +15,7 @@ import { useTerminalStore } from '../../stores/terminalStore';
 import { useGamificationStore } from '../../stores/gamificationStore';
 import { useHardcoreStore } from '../../stores/hardcoreStore';
 import { Signal } from '../../features/command-engine/types';
+import { tokens, Button } from '../ui/AshbornDesignSystem';
 
 export const TerminalComponent: React.FC = () => {
     const terminalRef = useRef<HTMLDivElement>(null);
@@ -38,19 +39,19 @@ export const TerminalComponent: React.FC = () => {
         // Initialize XTerm
         const term = new Terminal({
             cursorBlink: true,
-            fontFamily: 'JetBrains Mono, monospace',
-            fontSize: 14,
+            fontFamily: tokens.font.mono,
+            fontSize: parseInt(tokens.fontSize.base),
             theme: {
-                background: '#0A0A0A',
-                foreground: '#00FF9D',
-                cursor: '#00FF9D',
-                selectionBackground: '#FFFFFF',
-                black: '#0A0A0A',
-                white: '#FFFFFF',
-                green: '#00FF9D',
-                red: '#FF4D4D',
-                blue: '#00CCFF',
-                yellow: '#FFE600',
+                background: tokens.color.bg.base,
+                foreground: tokens.color.terminal.output,
+                cursor: tokens.color.terminal.cursor,
+                selectionBackground: 'rgba(255,255,255,0.1)',
+                black: tokens.color.bg.base,
+                white: tokens.color.text.primary,
+                green: tokens.color.terminal.command,
+                red: tokens.color.terminal.error,
+                blue: tokens.color.terminal.command,
+                yellow: tokens.color.terminal.root,
             },
             allowProposedApi: true
         });
@@ -282,34 +283,78 @@ export const TerminalComponent: React.FC = () => {
     getPromptRef.current = getPrompt;
 
     return (
-        <div className="flex flex-col w-full h-full bg-brutal-black font-mono text-brutal-green p-4 border-3 border-brutal-white shadow-brutal-lg">
-            <div className="relative w-full h-full overflow-hidden">
+        <div 
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            width: '100%',
+            height: '100%',
+            backgroundColor: tokens.color.bg.base,
+            padding: tokens.space[4],
+            border: `1px solid ${tokens.color.border.default}`,
+            boxShadow: tokens.shadow.md
+          }}
+        >
+            <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}>
                 {/* Mastery / Death Overlay */}
                 {useHardcoreStore.getState().profile?.isActive && useGamificationStore.getState().level === 1 && useGamificationStore.getState().totalXpEarned === 0 && (
-                    <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-brutal-dark/95 backdrop-blur-sm p-8 text-center border-4 border-brutal-red animate-pulse">
-                        <span className="text-6xl mb-4">💀</span>
-                        <h2 className="text-3xl font-heading text-brutal-red uppercase mb-2">SYSTEM CRITICAL FAILURE</h2>
-                        <p className="text-brutal-white mb-6 max-w-md">
+                    <div 
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        zIndex: tokens.z.dropdown,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        backgroundColor: 'rgba(13,13,15,0.95)',
+                        backdropFilter: 'blur(4px)',
+                        padding: tokens.space[8],
+                        textAlign: 'center',
+                        border: `2px solid ${tokens.color.semantic.error}`,
+                        animation: 'al-pulse 2s infinite'
+                      }}
+                    >
+                        <span style={{ fontSize: 64, marginBottom: tokens.space[4] }}>💀</span>
+                        <h2 style={{ 
+                            fontFamily: tokens.font.sans, 
+                            fontSize: tokens.fontSize['2xl'], 
+                            fontWeight: 800, 
+                            color: tokens.color.semantic.error, 
+                            textTransform: 'uppercase', 
+                            marginBottom: tokens.space[2] 
+                        }}>
+                            SYSTEM CRITICAL FAILURE
+                        </h2>
+                        <p style={{ 
+                            fontFamily: tokens.font.sans, 
+                            fontSize: tokens.fontSize.base, 
+                            color: tokens.color.text.secondary, 
+                            marginBottom: tokens.space[6], 
+                            maxWidth: 400 
+                        }}>
                             [HARDCORE] You have died. All progress lost. Respawn with caution.
                         </p>
-                        <div className="flex flex-col gap-2 font-mono text-sm">
-                            <span className="text-brutal-red">XP RESET TO 0</span>
-                            <span className="text-brutal-white">
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.space[2], fontFamily: tokens.font.mono, fontSize: tokens.fontSize.xs }}>
+                            <span style={{ color: tokens.color.semantic.error, fontWeight: 700 }}>XP RESET TO 0</span>
+                            <span style={{ color: tokens.color.text.secondary }}>
                                 LEVEL RECALIBRATED TO 1
                             </span>
                         </div>
-                        <button 
-                            className="mt-6 px-6 py-2 bg-brutal-red text-brutal-white border-2 border-brutal-white uppercase font-bold hover:bg-brutal-white hover:text-brutal-red transition-colors"
-                            onClick={() => window.location.reload()} // For now, just reload to clear state or we could reset stores
+                        <Button 
+                            variant="danger"
+                            size="lg"
+                            style={{ mt: tokens.space[6], marginTop: tokens.space[6] }}
+                            onClick={() => window.location.reload()}
                         >
                             Respawn
-                        </button>
+                        </Button>
                     </div>
                 )}
 
                 <div 
                     ref={terminalRef} 
-                    className="w-full h-full overflow-hidden" 
+                    style={{ width: '100%', height: '100%', overflow: 'hidden' }}
                     data-testid="terminal-container" 
                     data-engine-status={engineStatus}
                 />

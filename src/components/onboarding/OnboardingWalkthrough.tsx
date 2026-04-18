@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useUIStore } from '../../stores/uiStore';
-import { useLabStore } from '../../stores/labStore';
 import { trackEvent } from '../../utils/analytics';
 import { useNavigate } from 'react-router-dom';
+import { tokens, Card, Button, Input } from '../ui/AshbornDesignSystem';
 
 /**
  * OnboardingWalkthrough — per user_onboarding.md §3.2
- * A guided terminal introduction that teaches basic navigation.
- * Appears after the WelcomeModal, overlays as a tooltip-style guide.
+ * Harmonized with Ashborn Design System.
  */
 const WALKTHROUGH_STEPS = [
     {
@@ -88,62 +87,122 @@ export const OnboardingWalkthrough: React.FC = () => {
     const isBottom = step.targetArea === 'terminal';
 
     return (
-        <div className={`fixed z-[150] ${isBottom ? 'bottom-24 left-1/2 -translate-x-1/2' : 'top-1/3 right-8'}`}>
-            <div className="bg-brutal-dark border-3 border-brutal-green p-5 max-w-sm shadow-brutal animate-slide-in">
-                <div className="flex items-center justify-between mb-2">
-                    <span className="font-heading uppercase text-[10px] text-brutal-green">
+        <div style={{
+            position: "fixed",
+            zIndex: tokens.z.modal,
+            ...(isBottom 
+                ? { bottom: 96, left: "50%", transform: "translateX(-50%)" } 
+                : { top: "33%", right: 32 })
+        }}>
+            <Card style={{ 
+                maxWidth: 380, width: "100%", padding: tokens.space[5],
+                border: `1px solid ${tokens.color.lime.base}`,
+                background: tokens.color.bg.overlay,
+                animation: "al-slideUp 0.3s ease",
+                position: "relative"
+            }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: tokens.space[2] }}>
+                    <span style={{ 
+                        fontFamily: tokens.font.sans, fontSize: 10, 
+                        fontWeight: 800, textTransform: "uppercase", 
+                        color: tokens.color.lime.base, letterSpacing: tokens.letterSpacing.wider
+                    }}>
                         Step {currentStep + 1}/{WALKTHROUGH_STEPS.length}
                     </span>
                     <button
                         onClick={handleSkip}
-                        className="text-brutal-gray text-xs hover:text-brutal-white transition-colors"
+                        style={{ 
+                            background: "none", border: "none", cursor: "pointer",
+                            fontFamily: tokens.font.sans, fontSize: 11, 
+                            color: tokens.color.text.tertiary, transition: "color 0.15s"
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.color = tokens.color.text.primary}
+                        onMouseLeave={(e) => e.currentTarget.style.color = tokens.color.text.tertiary}
                     >
                         Skip Tour
                     </button>
                 </div>
 
-                <h3 className="font-heading text-lg uppercase text-brutal-white mb-2">{step.title}</h3>
-                <p className="text-sm text-brutal-gray mb-3">{step.message}</p>
+                <h3 style={{ 
+                    fontFamily: tokens.font.sans, fontSize: tokens.fontSize.lg, 
+                    fontWeight: 800, textTransform: "uppercase", 
+                    color: tokens.color.text.primary, marginBottom: tokens.space[2] 
+                }}>{step.title}</h3>
+                <p style={{ 
+                    fontFamily: tokens.font.sans, fontSize: tokens.fontSize.sm, 
+                    color: tokens.color.text.secondary, marginBottom: tokens.space[4],
+                    lineHeight: 1.5
+                }}>{step.message}</p>
 
                 {step.action && (
-                    <div className="bg-brutal-black border border-brutal-green p-3 mb-3">
-                        <p className="text-[10px] text-brutal-gray uppercase mb-1">Interactive Prompt</p>
+                    <div style={{ 
+                        background: tokens.color.bg.input, 
+                        border: `1px solid ${tokens.color.border.default}`,
+                        padding: tokens.space[3], marginBottom: tokens.space[4]
+                    }}>
+                        <p style={{ 
+                            fontFamily: tokens.font.sans, fontSize: 9, 
+                            color: tokens.color.text.tertiary, textTransform: "uppercase",
+                            letterSpacing: tokens.letterSpacing.widest,
+                            fontWeight: 700, marginBottom: 4
+                        }}>Interactive Prompt</p>
+                        
                         {requiresAction ? (
-                            <form onSubmit={handleTerminalSubmit} className="flex items-center gap-2">
-                                <span className="text-brutal-green font-mono text-xs">$</span>
-                                    <input
-                                        type="text"
-                                        value={inputValue}
-                                        onChange={(e) => setInputValue(e.target.value)}
-                                        placeholder={step.action.match(/`([^`]+)`/)?.[1] || "type command..."}
-                                        data-testid="walkthrough-input"
-                                        className="bg-transparent text-brutal-white font-mono text-xs w-full focus:outline-none"
-                                        autoFocus
-                                    />
+                            <form onSubmit={handleTerminalSubmit} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                <span style={{ fontFamily: tokens.font.mono, fontSize: tokens.fontSize.xs, color: tokens.color.lime.base }}>$</span>
+                                <input
+                                    type="text"
+                                    value={inputValue}
+                                    onChange={(e) => setInputValue(e.target.value)}
+                                    placeholder={step.action.match(/`([^`]+)`/)?.[1] || "type command..."}
+                                    data-testid="walkthrough-input"
+                                    style={{ 
+                                        background: "transparent", border: "none", outline: "none",
+                                        fontFamily: tokens.font.mono, fontSize: tokens.fontSize.xs, 
+                                        color: tokens.color.text.primary, width: "100%"
+                                    }}
+                                    autoFocus
+                                />
                             </form>
                         ) : (
-                            <p className="text-xs text-brutal-green font-mono">→ {step.action}</p>
+                            <p style={{ 
+                                fontFamily: tokens.font.mono, fontSize: tokens.fontSize.xs, 
+                                color: tokens.color.lime.base
+                            }}>→ {step.action}</p>
                         )}
                     </div>
                 )}
 
                 {requiresAction ? (
-                    <p className="text-[10px] text-brutal-gray italic text-center mb-1">
-                        Type the command above and press Enter to continue
+                    <p style={{ 
+                        fontFamily: tokens.font.sans, fontSize: 10, 
+                        color: tokens.color.text.tertiary, fontStyle: "italic", textAlign: "center" 
+                    }}>
+                        Type command and press Enter
                     </p>
                 ) : (
-                    <button
+                    <Button
+                        variant="lime"
                         onClick={handleNext}
-                        className="w-full border-2 border-brutal-green text-brutal-green py-2 font-heading uppercase text-sm hover:bg-brutal-green hover:text-brutal-black transition-colors"
+                        style={{ width: "100%" }}
                     >
                         {currentStep < WALKTHROUGH_STEPS.length - 1 ? 'Next →' : 'Start Learning!'}
-                    </button>
+                    </Button>
                 )}
 
-                {/* Pointer arrow */}
-                <div className={`absolute w-4 h-4 bg-brutal-dark border-brutal-green rotate-45 ${isBottom ? '-bottom-2 left-1/2 -translate-x-1/2 border-b-3 border-r-3' : '-left-2 top-8 border-l-3 border-b-3'
-                    }`} />
-            </div>
+                {/* Arrow indicator */}
+                <div style={{
+                    position: "absolute",
+                    width: 12, height: 12,
+                    background: tokens.color.bg.overlay,
+                    borderRight: `1px solid ${tokens.color.lime.base}`,
+                    borderBottom: `1px solid ${tokens.color.lime.base}`,
+                    transform: "rotate(45deg)",
+                    ...(isBottom 
+                        ? { bottom: -7, left: "50%", marginLeft: -6 } 
+                        : { left: -7, top: 32, transform: "rotate(135deg)" })
+                }} />
+            </Card>
         </div>
     );
 };

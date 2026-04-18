@@ -1,4 +1,5 @@
 import React from 'react';
+import { Button, Card, tokens } from '../ui/AshbornDesignSystem';
 
 /**
  * CelebrationModal — per user_onboarding.md §3.4
@@ -17,39 +18,105 @@ export const CelebrationModal: React.FC<CelebrationModalProps> = ({
     title, message, xpEarned, levelUp, onContinue, onDashboard
 }) => {
     return (
-        <div className="fixed inset-0 bg-brutal-black/90 flex items-center justify-center z-50 p-4">
-            <div className="bg-brutal-dark border-3 border-brutal-green p-8 max-w-md w-full text-center shadow-brutal animate-pulse-once">
-                <div className="text-5xl mb-4">🎉</div>
-                <h2 className="font-heading text-2xl uppercase text-brutal-green mb-2">{title}</h2>
-                <p className="text-brutal-white text-sm mb-4">{message}</p>
+        <div 
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0,0,0,0.85)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: tokens.z.modal,
+            padding: tokens.space[4],
+            backdropFilter: 'blur(4px)'
+          }}
+          data-testid="celebration-modal"
+        >
+            <Card 
+              variant="raised"
+              style={{
+                maxWidth: 400,
+                width: '100%',
+                textAlign: 'center',
+                padding: tokens.space[8],
+                border: `1px solid ${tokens.color.lime.base}`,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: tokens.space[4]
+              }}
+            >
+                <div style={{ fontSize: 48, marginBottom: tokens.space[2] }}>🎉</div>
+                
+                <h2 style={{ 
+                    fontFamily: tokens.font.sans, 
+                    fontSize: tokens.fontSize['2xl'], 
+                    fontWeight: 800, 
+                    color: tokens.color.lime.base, 
+                    textTransform: 'uppercase',
+                    margin: 0
+                }}>
+                    {title}
+                </h2>
+                
+                <p style={{ 
+                    fontFamily: tokens.font.sans, 
+                    fontSize: tokens.fontSize.sm, 
+                    color: tokens.color.text.secondary,
+                    lineHeight: 1.6,
+                    margin: 0
+                }}>
+                    {message}
+                </p>
 
-                <div className="flex flex-col gap-4 mb-6 items-center">
-                    <div className="inline-block bg-brutal-green text-brutal-black px-4 py-2 border-2 border-brutal-black font-heading text-lg">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.space[3], margin: `${tokens.space[4]} 0` }}>
+                    <div style={{ 
+                        background: tokens.color.lime.alpha[12], 
+                        color: tokens.color.lime.base, 
+                        padding: '10px 20px', 
+                        border: `1px solid ${tokens.color.lime.alpha[24]}`,
+                        fontFamily: tokens.font.mono,
+                        fontWeight: 700,
+                        fontSize: tokens.fontSize.lg
+                    }}>
                         +{xpEarned} XP
                     </div>
 
                     {levelUp && (
-                        <div className="bg-brutal-yellow text-brutal-black px-4 py-1 border-2 border-brutal-black font-heading uppercase text-xs animate-bounce">
+                        <div style={{ 
+                            background: tokens.color.amber.alpha[12], 
+                            color: tokens.color.amber.base, 
+                            padding: '6px 12px', 
+                            border: `1px solid ${tokens.color.amber.alpha[24]}`,
+                            fontFamily: tokens.font.sans,
+                            fontWeight: 800,
+                            fontSize: tokens.fontSize.xs,
+                            textTransform: 'uppercase'
+                        }}>
                             Leveled Up to {levelUp}!
                         </div>
                     )}
                 </div>
 
-                <div className="flex flex-col gap-3">
-                    <button
+                <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.space[3], width: '100%' }}>
+                    <Button
+                        variant="lime"
                         onClick={onContinue}
-                        className="w-full bg-brutal-green text-brutal-black border-2 border-brutal-black py-3 font-heading uppercase text-sm hover:brightness-110 transition-all"
+                        size="lg"
+                        style={{ width: '100%' }}
                     >
                         Continue Learning →
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                        variant="secondary"
                         onClick={onDashboard}
-                        className="w-full border-2 border-brutal-white text-brutal-white py-3 font-heading uppercase text-sm hover:bg-brutal-white hover:text-brutal-black transition-colors"
+                        size="lg"
+                        style={{ width: '100%' }}
                     >
                         View Dashboard
-                    </button>
+                    </Button>
                 </div>
-            </div>
+            </Card>
         </div>
     );
 };

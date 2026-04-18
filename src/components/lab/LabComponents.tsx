@@ -25,7 +25,8 @@ interface LabCardProps {
 export const LabCard: React.FC<LabCardProps> = ({ lab, status, onStart }) => {
     return (
         <Card
-            variant={status === 'locked' ? 'default' : 'default'}
+            variant={status === 'in-progress' ? 'active' : status === 'locked' ? 'locked' : 'default'}
+            data-testid={`lab-card-${lab.id}`}
             style={{ 
                 opacity: status === 'locked' ? 0.4 : 1,
                 cursor: status === 'locked' ? 'not-allowed' : 'default',
