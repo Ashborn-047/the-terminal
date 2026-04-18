@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import seedrandom from 'seedrandom';
 import { brokenSystemLabs } from '../data/labs/broken_systems';
 
 export interface DailyQuest {
@@ -15,6 +14,31 @@ interface QuestState {
     // Actions
     rotateQuestsIfNecessary: () => void;
     getQuestMultiplier: (labId: string) => number;
+}
+
+/**
+ * Simple deterministic seeded PRNG (mulberry32).
+ * No external dependency needed — produces consistent results for the same seed.
+ */
+function seededRandom(seed: number): () => number {
+    return () => {
+        seed |= 0;
+        seed = (seed + 0x6d2b79f5) | 0;
+        let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+}
+
+/** Convert a date string to a numeric seed */
+function dateToSeed(dateString: string): number {
+    let hash = 0;
+    for (let i = 0; i < dateString.length; i++) {
+        const char = dateString.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash |= 0; // Convert to 32-bit integer
+    }
+    return hash;
 }
 
 export const useQuestStore = create<QuestState>()(
@@ -35,7 +59,7 @@ export const useQuestStore = create<QuestState>()(
 
                 // Deterministic rotation based on the date string
                 // Everyone gets the same daily quests!
-                const rng = seedrandom(dateString);
+                const rng = seededRandom(dateToSeed(dateString));
                 
                 // Shuffle copy of the labs
                 const shuffledLabs = [...brokenSystemLabs].sort(() => 0.5 - rng());

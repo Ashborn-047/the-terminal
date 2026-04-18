@@ -1,5 +1,4 @@
 import { v4 as uuidv4 } from 'uuid';
-import { useHardcoreStore } from '../../stores/hardcoreStore';
 import {
     Inode,
     InodePermissions,
@@ -89,6 +88,7 @@ export class VFS {
     private processProvider: () => any[] = () => [];
     private syscallListeners: ((syscall: string, args: any[], result: any) => void)[] = [];
     private procDentryId: string | null = null;
+    private onBeforeMutation: ((path: string) => boolean) | null = null;
 
     constructor(snapshot?: VFSSnapshot) {
         if (snapshot && snapshot.dentries && snapshot.inodeTable) {
@@ -651,7 +651,7 @@ export class VFS {
 
     public async writeFile(path: string, content: string, userId: string = 'root', groups: string[] = [], append: boolean = false, isBootstrap: boolean = false): Promise<boolean | { error: string }> {
         if (!isBootstrap && isProtectedPath(path) && userId !== 'root') {
-            const isCatastrophic = useHardcoreStore.getState().checkDestructiveAction(path);
+            const isCatastrophic = this.onBeforeMutation?.(path) || false;
             if (isCatastrophic) {
                 return 'Permission denied: Catastrophic write to protected path detected.';
             }
@@ -717,7 +717,7 @@ export class VFS {
     public async mkdir(parentPath: string, name: string, ownerId: string = 'root', mode?: string, groups: string[] = [], isBootstrap: boolean = false): Promise<Inode | string> {
         const fullPath = (parentPath === '/' ? '' : parentPath) + '/' + name;
         if (!isBootstrap && isProtectedPath(fullPath) && ownerId !== 'root') {
-            const isCatastrophic = useHardcoreStore.getState().checkDestructiveAction(fullPath);
+            const isCatastrophic = this.onBeforeMutation?.(fullPath) || false;
             if (isCatastrophic) {
                 return 'Permission denied: Catastrophic write to protected path detected.';
             }
@@ -874,7 +874,7 @@ export class VFS {
 
     public async rm(path: string, recursive: boolean = false, userId: string = 'root', groups: string[] = [], isBootstrap: boolean = false): Promise<boolean | string> {
         if (!isBootstrap && isProtectedPath(path) && userId !== 'root') {
-            const isCatastrophic = useHardcoreStore.getState().checkDestructiveAction(path);
+            const isCatastrophic = this.onBeforeMutation?.(path) || false;
             if (isCatastrophic) {
                 return 'Permission denied: Catastrophic write to protected path detected.';
             }
@@ -960,6 +960,10 @@ export class VFS {
         } catch (err) {
             return 'SpacetimeDB conflict: chown reverted';
         }
+    }
+
+    public setMutationHook(hook: (path: string) => boolean): void {
+        this.onBeforeMutation = hook;
     }
 
     public readFile(path: string, userId: string = 'root', groups: string[] = []): string | { error: string } {
@@ -1072,7 +1076,7 @@ export class VFS {
 
     public async mv(srcPath: string, destPath: string, userId: string = 'root', groups: string[] = [], isBootstrap: boolean = false): Promise<boolean | string> {
         if (!isBootstrap && (isProtectedPath(srcPath) || isProtectedPath(destPath))) {
-            const isCatastrophic = useHardcoreStore.getState().checkDestructiveAction(srcPath) || useHardcoreStore.getState().checkDestructiveAction(destPath);
+            const isCatastrophic = (this.onBeforeMutation?.(srcPath) || false) || (this.onBeforeMutation?.(destPath) || false);
             if (isCatastrophic) {
                 return 'Permission denied: Catastrophic write to protected path detected.';
             }

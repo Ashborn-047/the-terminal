@@ -5,6 +5,7 @@ import { useLabStore } from '../stores/labStore';
 import { useUIStore } from '../stores/uiStore';
 import { useTerminalStore } from '../stores/terminalStore';
 import { useGamificationStore } from '../stores/gamificationStore';
+import { useHardcoreStore } from '../stores/hardcoreStore';
 import { VFS } from '../features/vfs/vfs';
 import { Lexer } from '../features/command-engine/shell/lexer';
 import { Parser } from '../features/command-engine/shell/parser';
@@ -66,6 +67,15 @@ export function useTerminal() {
             vfsRef.current.ensureUserHome(uiUsername);
         }
     }, [uiUsername]);
+
+    // Phase 3.3: Inject Hardcore Mode Security Hook into VFS
+    // This breaks the circular dependency by injecting the store logic at runtime
+    useEffect(() => {
+        const checkAction = (path: string) => {
+            return useHardcoreStore.getState().checkDestructiveAction(path);
+        };
+        vfsRef.current.setMutationHook(checkAction);
+    }, []);
 
     // Seed processes from snapshot - per advanced-scenarios requirements
     useEffect(() => {
