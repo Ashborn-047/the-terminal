@@ -30,6 +30,7 @@ export interface CommandContext {
     isInterrupted: () => boolean;
     waitIfSuspended: () => Promise<void>;
     jobId?: number;
+    pid?: number;
 }
 
 export interface CommandResult {

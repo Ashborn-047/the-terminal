@@ -111,6 +111,19 @@ export class JobManager {
         }
     }
 
+    public setBackground(jobId: number, background: boolean): void {
+        const job = this.jobs.get(jobId);
+        if (job) {
+            job.foreground = !background;
+            if (!job.foreground && this.currentForegroundJob?.id === jobId) {
+                this.currentForegroundJob = null;
+            } else if (job.foreground) {
+                this.currentForegroundJob = job;
+            }
+            this.notify();
+        }
+    }
+
     public terminateJob(jobId: number, signal?: Signal): void {
         const job = this.jobs.get(jobId);
         if (job) {

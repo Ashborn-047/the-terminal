@@ -197,6 +197,9 @@ export function useTerminal() {
             const parser = new Parser(tokens);
             const ast = parser.parse();
 
+            const terminalStore = useTerminalStore.getState();
+            const pid = terminalStore.getNextPid();
+
             const context: CommandContext = {
                 cwd: currentCwd,
                 updateCwd: (path) => {
@@ -214,14 +217,12 @@ export function useTerminal() {
                     const base = context.cwd === '/' ? '/' : context.cwd + '/';
                     return base + path;
                 },
+                pid,
                 // Wave 2 Hardening: Provide default noop implementations to prevent runtime crashes
                 onSignal: (handler) => console.debug('[Terminal] Base context signal handler registered for command.'),
                 isInterrupted: () => false,
                 waitIfSuspended: async () => {}
             };
-
-            const terminalStore = useTerminalStore.getState();
-            const pid = terminalStore.getNextPid();
             
             // Get first command name for job entry
             const getFirstCmdName = (node: any): string | null => {
@@ -231,17 +232,27 @@ export function useTerminal() {
                 if (node.type === 7) return getFirstCmdName(node.nodes[0]); // SEQUENCE
                 return null;
             };
-            const cmdNameAttempt = getFirstCmdName(ast);
+            const cmdNameAttempt = getFirstCmdName(ast);            // Phase 3.3 FIX: Synchronize Job IDs by adding the job BEFORE execution
+            // We use a wrapper promise so we can add the job now and resolve it when the engine finishes
+            let resolveExecution: (result: CommandResult) => void;
+            const jobPromise = new Promise<CommandResult>((resolve) => {
+                resolveExecution = resolve;
+            });
 
-            // Create the promise first
-            const executionPromise = executorRef.current.execute(ast, context, shellEnvRef.current);
-            
             // Add to job manager as a foreground job
             const job = jobManagerRef.current.addJob(trimmedInput, [{ 
                 pid, 
                 name: cmdNameAttempt || trimmedInput.split(' ')[0], 
-                promise: executionPromise 
+                promise: jobPromise 
             }], true);
+
+            context.jobId = job.id;
+
+            // Now start the execution
+            const executionPromise = executorRef.current.execute(ast, context, shellEnvRef.current);
+            
+            // Resolve the wrapper promise when the real execution finishes
+            executionPromise.then(resolveExecution!);
 
             // Create a promise that resolves if the job is suspended
             const suspensionPromise = new Promise<CommandResult>((resolve) => {

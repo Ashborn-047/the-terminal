@@ -315,18 +315,28 @@ export class ShellExecutor {
     private async launchBackgroundJob(node: CommandNode | PipelineNode, context: CommandContext, env: ShellEnvironment): Promise<CommandResult> {
         const commandText = this.getCommandText(node);
         const terminalStore = useTerminalStore.getState();
-        const pid = terminalStore.getNextPid();
         
-        // Assign the ID to the node so executeCommand can use it
-        // We'll calculate the next job ID from the manager
-        const jobId = (context.jobManager as any).nextJobId; 
+        // Phase 3.3 FIX: Reuse PID from context to prevent double-consumption
+        const pid = context.pid || terminalStore.getNextPid();
+        
+        // Reuse jobId if provided by useTerminal (which it should be for top-level commands)
+        const jobId = context.jobId || (context.jobManager as any).nextJobId;
         (node as any).jobId = jobId;
 
         const promise = node.type === NodeType.COMMAND 
             ? this.executeCommand(node as CommandNode, context, env)
             : this.executePipeline(node as PipelineNode, context, env);
 
-        const job = context.jobManager.addJob(commandText, [{ pid, name: commandText.split(' ')[0], promise }], false);
+        // If we reused context.jobId, the job is already added in useTerminal
+        // We just need to update it from foreground to background
+        let job;
+        const existingJob = context.jobManager.getJob(jobId);
+        if (existingJob) {
+            job = existingJob;
+            context.jobManager.setBackground(jobId, true); // Move existing job to background
+        } else {
+            job = context.jobManager.addJob(commandText, [{ pid, name: commandText.split(' ')[0], promise }], false);
+        }
         
         return {
             output: `[${job.id}] ${pid}\n`,
