@@ -2,27 +2,33 @@ import React, { useState } from 'react';
 import { useUIStore } from '../stores/uiStore';
 import { 
     tokens, 
-    Card, 
     Button, 
-    Badge, 
-    Divider,
     SettingsSection,
     ToggleRow,
     KeybindRow,
     Display,
-    Label,
-    Input
+    Label
 } from '../components/ui/AshbornDesignSystem';
-import { User, Monitor, AlertTriangle, CheckCircle } from 'lucide-react';
+import { CheckCircle } from 'lucide-react';
 
 /**
  * SettingsPage — User preferences: username, theme, notification settings.
  */
 export const SettingsPage: React.FC = () => {
-    const { username, setUsername, highContrast, toggleHighContrast, setOnboardingStep } = useUIStore();
+    const { 
+        username, 
+        setUsername, 
+        highContrast, 
+        toggleHighContrast, 
+        setOnboardingStep,
+        themePreset,
+        setThemePreset
+    } = useUIStore();
     const [tempUsername, setTempUsername] = useState(username);
     const [isEditing, setIsEditing] = useState(false);
     const [saveMessage, setSaveMessage] = useState('');
+    const [uiAnimations, setUiAnimations] = useState(true);
+    const [autoVerifyObjectives, setAutoVerifyObjectives] = useState(true);
 
     const handleSaveUsername = () => {
         const trimmed = tempUsername.trim();
@@ -57,7 +63,7 @@ export const SettingsPage: React.FC = () => {
             <Label color={tokens.color.lime.base} style={{ marginBottom: 6 }}>System Configuration</Label>
             <Display size="lg" style={{ marginBottom: 28 }}>System Settings</Display>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.space[2] }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.space[4] }}>
                 {/* User Identity Section */}
                 <SettingsSection title="User Identity" icon="👤" subtitle="Your node handle and agent credentials">
                     <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 16 }}>
@@ -118,22 +124,26 @@ export const SettingsPage: React.FC = () => {
                         <Label style={{ marginBottom: 8 }}>Workstation Theme</Label>
                         <div style={{ display: "flex", gap: 6 }}>
                             {[
-                                { label: "ASHBORN_V2.0", colors: [tokens.color.lime.base, tokens.color.amber.base], active: true },
-                                { label: "MONO_DARK", colors: ["#9A9A9A", "#555555"], active: false },
-                                { label: "ACID_RED", colors: ["#FF5A5A", "#F5A623"], active: false },
+                                { id: 'ashborn', label: "ASHBORN_V2.0", colors: [tokens.color.lime.base, tokens.color.amber.base] },
+                                { id: 'mono', label: "MONO_DARK", colors: ["#9A9A9A", "#555555"] },
+                                { id: 'acid', label: "ACID_RED", colors: ["#FF5A5A", "#F5A623"] },
                             ].map((th) => (
-                                <div key={th.label} style={{ 
+                                <button
+                                    key={th.id}
+                                    onClick={() => setThemePreset(th.id as 'ashborn' | 'mono' | 'acid')}
+                                    style={{ 
                                     display: "flex", alignItems: "center", gap: 6, 
                                     padding: "6px 10px", 
-                                    background: th.active ? tokens.color.lime.alpha[6] : tokens.color.bg.base, 
-                                    border: `1px solid ${th.active ? tokens.color.lime.alpha[25] : tokens.color.border.default}`, 
-                                    cursor: "pointer" 
+                                    background: themePreset === th.id ? tokens.color.lime.alpha[6] : tokens.color.bg.base, 
+                                    border: `1px solid ${themePreset === th.id ? tokens.color.border.lime : tokens.color.border.default}`, 
+                                    cursor: "pointer",
+                                    color: 'inherit'
                                 }}>
                                     <div style={{ display: "flex", gap: 3 }}>
                                         {th.colors.map((c, i) => <div key={i} style={{ width: 10, height: 10, background: c }} />)}
                                     </div>
-                                    <span style={{ fontFamily: tokens.font.mono, fontSize: "9px", color: th.active ? tokens.color.lime.base : tokens.color.text.tertiary }}>{th.label}</span>
-                                </div>
+                                    <span style={{ fontFamily: tokens.font.mono, fontSize: "9px", color: themePreset === th.id ? tokens.color.lime.base : tokens.color.text.tertiary }}>{th.label}</span>
+                                </button>
                             ))}
                         </div>
                     </div>
@@ -146,8 +156,8 @@ export const SettingsPage: React.FC = () => {
                     <ToggleRow 
                         label="UI Animations" 
                         description="Smooth transitions and micro-interactions" 
-                        value={true} 
-                        onChange={() => {}} 
+                        value={uiAnimations} 
+                        onChange={setUiAnimations} 
                     />
                 </SettingsSection>
 
@@ -156,8 +166,8 @@ export const SettingsPage: React.FC = () => {
                     <ToggleRow 
                         label="Auto-verify Objectives" 
                         description="Automatically check labs when commands match targets" 
-                        value={true} 
-                        onChange={() => {}} 
+                        value={autoVerifyObjectives} 
+                        onChange={setAutoVerifyObjectives} 
                     />
                     <div style={{ marginTop: 12, background: tokens.color.bg.base, border: `1px solid ${tokens.color.border.default}`, padding: "10px 12px" }}>
                         <Label style={{ marginBottom: 6 }}>Terminal Preview</Label>

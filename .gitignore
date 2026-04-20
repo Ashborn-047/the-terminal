@@ -12,6 +12,8 @@ redesign-v2-preview.html
 test/
 # Claude Findings
 claudes_findings/
+claude_findings/
+claude*findings/
 
 # SpacetimeDB
 spacetimedb_secrets.md

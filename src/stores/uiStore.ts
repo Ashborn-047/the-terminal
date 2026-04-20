@@ -14,6 +14,7 @@ interface UIState {
     lastLeveledUpTo: number;
     username: string;
     highContrast: boolean;
+    themePreset: 'ashborn' | 'mono' | 'acid';
     tourStep: number;
 
     toggleSidebar: () => void;
@@ -25,6 +26,7 @@ interface UIState {
     hideLevelUp: () => void;
     setUsername: (name: string) => void;
     toggleHighContrast: () => void;
+    setThemePreset: (preset: UIState['themePreset']) => void;
 }
 
 export const useUIStore = create<UIState>()(
@@ -38,6 +40,7 @@ export const useUIStore = create<UIState>()(
             lastLeveledUpTo: 1,
             username: 'Guest',
             highContrast: false,
+            themePreset: 'ashborn',
             tourStep: 0,
 
             toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
@@ -49,6 +52,7 @@ export const useUIStore = create<UIState>()(
             hideLevelUp: () => set({ levelUpModalOpen: false }),
             setUsername: (name) => set({ username: name }),
             toggleHighContrast: () => set((s) => ({ highContrast: !s.highContrast })),
+            setThemePreset: (preset) => set({ themePreset: preset }),
         }),
         { name: 'the-terminal-ui' }
     )

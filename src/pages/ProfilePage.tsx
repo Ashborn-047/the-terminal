@@ -1,24 +1,16 @@
 import React from 'react';
 import { useGamificationStore, getLevelTitle, ACHIEVEMENTS } from '../stores/gamificationStore';
 import { useUIStore } from '../stores/uiStore';
-import { SkillTree } from '../components/gamification/SkillTree';
-import { Leaderboard } from '../components/gamification/Leaderboard';
-import { StreakHeatmap } from '../components/gamification/StreakHeatmap';
 import { 
     tokens, 
     Card, 
-    Badge, 
-    StatCard, 
-    ProgressBar,
     XPRing,
     SkillRadar,
     AchievementGrid,
     ActivitySpark,
     Display,
     Label,
-    Mono,
-    Divider,
-    Button
+    Mono
 } from '../components/ui/AshbornDesignSystem';
 
 /**
@@ -162,36 +154,9 @@ const ProfilePage: React.FC = () => {
 
                 {/* Achievements Section */}
                 <div style={{ marginBottom: 24 }}>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-                        <Label>Achievements ({unlockedAchievements.length} earned)</Label>
-                        <Button variant="ghost" size="sm">View All Achievements</Button>
-                    </div>
+                    <Label style={{ marginBottom: 16, display: 'block' }}>Achievements ({unlockedAchievements.length} earned)</Label>
                     <AchievementGrid achievements={mappedAchievements} />
                 </div>
-
-                <Divider style={{ margin: "32px 0" }} />
-
-                {/* Leaderboard Section */}
-                <section style={{ marginBottom: 48 }}>
-                     <h2 style={{ 
-                        fontFamily: tokens.font.sans, 
-                        fontSize: tokens.fontSize.lg, 
-                        fontWeight: 800, 
-                        textTransform: 'uppercase', 
-                        color: tokens.color.text.secondary, 
-                        marginBottom: tokens.space[6],
-                        letterSpacing: tokens.letterSpacing.wide
-                    }}>
-                        Global Network
-                    </h2>
-                    <Leaderboard />
-                </section>
-
-                <Divider style={{ margin: "32px 0" }} />
-
-                {/* Detailed Skill Tree (Old fallback) */}
-                <Label style={{ marginBottom: 16 }}>Detailed Advancement Path</Label>
-                <SkillTree />
             </div>
         </div>
     );

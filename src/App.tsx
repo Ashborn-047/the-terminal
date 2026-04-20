@@ -47,7 +47,7 @@ const PageLoader = () => (
 );
 
 function AppContent() {
-  const { onboardingComplete, completeOnboarding, setActiveView, onboardingStep, setOnboardingStep, setUsername, username } = useUIStore();
+  const { setOnboardingStep, setUsername, username, highContrast, themePreset } = useUIStore();
   const { setLabs, labs } = useLabStore();
   const [isAppReady, setIsAppReady] = React.useState(false);
   const [isServicesStarted, setIsServicesStarted] = React.useState(false);
@@ -77,6 +77,35 @@ function AppContent() {
       document.head.appendChild(style);
     }
   }, []);
+
+  // Apply global theme + accessibility overlays
+  React.useEffect(() => {
+    const root = document.documentElement;
+    root.setAttribute('data-al-theme', themePreset);
+    root.setAttribute('data-al-contrast', highContrast ? 'high' : 'normal');
+
+    const styleId = 'ashborn-ui-overrides';
+    if (!document.getElementById(styleId)) {
+      const style = document.createElement('style');
+      style.id = styleId;
+      style.textContent = `
+        html[data-al-theme="mono"] body {
+          filter: saturate(0.35) contrast(1.05);
+        }
+        html[data-al-theme="acid"] body {
+          filter: hue-rotate(-28deg) saturate(1.2) contrast(1.03);
+        }
+        html[data-al-contrast="high"] body {
+          filter: contrast(1.16) brightness(1.06);
+        }
+        html[data-al-theme="mono"][data-al-contrast="high"] body,
+        html[data-al-theme="acid"][data-al-contrast="high"] body {
+          filter: contrast(1.16) brightness(1.06) saturate(0.9);
+        }
+      `;
+      document.head.appendChild(style);
+    }
+  }, [themePreset, highContrast]);
 
   // Heartbeat & Registration synchronization
   React.useEffect(() => {
@@ -117,12 +146,6 @@ function AppContent() {
       logger.info('Loaded initial labs:', Object.keys(INITIAL_LABS).length);
     }
   }, [labs, setLabs]);
-
-  const handleOnboardingComplete = (name: string) => {
-    logger.info('Onboarding complete for user:', name);
-    setUsername(name);
-    setOnboardingStep(1); // Step 1 is the Tour Overlay
-  };
 
   // The Boot Sequence comes first and overtakes the screen
   if (bootState === 'booting') {
