@@ -61,9 +61,8 @@ const HomePage: React.FC = () => {
 
     return (
         <div 
-            className="h-full w-full overflow-y-auto"
             style={{ 
-                padding: tokens.space[6],
+                padding: "clamp(12px, 2.8vw, 24px)",
                 backgroundColor: tokens.color.bg.base,
                 color: tokens.color.text.primary,
             }}
@@ -73,7 +72,7 @@ const HomePage: React.FC = () => {
                 style={{
                     background: tokens.color.bg.surface,
                     border: `1px solid ${tokens.color.border.strong}`,
-                    padding: "20px 24px",
+                    padding: "clamp(14px, 2.2vw, 24px)",
                     marginBottom: tokens.space[6],
                     position: 'relative',
                     overflow: 'hidden',
@@ -286,7 +285,7 @@ const HomePage: React.FC = () => {
             </div>
 
             {/* Skill Tree */}
-            <div className="mb-6">
+            <div className="mb-8">
                 <SkillTree />
             </div>
 

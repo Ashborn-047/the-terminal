@@ -50,11 +50,11 @@ const ProfilePage: React.FC = () => {
     return (
         <div style={{ color: tokens.color.text.primary, height: '100%', overflow: 'auto' }}>
             {/* Identity Hero v2 */}
-            <div style={{ padding: "28px 28px 0", borderBottom: `1px solid ${tokens.color.border.strong}`, background: tokens.color.bg.surface }}>
-                <div style={{ display: "flex", alignItems: "flex-end", gap: 24, marginBottom: 20 }}>
+            <div style={{ padding: "clamp(14px, 3vw, 28px) clamp(14px, 3vw, 28px) 0", borderBottom: `1px solid ${tokens.color.border.strong}`, background: tokens.color.bg.surface }}>
+                <div style={{ display: "flex", alignItems: "flex-end", gap: 16, marginBottom: 20, flexWrap: "wrap" }}>
                     {/* Large Avatar */}
                     <div style={{ 
-                        width: 80, height: 80, 
+                        width: 72, height: 72, 
                         background: tokens.color.lime.base, 
                         display: "flex", alignItems: "center", justifyContent: "center", 
                         fontFamily: tokens.font.sans, fontSize: "28px", fontWeight: 800, 
@@ -89,11 +89,11 @@ const ProfilePage: React.FC = () => {
                     </div>
 
                     {/* XP Ring on the right */}
-                    <XPRing level={level} xpCurrent={current} xpNext={needed} size={96} accent="amber" />
+                    <XPRing level={level} xpCurrent={current} xpNext={needed} size={84} accent="amber" />
                 </div>
 
                 {/* Quick stat row */}
-                <div style={{ display: "flex", gap: 0, borderTop: `1px solid ${tokens.color.border.subtle}` }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 0, borderTop: `1px solid ${tokens.color.border.subtle}` }}>
                     {[
                         { label: "Total XP", value: totalXpEarned.toLocaleString(), color: tokens.color.lime.base },
                         { label: "Labs Done", value: labsCompleted, color: tokens.color.text.secondary },
@@ -117,9 +117,9 @@ const ProfilePage: React.FC = () => {
                 </div>
             </div>
 
-            <div style={{ padding: "24px 28px" }}>
+            <div style={{ padding: "clamp(12px, 2.5vw, 24px) clamp(12px, 3vw, 28px)" }}>
                 {/* Two Column Section */}
-                <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: 20, marginBottom: 24, alignItems: "start" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 16, marginBottom: 24, alignItems: "start" }}>
                     {/* Skill Radar */}
                     <div style={{ background: tokens.color.bg.surface, border: `1px solid ${tokens.color.border.strong}`, padding: "16px 20px" }}>
                         <Label style={{ marginBottom: 16 }}>Skill Profile</Label>

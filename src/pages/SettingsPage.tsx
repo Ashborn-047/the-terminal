@@ -52,7 +52,7 @@ export const SettingsPage: React.FC = () => {
 
     return (
         <div style={{ 
-            padding: tokens.space[8], 
+            padding: "clamp(12px, 3vw, 32px)", 
             maxWidth: 800, 
             margin: '0 auto', 
             height: '100%', 
@@ -78,7 +78,7 @@ export const SettingsPage: React.FC = () => {
                         </div>
                         <div style={{ flex: 1 }}>
                             {isEditing ? (
-                                <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                                <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
                                     <input
                                         type="text"
                                         value={tempUsername}
@@ -122,7 +122,7 @@ export const SettingsPage: React.FC = () => {
                 <SettingsSection title="Visual Output" icon="🖥" subtitle="Appearance and display preferences">
                     <div style={{ marginBottom: 14 }}>
                         <Label style={{ marginBottom: 8 }}>Workstation Theme</Label>
-                        <div style={{ display: "flex", gap: 6 }}>
+                        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                             {[
                                 { id: 'ashborn', label: "ASHBORN_V2.0", colors: [tokens.color.lime.base, tokens.color.amber.base] },
                                 { id: 'mono', label: "MONO_DARK", colors: ["#9A9A9A", "#555555"] },
@@ -138,7 +138,8 @@ export const SettingsPage: React.FC = () => {
                                     border: `1px solid ${themePreset === th.id ? tokens.color.border.lime : tokens.color.border.default}`, 
                                     cursor: "pointer",
                                     color: 'inherit'
-                                }}>
+                                }}
+                                >
                                     <div style={{ display: "flex", gap: 3 }}>
                                         {th.colors.map((c, i) => <div key={i} style={{ width: 10, height: 10, background: c }} />)}
                                     </div>

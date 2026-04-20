@@ -50,8 +50,13 @@ const NAV_ITEMS = [
     // Profile and Settings removed from sidebar, accessible via UserPopover
     { id: "arena", label: "Arena", Icon: Icons.Arena, path: "/challenge-arena" },
 ];
+const MOBILE_NAV_ITEMS = [
+    ...NAV_ITEMS,
+    { id: "profile", label: "Profile", Icon: Icons.Profile, path: "/profile" },
+    { id: "settings", label: "Settings", Icon: Icons.Settings, path: "/settings" },
+];
 
-const ActivityBarItem = ({ item, isActive, onClick, ...props }) => {
+const ActivityBarItem = ({ item, isActive, onClick, showTooltip = true, ...props }) => {
     const [hovered, setHovered] = useState(false);
     const iconStroke = isActive ? tokens.color.lime.base : hovered && !item.locked ? tokens.color.text.primary : tokens.color.text.tertiary;
 
@@ -93,7 +98,7 @@ const ActivityBarItem = ({ item, isActive, onClick, ...props }) => {
 
             <item.Icon stroke={iconStroke} size={18} />
 
-            {hovered && (
+            {showTooltip && hovered && (
                 <div style={{
                     position: "absolute",
                     left: "calc(100% + 10px)",
@@ -243,7 +248,7 @@ const ConnectionStatus = ({ online = true }) => (
     </div>
 );
 
-const Header = ({ user, online }) => {
+const Header = ({ user, online, compact = false }) => {
     // Robust safety for progress values
     const xpPercent = user?.xpPercent || 0;
     const xpCurrent = user?.xpCurrent || 0;
@@ -255,11 +260,11 @@ const Header = ({ user, online }) => {
             background: tokens.color.bg.surface,
             borderBottom: `1px solid ${tokens.color.border.strong}`,
             display: "flex", alignItems: "center",
-            padding: "0 16px", gap: 16,
+            padding: compact ? "0 10px" : "0 16px", gap: compact ? 8 : 16,
             flexShrink: 0,
         }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <Display size="xs" style={{ margin: 0, color: tokens.color.text.primary }}>
+                <Display size={compact ? "2xs" : "xs"} style={{ margin: 0, color: tokens.color.text.primary }}>
                     {user?.username || "GUEST"}
                 </Display>
                 <div style={{
@@ -271,11 +276,13 @@ const Header = ({ user, online }) => {
                 </div>
             </div>
 
-            <div style={{ width: 1, height: 20, background: tokens.color.border.strong }} />
+            {!compact && <div style={{ width: 1, height: 20, background: tokens.color.border.strong }} />}
 
-            <span style={{ fontFamily: tokens.font.sans, fontSize: 11, color: tokens.color.text.tertiary, letterSpacing: "0.05em", fontWeight: 600, textTransform: "uppercase" }}>
-                {user?.rank || "NOVICE"}
-            </span>
+            {!compact && (
+                <span style={{ fontFamily: tokens.font.sans, fontSize: 11, color: tokens.color.text.tertiary, letterSpacing: "0.05em", fontWeight: 600, textTransform: "uppercase" }}>
+                    {user?.rank || "NOVICE"}
+                </span>
+            )}
 
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <div style={{
@@ -285,17 +292,63 @@ const Header = ({ user, online }) => {
                 }}>
                     <div style={{ height: "100%", background: tokens.color.lime.base, width: `${xpPercent}%`, transition: "width 0.6s ease" }} />
                 </div>
-                <span style={{ fontFamily: tokens.font.mono, fontSize: 10, color: tokens.color.text.tertiary }}>
+                <span style={{ fontFamily: tokens.font.mono, fontSize: compact ? 9 : 10, color: tokens.color.text.tertiary }}>
                     {xpCurrent.toLocaleString()} / {xpNext.toLocaleString()} XP
                 </span>
             </div>
 
-            <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: compact ? 6 : 12 }}>
                 <ConnectionStatus online={online} />
             </div>
         </header>
     );
 };
+
+const MobileNav = ({ activePath, onNavigate }) => (
+    <nav
+        style={{
+            height: 58,
+            display: "grid",
+            gridTemplateColumns: `repeat(${MOBILE_NAV_ITEMS.length}, minmax(0,1fr))`,
+            borderTop: `1px solid ${tokens.color.border.strong}`,
+            background: tokens.color.bg.surface,
+            flexShrink: 0,
+        }}
+    >
+        {MOBILE_NAV_ITEMS.map((item) => {
+            const isActive = activePath === item.path || (item.path !== '/' && activePath.startsWith(item.path));
+            return (
+                <button
+                    key={item.id}
+                    onClick={() => onNavigate?.(item.path)}
+                    style={{
+                        background: isActive ? tokens.color.lime.alpha[8] : "transparent",
+                        border: "none",
+                        borderRight: `1px solid ${tokens.color.border.subtle}`,
+                        color: isActive ? tokens.color.lime.base : tokens.color.text.tertiary,
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 3,
+                        fontFamily: tokens.font.sans,
+                        fontSize: 9,
+                        fontWeight: 700,
+                        letterSpacing: "0.05em",
+                        textTransform: "uppercase",
+                        padding: "4px 2px",
+                        cursor: "pointer",
+                    }}
+                >
+                    <item.Icon stroke={isActive ? tokens.color.lime.base : tokens.color.text.tertiary} size={15} />
+                    <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>
+                        {item.label}
+                    </span>
+                </button>
+            );
+        })}
+    </nav>
+);
 
 export const AshbornLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const navigate = useNavigate();
@@ -304,6 +357,45 @@ export const AshbornLayout: React.FC<{ children: React.ReactNode }> = ({ childre
     const { level, streak, getXPProgress } = useGamificationStore();
     const { current: xpCurrent = 0, needed: xpNext = 150, percent: xpPercent = 0 } = getXPProgress?.() || {};
     const rank = level ? getLevelTitle(level) : "Terminal Novice";
+    const getViewportWidth = () => {
+        if (typeof window === "undefined") return 1280;
+        return (
+            window.visualViewport?.width ||
+            document.documentElement?.clientWidth ||
+            window.innerWidth
+        );
+    };
+    const [viewportWidth, setViewportWidth] = useState(getViewportWidth);
+    const [isLikelyTouchDevice, setIsLikelyTouchDevice] = useState(false);
+    const isMobile = viewportWidth < 768 && isLikelyTouchDevice;
+    const isCompactHeader = viewportWidth < 1024;
+
+    useEffect(() => {
+        const detectTouch = () => {
+            if (typeof window === "undefined") return false;
+            return Boolean(
+                window.matchMedia?.("(pointer: coarse)").matches ||
+                window.matchMedia?.("(hover: none)").matches ||
+                navigator.maxTouchPoints > 0
+            );
+        };
+        const onResize = () => {
+            setViewportWidth(getViewportWidth());
+            setIsLikelyTouchDevice(detectTouch());
+        };
+        setIsLikelyTouchDevice(detectTouch());
+        window.addEventListener("resize", onResize);
+        window.addEventListener("orientationchange", onResize);
+        window.visualViewport?.addEventListener("resize", onResize);
+        // Ensure state heals after browser resize edge cases.
+        const syncTick = window.setInterval(onResize, 400);
+        return () => {
+            window.removeEventListener("resize", onResize);
+            window.removeEventListener("orientationchange", onResize);
+            window.visualViewport?.removeEventListener("resize", onResize);
+            window.clearInterval(syncTick);
+        };
+    }, []);
     
     // In a real app, this would come from a connection store
     const systemOnline = true; 
@@ -323,7 +415,7 @@ export const AshbornLayout: React.FC<{ children: React.ReactNode }> = ({ childre
         <div 
             className="al-grid"
             style={{
-                display: "flex", height: "100vh", width: "100%",
+                display: "flex", height: "100%", minHeight: 0, width: "100%",
                 background: tokens.color.bg.base, color: tokens.color.text.primary,
                 overflow: "hidden",
                 fontFamily: tokens.font.sans,
@@ -346,22 +438,31 @@ export const AshbornLayout: React.FC<{ children: React.ReactNode }> = ({ childre
             {/* MAIN APP SHELL — Blurred if onboarding */}
             <div style={{ 
                 display: "flex", width: "100%", height: "100%",
+                flexDirection: isMobile ? "column" : "row",
                 filter: onboardingStep === 1 ? "blur(8px) brightness(0.4)" : "none",
                 transition: "filter 0.5s ease",
                 pointerEvents: onboardingStep === 1 ? "none" : "auto"
             }}>
-                <ActivityBar
-                    activePath={location.pathname}
-                    onNavigate={(p) => navigate(p)}
-                    user={user}
-                />
+                {!isMobile && (
+                    <ActivityBar
+                        activePath={location.pathname}
+                        onNavigate={(p) => navigate(p)}
+                        user={user}
+                    />
+                )}
 
                 <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
-                    <Header user={user} online={systemOnline} />
-                    <main style={{ flex: 1, overflow: "hidden", position: "relative" }}>
+                    <Header user={user} online={systemOnline} compact={isCompactHeader} />
+                    <main style={{ flex: 1, minHeight: 0, overflowY: "auto", overflowX: "hidden", position: "relative", WebkitOverflowScrolling: "touch" }}>
                         {children}
                     </main>
                 </div>
+                {isMobile && (
+                    <MobileNav
+                        activePath={location.pathname}
+                        onNavigate={(p) => navigate(p)}
+                    />
+                )}
             </div>
         </div>
     );

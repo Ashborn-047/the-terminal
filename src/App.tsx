@@ -160,8 +160,9 @@ function AppContent() {
   }
 
   return (
-    <div style={{ height: '100%', width: '100%', backgroundColor: tokens.color.bg.base, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ height: '100dvh', width: '100%', backgroundColor: tokens.color.bg.base, overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
       <ConnectionBanner />
+      <div style={{ flex: 1, minHeight: 0, display: 'flex' }}>
       <MainLayout>
         <ErrorBoundary section="Main Content">
           <Suspense fallback={<PageLoader />}>
@@ -181,6 +182,7 @@ function AppContent() {
         </ErrorBoundary>
         <LevelUpModal />
       </MainLayout>
+      </div>
     </div>
   );
 }
