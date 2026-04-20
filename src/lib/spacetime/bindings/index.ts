@@ -48,11 +48,11 @@ import UpdateStreakReducer from "./update_streak_reducer";
 import PinMessageReducer from "./pin_message_reducer";
 import CompleteQuestReducer from "./complete_quest_reducer";
 import UpvoteMessageReducer from "./upvote_message_reducer";
+import ChmodReducer from "./chmod_reducer";
 import CreateFileReducer from "./create_file_reducer";
 import WriteFileReducer from "./write_file_reducer";
 import DeleteFileReducer from "./delete_file_reducer";
 import MoveFileReducer from "./move_file_reducer";
-import ChmodReducer from "./chmod_reducer";
 
 // Import all procedure arg schemas
 
@@ -242,20 +242,20 @@ const REMOTE_MODULE = {
   versionInfo: {
     cliVersion: "2.0.2" as const,
   },
-  tables: tablesSchema.schemaType.tables,
-  reducers: reducersSchema.reducersType.reducers,
+  tables: (tablesSchema as any)?.schemaType?.tables || {},
+  reducers: (reducersSchema as any)?.reducersType?.reducers || {},
   ...proceduresSchema,
 } satisfies __RemoteModule<
-  typeof tablesSchema.schemaType,
-  typeof reducersSchema.reducersType,
-  typeof proceduresSchema
+  any,
+  any,
+  any
 >;
 
 /** The tables available in this remote SpacetimeDB module. Each table reference doubles as a query builder. */
-export const tables: __QueryBuilder<typeof tablesSchema.schemaType> = __makeQueryBuilder(tablesSchema.schemaType);
+export const tables: __QueryBuilder<typeof tablesSchema.schemaType> = (tablesSchema as any)?.schemaType ? __makeQueryBuilder(tablesSchema.schemaType) : {} as any;
 
 /** The reducers available in this remote SpacetimeDB module. */
-export const reducers = __convertToAccessorMap(reducersSchema.reducersType.reducers);
+export const reducers = (reducersSchema as any)?.reducersType?.reducers ? __convertToAccessorMap(reducersSchema.reducersType.reducers) : {} as any;
 
 
 /** The context type returned in callbacks for all possible events. */

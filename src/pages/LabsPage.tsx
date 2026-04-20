@@ -9,7 +9,9 @@ import { MODULES } from '../data/modules';
 import { 
     tokens, 
     Badge, 
-    Card 
+    Card,
+    Display,
+    Label
 } from '../components/ui/AshbornDesignSystem';
 
 /**
@@ -89,35 +91,17 @@ const LabsPage: React.FC = () => {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 24, marginBottom: 16 }}>
                         <span style={{ fontSize: 48 }}>{activeModule?.icon}</span>
                         <div>
-                            <h1 
-                                data-testid="lab-module-title"
-                                style={{ 
-                                    fontFamily: tokens.font.sans, 
-                                    fontSize: tokens.fontSize['3xl'], 
-                                    fontWeight: 900, 
-                                    color: tokens.color.amber.base, 
-                                    textTransform: 'uppercase', 
-                                    margin: 0,
-                                    letterSpacing: tokens.letterSpacing.tighter
-                                }}
-                            >
+                            <Display size="lg" color={tokens.color.amber.base} data-testid="lab-module-title">
                                 {activeModule?.title || 'Curriculum'}
-                            </h1>
+                            </Display>
                             <div style={{ marginTop: 8 }}>
                                 <Badge variant="lime">MODULE {activeModuleId.toString().padStart(2, '0')}</Badge>
                             </div>
                         </div>
                     </div>
-                    <p style={{ 
-                        fontFamily: tokens.font.sans, 
-                        fontSize: tokens.fontSize.md, 
-                        color: tokens.color.text.secondary, 
-                        maxWidth: 700, 
-                        lineHeight: 1.6,
-                        margin: 0
-                    }}>
+                    <Label size="md" color={tokens.color.text.secondary} style={{ maxWidth: 700 }}>
                         {activeModule?.description || 'Choose a lab to begin. Each lab teaches Linux commands through hands-on practice.'}
-                    </p>
+                    </Label>
                 </div>
 
                 {labList.length === 0 ? (

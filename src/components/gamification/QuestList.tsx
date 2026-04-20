@@ -7,7 +7,8 @@ import {
     Card, 
     Badge, 
     Button, 
-    Divider 
+    Divider,
+    Display
 } from '../ui/AshbornDesignSystem';
 
 export const QuestList: React.FC = () => {
@@ -17,10 +18,11 @@ export const QuestList: React.FC = () => {
 
     if (!userQuests) {
         return (
-            <Card variant="default" style={{ textAlign: 'center', padding: tokens.space[8], opacity: 0.5 }}>
-                <Target size={48} style={{ margin: '0 auto 16px', color: tokens.color.text.tertiary }} />
-                <p style={{ fontFamily: tokens.font.mono, fontSize: tokens.fontSize.xs, textTransform: 'uppercase', color: tokens.color.text.primary }}>
-                    No Active Missions
+            <Card id="quest-empty-card" variant="default" style={{ textAlign: 'center', padding: tokens.space[6], opacity: 0.5 }}>
+                <Target size={48} style={{ margin: '0 auto 20px', color: tokens.color.text.tertiary }} />
+                <Display size="sm" style={{ marginBottom: 4 }}>No Active Missions</Display>
+                <p style={{ fontFamily: tokens.font.mono, fontSize: tokens.fontSize.xs, textTransform: 'uppercase', color: tokens.color.text.tertiary }}>
+                    System Idle
                 </p>
             </Card>
         );
@@ -32,33 +34,27 @@ export const QuestList: React.FC = () => {
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.space[4] }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <h2 style={{ 
-                    fontFamily: tokens.font.sans, 
-                    fontSize: tokens.fontSize.md, 
-                    fontWeight: tokens.fontWeight.black,
-                    textTransform: 'uppercase', 
-                    color: tokens.color.text.primary,
+                <Display size="sm" style={{ 
                     display: 'flex',
                     alignItems: 'center',
                     gap: 12,
                     margin: 0
                 }}>
                     <Target style={{ color: tokens.color.lime.base }} size={20} /> Terminal Missions
-                </h2>
+                </Display>
                 <Badge variant="lime">LEVEL {level}</Badge>
             </div>
 
             {/* Active Quests */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }} role="list" aria-label="Active Missions">
                 {activeQuests.length === 0 && (
-                    <div style={{ 
+                    <div id="quest-sync-msg" style={{ 
                         padding: tokens.space[6], 
                         border: `1px dashed ${tokens.color.border.default}`, 
                         color: tokens.color.text.tertiary,
                         fontFamily: tokens.font.mono,
                         fontSize: tokens.fontSize.xs,
-                        textAlign: 'center',
-                        fontStyle: 'italic'
+                        textAlign: 'center'
                     }}>
                         All daily missions complete. Checking for new transmissions...
                     </div>
@@ -67,20 +63,14 @@ export const QuestList: React.FC = () => {
                     <Card
                         key={quest.id.toString()}
                         variant="default"
-                        style={{ position: 'relative', overflow: 'hidden' }}
+                        id={`quest-active-${quest.id}`}
+                        style={{ position: 'relative', overflow: 'hidden', padding: tokens.space[6] }}
                     >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-                            <h3 style={{ 
-                                fontFamily: tokens.font.sans,
-                                fontSize: tokens.fontSize.sm,
-                                fontWeight: tokens.fontWeight.bold,
-                                color: tokens.color.lime.base,
-                                textTransform: 'uppercase',
-                                margin: 0
-                            }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+                            <Display size="sm" color={tokens.color.lime.base} style={{ margin: 0, lineHeight: 1.2 }}>
                                 {quest.title}
-                            </h3>
-                            <Badge variant="amber">
+                            </Display>
+                            <Badge variant="amber" style={{ marginLeft: 12 }}>
                                 <Sparkles size={10} style={{ marginRight: 4 }} /> +{quest.xpReward.toString()} XP
                             </Badge>
                         </div>
@@ -97,7 +87,7 @@ export const QuestList: React.FC = () => {
                         
                         <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                             <Button
-                                variant="outline"
+                                variant="secondary"
                                 size="sm"
                                 onClick={() => spacetime.completeQuest(quest.id)}
                                 icon={<ChevronRight size={14} />}
@@ -131,14 +121,14 @@ export const QuestList: React.FC = () => {
                                     display: 'flex', 
                                     alignItems: 'center', 
                                     gap: 12, 
-                                    padding: '8px 12px',
+                                    padding: tokens.space[6],
                                     background: tokens.color.bg.surface,
                                     border: `1px solid ${tokens.color.border.strong}`,
                                     opacity: 0.6
                                 }}
                             >
                                 <CheckCircle2 size={14} style={{ color: tokens.color.lime.base }} />
-                                <span style={{ fontFamily: tokens.font.mono, fontSize: 10, color: tokens.color.text.secondary }}>
+                                <span style={{ fontFamily: tokens.font.display, fontSize: 10, color: tokens.color.text.secondary, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                     {quest.title}
                                 </span>
                             </div>

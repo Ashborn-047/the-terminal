@@ -10,11 +10,17 @@ export async function waitForEngineReady(page: Page) {
 
     // 2. Wait for the Terminal Engine to signal 'ready' status
     const terminal = page.getByTestId('terminal-container');
+    
+    // First, ensure the terminal container is AT LEAST present in the DOM
+    await expect(terminal).toBeAttached({ timeout: 15000 });
+    
     try {
+        // Now wait for the localized status to signify readiness
         await page.waitForSelector('[data-engine-status="ready"]', { timeout: 30000 });
     } catch (e) {
-        const text = await terminal.textContent();
-        console.error(`[Test Diagnostic] Engine readiness timeout. Current DOM text: "${text}"`);
+        // If we timeout, try to scrape terminal text for diagnostics
+        const text = await terminal.innerText();
+        console.error(`[Test Diagnostic] Engine readiness timeout. Current DOM text length: ${text.length}`);
         throw e;
     }
 

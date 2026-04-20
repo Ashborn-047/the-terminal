@@ -9,7 +9,10 @@ import {
     Badge, 
     Button, 
     ProgressBar,
-    Divider
+    Divider,
+    Display,
+    Label,
+    Mono
 } from '../ui/AshbornDesignSystem';
 
 // ======================================================================
@@ -34,59 +37,40 @@ export const LabCard: React.FC<LabCardProps> = ({ lab, status, onStart }) => {
                 flexDirection: 'column',
                 height: '100%',
                 transition: 'border-color 0.2s ease',
-                borderColor: status === 'completed' ? tokens.color.lime.base : tokens.color.border.default
+                borderColor: status === 'completed' ? tokens.color.lime.base : tokens.color.border.default,
+                padding: tokens.space[6] // STANDARD 24px PADDING
             }}
         >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: tokens.space[4] }}>
-                <h3 style={{ 
-                    fontFamily: tokens.font.sans, 
-                    fontSize: tokens.fontSize.lg, 
-                    fontWeight: 700, 
-                    textTransform: 'uppercase', 
-                    color: tokens.color.text.primary,
-                    margin: 0,
-                    maxWidth: '75%'
-                }}>
+                <Display size="sm" style={{ maxWidth: '85%', color: tokens.color.text.primary }}>
                     {lab.title}
-                </h3>
+                </Display>
                 <Badge variant={lab.type === 'guided' ? 'lime' : 'amber'}>
                     {lab.type.toUpperCase()}
                 </Badge>
             </div>
 
             <p style={{ 
-                fontFamily: tokens.font.sans, 
+                fontFamily: tokens.font.sans,
                 fontSize: tokens.fontSize.xs, 
                 color: tokens.color.text.secondary, 
-                marginBottom: tokens.space[6],
+                marginBottom: tokens.space[6], 
                 flex: 1,
                 lineHeight: 1.5
             }}>
                 {lab.description}
             </p>
 
-            <Divider style={{ margin: '0 0 16px 0', opacity: 0.3 }} />
+            <Divider style={{ margin: '0 0 16px 0', opacity: 0.15 }} />
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' }}>
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ 
-                        fontFamily: tokens.font.mono, 
-                        fontSize: 8, 
-                        color: tokens.color.text.tertiary, 
-                        textTransform: 'uppercase', 
-                        letterSpacing: tokens.letterSpacing.widest,
-                        marginBottom: 4
-                    }}>
+                    <Label uppercase size="2xs" color={tokens.color.text.tertiary} style={{ marginBottom: 4, letterSpacing: '.06em' }}>
                         Reward
-                    </span>
-                    <span style={{ 
-                        fontFamily: tokens.font.sans, 
-                        fontSize: tokens.fontSize.md, 
-                        fontWeight: 700, 
-                        color: tokens.color.amber.base 
-                    }}>
+                    </Label>
+                    <Mono size="sm" color={tokens.color.amber.base} weight={800}>
                         {lab.xpReward} XP
-                    </span>
+                    </Mono>
                 </div>
 
                 {status === 'completed' && (
@@ -117,7 +101,7 @@ export const LabCard: React.FC<LabCardProps> = ({ lab, status, onStart }) => {
                 )}
 
                 {status === 'locked' && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: tokens.color.text.tertiary, fontSize: 10, fontFamily: tokens.font.sans, fontWeight: 700, textTransform: 'uppercase' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: tokens.color.text.tertiary, fontSize: 10, fontFamily: tokens.font.mono, fontWeight: 700, textTransform: 'uppercase' }}>
                         <Lock size={12} /> LOCKED
                     </div>
                 )}
@@ -147,9 +131,9 @@ export const GuidedLabInstructions: React.FC<GuidedLabProps> = ({ lab, currentSt
             <Card variant="default" style={{ background: tokens.color.lime.base, color: tokens.color.bg.base, padding: tokens.space[6] }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: tokens.space[2] }}>
                     <Award size={24} />
-                    <h4 style={{ fontFamily: tokens.font.sans, fontSize: tokens.fontSize.lg, fontWeight: 800, textTransform: 'uppercase', margin: 0 }}>Lab Complete!</h4>
+                    <Display size="sm" color={tokens.color.bg.base}>Lab Complete!</Display>
                 </div>
-                <p style={{ fontFamily: tokens.font.sans, fontSize: tokens.fontSize.sm, fontWeight: 500, margin: 0 }}>{lab.completionMessage}</p>
+                <Label size="sm" color={tokens.color.bg.base}>{lab.completionMessage}</Label>
             </Card>
         );
     }
@@ -159,23 +143,19 @@ export const GuidedLabInstructions: React.FC<GuidedLabProps> = ({ lab, currentSt
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%', color: tokens.color.text.primary }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: tokens.space[6], paddingBottom: tokens.space[2], borderBottom: `1px solid ${tokens.color.border.default}` }}>
-                <h4 style={{ fontFamily: tokens.font.sans, fontSize: tokens.fontSize.md, fontWeight: 800, textTransform: 'uppercase', color: tokens.color.lime.base, margin: 0 }}>
+                <Display size="sm" color={tokens.color.lime.base}>
                     Step {currentStepIndex + 1} <span style={{ color: tokens.color.text.tertiary, fontSize: tokens.fontSize.xs, fontWeight: 500 }}>/ {lab.steps.length}</span>
-                </h4>
+                </Display>
                 <Badge variant="lime">GUIDED LAB</Badge>
             </div>
 
-            <p style={{ 
-                fontFamily: tokens.font.sans, 
-                fontSize: tokens.fontSize.md, 
+            <Label size="md" style={{ 
                 marginBottom: tokens.space[8], 
                 paddingLeft: tokens.space[4],
                 borderLeft: `2px solid ${tokens.color.lime.base}`,
-                lineHeight: 1.6,
-                color: tokens.color.text.primary
             }}>
                 {step.instruction}
-            </p>
+            </Label>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {step.hint && (
@@ -316,12 +296,12 @@ export const DIYLabInstructions: React.FC<DIYLabProps> = ({ lab, vfs, userId, on
             <Card variant="default" style={{ background: tokens.color.lime.base, color: tokens.color.bg.base, padding: tokens.space[6] }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: tokens.space[2] }}>
                     <Award size={24} />
-                    <h4 style={{ fontFamily: tokens.font.sans, fontSize: tokens.fontSize.lg, fontWeight: 800, textTransform: 'uppercase', margin: 0 }}>Lab Complete!</h4>
+                    <Display size="sm" color={tokens.color.bg.base}>Lab Complete!</Display>
                 </div>
-                <p style={{ fontFamily: tokens.font.sans, fontSize: tokens.fontSize.sm, fontWeight: 500, margin: 0 }}>{lab.completionMessage}</p>
-                <div style={{ marginTop: 12, fontFamily: tokens.font.mono, fontSize: 11, fontWeight: 700, textTransform: 'uppercase' }}>
+                <Label size="sm" color={tokens.color.bg.base}>{lab.completionMessage}</Label>
+                <Mono size="11px" weight={700} color={tokens.color.bg.base} style={{ marginTop: 12 }}>
                     +{lab.xpReward} XP earned!
-                </div>
+                </Mono>
             </Card>
         );
     }
@@ -329,38 +309,31 @@ export const DIYLabInstructions: React.FC<DIYLabProps> = ({ lab, vfs, userId, on
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%', color: tokens.color.text.primary }}>
             <div style={{ display: 'flex', justifyBetween: 'space-between', alignItems: 'center', marginBottom: tokens.space[6], paddingBottom: tokens.space[2], borderBottom: `1px solid ${tokens.color.border.default}`, justifyContent: 'space-between' }}>
-                <h4 style={{ fontFamily: tokens.font.sans, fontSize: tokens.fontSize.md, fontWeight: 800, textTransform: 'uppercase', color: tokens.color.amber.base, margin: 0 }}>Objective</h4>
+                <Display size="sm" color={tokens.color.amber.base}>Objective</Display>
                 <Badge variant="amber">DIY LAB</Badge>
             </div>
 
-            <p style={{ 
-                fontFamily: tokens.font.sans, 
-                fontSize: tokens.fontSize.md, 
-                marginBottom: tokens.space[8], 
-                lineHeight: 1.6,
-                color: tokens.color.text.primary
-            }}>
+            <Label size="md" style={{ marginBottom: tokens.space[8] }}>
                 {lab.description}
-            </p>
+            </Label>
 
             {lab.verification && (
                 <div style={{ marginBottom: tokens.space[4] }}>
-                    <h5 style={{ fontFamily: tokens.font.sans, fontSize: 11, fontWeight: 700, textTransform: 'uppercase', marginBottom: 12, color: tokens.color.text.secondary }}>Requirements:</h5>
+                    <Label size="xs" weight={700} color={tokens.color.text.secondary} style={{ marginBottom: 12 }}>Requirements:</Label>
                     <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
                         {lab.verification.conditions.map((cond, i) => (
                             <li
                                 key={i}
                                 style={{
-                                    fontFamily: tokens.font.mono,
-                                    fontSize: 11,
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: 8,
-                                    color: failedMessages.includes(cond.message) ? "rgb(239, 68, 68)" : tokens.color.text.tertiary
                                 }}
                             >
-                                <ChevronRight size={10} />
-                                {cond.message}
+                                <ChevronRight size={10} color={tokens.color.text.tertiary} />
+                                <Mono size="11px" color={failedMessages.includes(cond.message) ? "rgb(239, 68, 68)" : tokens.color.text.tertiary}>
+                                    {cond.message}
+                                </Mono>
                             </li>
                         ))}
                     </ul>

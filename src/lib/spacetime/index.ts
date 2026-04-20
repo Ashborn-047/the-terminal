@@ -278,10 +278,14 @@ class SpacetimeService {
                 isOnline: true
             } as any;
         }
-        if (!this.conn || !this.isConnected) return null;
+        if (!this.conn || !this.isConnected || !this.conn.identity) return null;
         const identity = this.conn.identity;
-        if (!identity) return null;
-        return this.conn.db.user.identity.find(identity);
+        try {
+            return this.conn.db.user.identity.find(identity);
+        } catch (e) {
+            console.error("[SpacetimeDB] Failed to query local user:", e);
+            return null;
+        }
     }
 
     public getUserProgress() {
@@ -295,10 +299,14 @@ class SpacetimeService {
                 streakDays: 3
             } as any;
         }
-        if (!this.conn || !this.isConnected) return null;
+        if (!this.conn || !this.isConnected || !this.conn.identity) return null;
         const identity = this.conn.identity;
-        if (!identity) return null;
-        return this.conn.db.user_progress.identity.find(identity);
+        try {
+            return this.conn.db.user_progress.identity.find(identity);
+        } catch (e) {
+            console.error("[SpacetimeDB] Failed to query user progress:", e);
+            return null;
+        }
     }
 
     public getQuests() {
@@ -323,10 +331,14 @@ class SpacetimeService {
                 upvotedMessageIds: []
             } as any;
         }
-        if (!this.conn || !this.isConnected) return null;
+        if (!this.conn || !this.isConnected || !this.conn.identity) return null;
         const identity = this.conn.identity;
-        if (!identity) return null;
-        return this.conn.db.user_quest.identity.find(identity);
+        try {
+            return this.conn.db.user_quest.identity.find(identity);
+        } catch (e) {
+            console.error("[SpacetimeDB] Failed to query user quests:", e);
+            return null;
+        }
     }
 
     public onUpdate(cb: () => void) {

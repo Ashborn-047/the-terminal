@@ -9,7 +9,16 @@ import {
     Card, 
     Badge, 
     StatCard, 
-    ProgressBar 
+    ProgressBar,
+    XPRing,
+    SkillRadar,
+    AchievementGrid,
+    ActivitySpark,
+    Display,
+    Label,
+    Mono,
+    Divider,
+    Button
 } from '../components/ui/AshbornDesignSystem';
 
 /**
@@ -23,145 +32,148 @@ const ProfilePage: React.FC = () => {
     } = useGamificationStore();
     const { current, needed, percent } = getXPProgress();
 
-    return (
-        <div style={{ 
-            height: '100%', 
-            overflowY: 'auto', 
-            padding: tokens.space[8], 
-            backgroundColor: tokens.color.bg.base,
-            color: tokens.color.text.primary,
-            paddingBottom: 80
-        }}>
-            <h1 style={{ 
-                fontFamily: tokens.font.sans, 
-                fontSize: tokens.fontSize['3xl'], 
-                fontWeight: 900, 
-                textTransform: 'uppercase', 
-                color: tokens.color.text.primary, 
-                letterSpacing: tokens.letterSpacing.widest,
-                marginBottom: tokens.space[8],
-                fontStyle: 'italic'
-            }}>
-                Agent Profile: <span style={{ color: tokens.color.lime.base }}>{username}</span>
-            </h1>
+    // Mapping achievements to the format required by AchievementGrid
+    const mappedAchievements = ACHIEVEMENTS.filter(a => !a.hidden || unlockedAchievements.includes(a.id)).map(ach => ({
+        id: ach.id,
+        icon: ach.icon,
+        name: ach.name,
+        desc: ach.description,
+        earned: unlockedAchievements.includes(ach.id),
+        xp: ach.xp,
+        progress: Math.min(100, Math.round(((ach.criteria.target === 'labs-completed' ? labsCompleted
+            : ach.criteria.target === 'level' ? level
+                : ach.criteria.target === 'streak' ? streak.current
+                    : (counters[ach.criteria.target] || 0)) / ach.criteria.threshold) * 100))
+    }));
 
-            {/* Stats Grid */}
-            <div style={{ 
-                display: 'grid', 
-                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
-                gap: tokens.space[4], 
-                marginBottom: tokens.space[8] 
-            }}>
-                <StatCard label="Current Level" value={String(level)} sub={getLevelTitle(level)} accent="lime" />
-                <StatCard label="Total Experience" value={totalXpEarned.toLocaleString()} sub={`${current}/${needed} XP`} accent="amber" />
-                <StatCard label="Current Streak" value={`${streak.current} Days`} sub={`Best: ${streak.longest}`} accent="amber" />
-                <StatCard label="Labs Completed" value={String(labsCompleted)} sub="certified labs" accent="neutral" />
+    // Mock skills for the radar (ideally derived from lab categories)
+    const mockSkills = {
+        filesystem: Math.min(100, (labsCompleted / 10) * 100),
+        permissions: Math.min(100, (counters['permissions-fix'] || 0) * 20),
+        networking: 0,
+        scripting: 0,
+        processes: 0
+    };
+
+    return (
+        <div style={{ color: tokens.color.text.primary, height: '100%', overflow: 'auto' }}>
+            {/* Identity Hero v2 */}
+            <div style={{ padding: "28px 28px 0", borderBottom: `1px solid ${tokens.color.border.strong}`, background: tokens.color.bg.surface }}>
+                <div style={{ display: "flex", alignItems: "flex-end", gap: 24, marginBottom: 20 }}>
+                    {/* Large Avatar */}
+                    <div style={{ 
+                        width: 80, height: 80, 
+                        background: tokens.color.lime.base, 
+                        display: "flex", alignItems: "center", justifyContent: "center", 
+                        fontFamily: tokens.font.sans, fontSize: "28px", fontWeight: 800, 
+                        color: tokens.color.text.inverse, flexShrink: 0, position: "relative" 
+                    }}>
+                        {username?.[0]?.toUpperCase() || 'H'}
+                        <div style={{ 
+                            position: "absolute", bottom: 4, right: 4, 
+                            width: 10, height: 10, borderRadius: "50%", 
+                            background: tokens.color.lime.base, border: `2px solid ${tokens.color.bg.surface}`, 
+                            animation: "al-pulse 2s infinite" 
+                        }} />
+                    </div>
+
+                    {/* Identity block */}
+                    <div style={{ flex: 1 }}>
+                        <Label color={tokens.color.lime.base} style={{ marginBottom: 4 }}>Agent Profile</Label>
+                        <Display size="lg">{username || "UNKNOWN_AGENT"}</Display>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
+                            <div style={{ 
+                                background: tokens.color.amber.base, 
+                                padding: "2px 8px", 
+                                fontFamily: tokens.font.mono, fontSize: "10px", fontWeight: 800, 
+                                color: tokens.color.text.inverse, letterSpacing: ".08em" 
+                            }}>
+                                LVL {level}
+                            </div>
+                            <span style={{ fontFamily: tokens.font.sans, fontSize: "12px", color: tokens.color.text.secondary }}>{getLevelTitle(level)}</span>
+                            <div style={{ width: 4, height: 4, borderRadius: "50%", background: tokens.color.text.tertiary }} />
+                            <span style={{ fontFamily: tokens.font.mono, fontSize: "11px", color: tokens.color.text.tertiary }}>System Sync Active</span>
+                        </div>
+                    </div>
+
+                    {/* XP Ring on the right */}
+                    <XPRing level={level} xpCurrent={current} xpNext={needed} size={96} accent="amber" />
+                </div>
+
+                {/* Quick stat row */}
+                <div style={{ display: "flex", gap: 0, borderTop: `1px solid ${tokens.color.border.subtle}` }}>
+                    {[
+                        { label: "Total XP", value: totalXpEarned.toLocaleString(), color: tokens.color.lime.base },
+                        { label: "Labs Done", value: labsCompleted, color: tokens.color.text.secondary },
+                        { label: "Streak", value: `${streak.current}d`, color: tokens.color.amber.base },
+                        { label: "Achievements", value: unlockedAchievements.length, color: tokens.color.text.secondary },
+                    ].map((s, i, arr) => (
+                        <div key={s.label} style={{ 
+                            flex: 1, padding: "12px 0 12px", 
+                            borderRight: i < arr.length - 1 ? `1px solid ${tokens.color.border.subtle}` : "none", 
+                            paddingLeft: 16 
+                        }}>
+                            <Label style={{ marginBottom: 2 }}>{s.label}</Label>
+                            <span style={{ 
+                                fontFamily: tokens.font.display, 
+                                fontSize: "20px", 
+                                color: s.color, 
+                                letterSpacing: "-0.01em" 
+                            }}>{s.value}</span>
+                        </div>
+                    ))}
+                </div>
             </div>
 
-            <section style={{ marginBottom: tokens.space[10] }}>
-                <h2 style={{ 
-                    fontFamily: tokens.font.sans, 
-                    fontSize: tokens.fontSize.lg, 
-                    fontWeight: 800, 
-                    textTransform: 'uppercase', 
-                    color: tokens.color.text.secondary, 
-                    marginBottom: tokens.space[6],
-                    letterSpacing: tokens.letterSpacing.wide
-                }}>
-                    Advancement Path
-                </h2>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.space[6] }}>
-                    <SkillTree />
-                    <StreakHeatmap />
-                </div>
-            </section>
-
-            <div style={{ 
-                display: 'grid', 
-                gridTemplateColumns: '1fr',
-                gap: tokens.space[10] 
-            }} className="lg:grid-cols-2">
-                {/* Achievements */}
-                <section>
-                    <h2 style={{ 
-                        fontFamily: tokens.font.sans, 
-                        fontSize: tokens.fontSize.lg, 
-                        fontWeight: 800, 
-                        textTransform: 'uppercase', 
-                        color: tokens.color.text.secondary, 
-                        marginBottom: tokens.space[6],
-                        letterSpacing: tokens.letterSpacing.wide
-                    }}>
-                        Honors ({unlockedAchievements.length}/{ACHIEVEMENTS.filter(a => !a.hidden).length})
-                    </h2>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: tokens.space[3] }} className="md:grid-cols-2">
-                        {ACHIEVEMENTS.filter(a => !a.hidden || unlockedAchievements.includes(a.id)).map((ach) => {
-                            const unlocked = unlockedAchievements.includes(ach.id);
-                            const currentVal = ach.criteria.target === 'labs-completed' ? labsCompleted
-                                : ach.criteria.target === 'level' ? level
-                                    : ach.criteria.target === 'streak' ? streak.current
-                                        : (counters[ach.criteria.target] || 0);
-                            const achPercent = Math.min(100, Math.round((currentVal / ach.criteria.threshold) * 100));
-
-                            return (
-                                <Card
-                                    key={ach.id}
-                                    variant="default"
-                                    style={{ 
-                                        opacity: unlocked ? 1 : 0.6,
-                                        borderColor: unlocked ? tokens.color.amber.base : tokens.color.border.default,
-                                        transition: 'transform 0.2s',
-                                        padding: tokens.space[4]
-                                    }}
-                                >
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-                                        <span style={{ fontSize: 24 }}>{ach.icon}</span>
-                                        <span style={{ 
-                                            fontFamily: tokens.font.sans, 
-                                            fontSize: tokens.fontSize.xs, 
-                                            fontWeight: 700, 
-                                            textTransform: 'uppercase', 
-                                            color: tokens.color.text.primary 
-                                        }}>
-                                            {ach.name}
-                                        </span>
-                                    </div>
-                                    <p style={{ 
-                                        fontSize: 10, 
-                                        color: tokens.color.text.tertiary, 
-                                        marginBottom: 12, 
-                                        fontFamily: tokens.font.sans,
-                                        height: 32,
-                                        overflow: 'hidden',
-                                        lineHeight: 1.4
-                                    }}>
-                                        {ach.description}
-                                    </p>
-                                    <ProgressBar 
-                                        value={achPercent} 
-                                        height={3} 
-                                        variant={unlocked ? "lime" : "amber"} 
-                                    />
-                                    <div style={{ 
-                                        marginTop: 8, 
-                                        display: 'flex', 
-                                        justifyContent: 'space-between',
-                                        fontFamily: tokens.font.mono,
-                                        fontSize: 8,
-                                        color: tokens.color.text.tertiary
-                                    }}>
-                                        <span>{unlocked ? '✅ SYSTEM SYNCED' : `${currentVal} / ${ach.criteria.threshold}`}</span>
-                                        <span>{achPercent}%</span>
-                                    </div>
-                                </Card>
-                            );
-                        })}
+            <div style={{ padding: "24px 28px" }}>
+                {/* Two Column Section */}
+                <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: 20, marginBottom: 24, alignItems: "start" }}>
+                    {/* Skill Radar */}
+                    <div style={{ background: tokens.color.bg.surface, border: `1px solid ${tokens.color.border.strong}`, padding: "16px 20px" }}>
+                        <Label style={{ marginBottom: 16 }}>Skill Profile</Label>
+                        <SkillRadar skills={mockSkills} size={220} />
                     </div>
-                </section>
+
+                    {/* Activity Column */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                        <Card variant="default" style={{ padding: "14px 16px" }}>
+                            <ActivitySpark data={[]} streak={streak.current} />
+                        </Card>
+                        
+                        <Card variant="default" style={{ padding: "14px 16px" }}>
+                            <Label style={{ marginBottom: 12 }}>System Status</Label>
+                            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                                    <span style={{ fontSize: "11px", color: tokens.color.text.secondary }}>Filesystem Expertise</span>
+                                    <Mono size="10px" color={tokens.color.lime.base}>{labsCompleted > 5 ? 'High' : labsCompleted > 0 ? 'Nominal' : 'Low'}</Mono>
+                                </div>
+                                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                                    <span style={{ fontSize: "11px", color: tokens.color.text.secondary }}>Kernel Interaction</span>
+                                    <Mono size="10px" color={tokens.color.amber.base}>Nominal</Mono>
+                                </div>
+                                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                                    <span style={{ fontSize: "11px", color: tokens.color.text.secondary }}>Network Routing</span>
+                                    <Mono size="10px" color={tokens.color.text.tertiary}>Locked</Mono>
+                                </div>
+                            </div>
+                        </Card>
+                    </div>
+                </div>
+
+                {/* Achievements Section */}
+                <div style={{ marginBottom: 24 }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+                        <Label>Achievements ({unlockedAchievements.length} earned)</Label>
+                        <Button variant="ghost" size="sm">View All Achievements</Button>
+                    </div>
+                    <AchievementGrid achievements={mappedAchievements} />
+                </div>
+
+                <Divider style={{ margin: "32px 0" }} />
 
                 {/* Leaderboard Section */}
-                <section>
-                    <h2 style={{ 
+                <section style={{ marginBottom: 48 }}>
+                     <h2 style={{ 
                         fontFamily: tokens.font.sans, 
                         fontSize: tokens.fontSize.lg, 
                         fontWeight: 800, 
@@ -174,6 +186,12 @@ const ProfilePage: React.FC = () => {
                     </h2>
                     <Leaderboard />
                 </section>
+
+                <Divider style={{ margin: "32px 0" }} />
+
+                {/* Detailed Skill Tree (Old fallback) */}
+                <Label style={{ marginBottom: 16 }}>Detailed Advancement Path</Label>
+                <SkillTree />
             </div>
         </div>
     );

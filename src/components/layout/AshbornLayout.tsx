@@ -2,7 +2,10 @@ import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useUIStore } from "../../stores/uiStore";
 import { useGamificationStore, getLevelTitle } from "../../stores/gamificationStore";
-import { tokens } from "../ui/AshbornDesignSystem";
+import { tokens, UserPopover, Display } from "../ui/AshbornDesignSystem";
+import { OnboardingWalkthrough } from "../onboarding/OnboardingWalkthrough";
+import { WelcomeModal } from "../onboarding/WelcomeModal";
+import { useRef, useEffect } from "react";
 
 /**
  * ============================================================
@@ -39,17 +42,16 @@ const Icons = {
 };
 
 const NAV_ITEMS = [
-    { id: "dashboard", label: "Dashboard", Icon: Icons.Dashboard, path: "/" },
+    { id: "home", label: "Dashboard", Icon: Icons.Dashboard, path: "/" },
     { id: "terminal", label: "Terminal", Icon: Icons.Terminal, path: "/terminal" },
     { id: "curriculum", label: "Curriculum", Icon: Icons.Curriculum, path: "/labs" },
     { id: "docs", label: "Commands", Icon: Icons.Docs, path: "/commands" },
     { id: "chat", label: "Chat", Icon: Icons.AITutor, path: "/chat" },
-    { id: "profile", label: "Profile", Icon: Icons.Profile, path: "/profile" },
+    // Profile and Settings removed from sidebar, accessible via UserPopover
     { id: "arena", label: "Arena", Icon: Icons.Arena, path: "/challenge-arena" },
-    { id: "settings", label: "Settings", Icon: Icons.Settings, path: "/settings" },
 ];
 
-const ActivityBarItem = ({ item, isActive, onClick }) => {
+const ActivityBarItem = ({ item, isActive, onClick, ...props }) => {
     const [hovered, setHovered] = useState(false);
     const iconStroke = isActive ? tokens.color.lime.base : hovered && !item.locked ? tokens.color.text.primary : tokens.color.text.tertiary;
 
@@ -80,6 +82,7 @@ const ActivityBarItem = ({ item, isActive, onClick }) => {
             }}
             onMouseEnter={() => setHovered(true)}
             onMouseLeave={() => setHovered(false)}
+            {...props}
         >
             {isActive && (
                 <div style={{
@@ -123,68 +126,102 @@ const ActivityBarItem = ({ item, isActive, onClick }) => {
     );
 };
 
-const ActivityBar = ({ activePath, onNavigate, user }) => (
-    <aside style={{
-        width: 64,
-        background: tokens.color.bg.surface,
-        borderRight: `1px solid ${tokens.color.border.default}`,
-        display: "flex", flexDirection: "column",
-        alignItems: "center",
-        padding: "12px 0",
-        flexShrink: 0,
-        zIndex: 20,
-    }}>
-        <div
-            style={{
-                width: 36, height: 36,
-                background: tokens.color.lime.base,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                marginBottom: 20, cursor: "pointer", flexShrink: 0,
-            }}
-            onClick={() => onNavigate?.("/")}
-        >
-            <Icons.LogoMark size={18} />
-        </div>
+const ActivityBar = ({ activePath, onNavigate, user }) => {
+    const [popoverOpen, setPopoverOpen] = useState(false);
+    const popoverRef = useRef(null);
 
-        <nav style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: 1, width: "100%" }}>
-            {NAV_ITEMS.map((item) => (
-                <ActivityBarItem
-                    key={item.id}
-                    item={item}
-                    isActive={activePath === item.path || (item.path !== '/' && activePath.startsWith(item.path))}
-                    onClick={onNavigate}
-                />
-            ))}
-        </nav>
+    // Close popover when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (popoverRef.current && !popoverRef.current.contains(event.target)) {
+                setPopoverOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
 
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, paddingBottom: 4 }}>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, cursor: "help" }} title={`${user.streakDays} Day Streak`}>
-                <div style={{ color: tokens.color.amber.base, fontSize: 16, lineHeight: 1, fontWeight: 700 }}>▲</div>
-                <div style={{ fontFamily: tokens.font.mono, fontSize: 9, color: tokens.color.amber.base, fontWeight: 700, letterSpacing: "0.05em" }}>
-                    {user.streakDays}
-                </div>
-                {/* Hidden text for Playwright tests §7.3 */}
-                <span style={{ position: "absolute", width: 1, height: 1, padding: 0, margin: -1, overflow: "hidden", clip: "rect(0,0,0,0)", border: 0 }}>
-                    {user.streakDays} Day Streak
-                </span>
-            </div>
-
+    return (
+        <aside style={{
+            width: 64,
+            background: tokens.color.bg.surface,
+            borderRight: `1px solid ${tokens.color.border.strong}`,
+            display: "flex", flexDirection: "column",
+            alignItems: "center",
+            padding: "12px 0",
+            flexShrink: 0,
+            zIndex: 20,
+            position: "relative",
+        }}>
             <div
                 style={{
                     width: 32, height: 32,
                     background: tokens.color.lime.base,
                     display: "flex", alignItems: "center", justifyContent: "center",
-                    fontFamily: tokens.font.sans,
-                    fontSize: 12, fontWeight: 800, color: tokens.color.text.inverse,
-                    cursor: "pointer", transition: "background 0.15s",
+                    marginBottom: 20, cursor: "pointer", flexShrink: 0,
+                    fontFamily: tokens.font.display, fontSize: 13, fontWeight: 900,
+                    color: tokens.color.text.inverse
                 }}
-                onClick={() => onNavigate?.("/profile")}
+                onClick={() => onNavigate?.("/")}
             >
-                {user.initial}
+                AL
             </div>
-        </div>
-    </aside>
-);
+
+            <nav style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: 1, width: "100%" }}>
+                {NAV_ITEMS.map((item) => (
+                    <ActivityBarItem
+                        key={item.id}
+                        item={item}
+                        isActive={activePath === item.path || (item.path !== '/' && activePath.startsWith(item.path))}
+                        onClick={onNavigate}
+                        data-testid={`nav-item-${item.id}`}
+                    />
+                ))}
+            </nav>
+
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, paddingBottom: 12, width: "100%", position: "relative" }}>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, cursor: "help" }} title={`${user.streakDays} Day Streak`}>
+                    <div style={{ color: tokens.color.amber.base, fontSize: 16, lineHeight: 1, fontWeight: 700 }}>▲</div>
+                    <div style={{ fontFamily: tokens.font.mono, fontSize: 9, color: tokens.color.amber.base, fontWeight: 700, letterSpacing: "0.05em" }}>
+                        {user.streakDays}
+                    </div>
+                    <span style={{ display: 'none' }}>{user.streakDays} Day Streak</span>
+                </div>
+
+                <div
+                    style={{
+                        width: 32, height: 32,
+                        background: tokens.color.bg.overlay,
+                        border: `1px solid ${popoverOpen ? tokens.color.lime.base : tokens.color.border.strong}`,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        fontFamily: tokens.font.mono,
+                        fontSize: 12, fontWeight: 800, color: tokens.color.lime.base,
+                        cursor: "pointer", transition: "all 0.15s",
+                    }}
+                    onClick={() => setPopoverOpen(!popoverOpen)}
+                >
+                    {user.initial}
+                </div>
+
+                {popoverOpen && (
+                    <div ref={popoverRef}>
+                        <UserPopover
+                            user={user}
+                            onProfile={() => onNavigate?.("/profile")}
+                            onSettings={() => onNavigate?.("/settings")}
+                            onLogout={() => {
+                                // Simple logout for now, could be more involved
+                                localStorage.clear();
+                                window.location.reload();
+                            }}
+                            onClose={() => setPopoverOpen(false)}
+                        />
+                    </div>
+                )}
+            </div>
+        </aside>
+    );
+};
 
 const ConnectionStatus = ({ online = true }) => (
     <div style={{
@@ -206,60 +243,67 @@ const ConnectionStatus = ({ online = true }) => (
     </div>
 );
 
-const Header = ({ user, online }) => (
-    <header style={{
-        height: 48,
-        background: tokens.color.bg.surface,
-        borderBottom: `1px solid ${tokens.color.border.default}`,
-        display: "flex", alignItems: "center",
-        padding: "0 16px", gap: 16,
-        flexShrink: 0,
-    }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontFamily: tokens.font.mono, fontSize: 13, fontWeight: 700, letterSpacing: "0.04em", color: tokens.color.text.primary }}>
-                {user.username}
-            </span>
-            <div style={{
-                padding: "2px 7px",
-                background: tokens.color.amber.base, color: tokens.color.text.inverse,
-                fontFamily: tokens.font.mono, fontSize: 10, fontWeight: 800, letterSpacing: "0.08em",
-            }}>
-                LVL {user.level}
+const Header = ({ user, online }) => {
+    // Robust safety for progress values
+    const xpPercent = user?.xpPercent || 0;
+    const xpCurrent = user?.xpCurrent || 0;
+    const xpNext = user?.xpNext || 150;
+
+    return (
+        <header style={{
+            height: 48,
+            background: tokens.color.bg.surface,
+            borderBottom: `1px solid ${tokens.color.border.strong}`,
+            display: "flex", alignItems: "center",
+            padding: "0 16px", gap: 16,
+            flexShrink: 0,
+        }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <Display size="xs" style={{ margin: 0, color: tokens.color.text.primary }}>
+                    {user?.username || "GUEST"}
+                </Display>
+                <div style={{
+                    padding: "2px 7px",
+                    background: tokens.color.amber.base, color: tokens.color.text.inverse,
+                    fontFamily: tokens.font.mono, fontSize: 10, fontWeight: 900, letterSpacing: "0.08em",
+                }}>
+                    LVL {user?.level || 1}
+                </div>
             </div>
-        </div>
 
-        <div style={{ width: 1, height: 20, background: tokens.color.border.strong }} />
+            <div style={{ width: 1, height: 20, background: tokens.color.border.strong }} />
 
-        <span style={{ fontFamily: tokens.font.sans, fontSize: 11, color: tokens.color.text.tertiary, letterSpacing: "0.05em", fontWeight: 600, textTransform: "uppercase" }}>
-            {user.rank}
-        </span>
-
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <div style={{
-                width: 100, height: 4,
-                background: "rgba(255,255,255,0.08)",
-                position: "relative", overflow: "hidden",
-            }}>
-                <div style={{ height: "100%", background: tokens.color.lime.base, width: `${user.xpPercent}%`, transition: "width 0.6s ease" }} />
-            </div>
-            <span style={{ fontFamily: tokens.font.mono, fontSize: 10, color: tokens.color.text.tertiary }}>
-                {user.xpCurrent.toLocaleString()} / {user.xpNext.toLocaleString()} XP
+            <span style={{ fontFamily: tokens.font.sans, fontSize: 11, color: tokens.color.text.tertiary, letterSpacing: "0.05em", fontWeight: 600, textTransform: "uppercase" }}>
+                {user?.rank || "NOVICE"}
             </span>
-        </div>
 
-        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 12 }}>
-            <ConnectionStatus online={online} />
-        </div>
-    </header>
-);
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div style={{
+                    width: 100, height: 4,
+                    background: "rgba(255,255,255,0.08)",
+                    position: "relative", overflow: "hidden",
+                }}>
+                    <div style={{ height: "100%", background: tokens.color.lime.base, width: `${xpPercent}%`, transition: "width 0.6s ease" }} />
+                </div>
+                <span style={{ fontFamily: tokens.font.mono, fontSize: 10, color: tokens.color.text.tertiary }}>
+                    {xpCurrent.toLocaleString()} / {xpNext.toLocaleString()} XP
+                </span>
+            </div>
+
+            <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 12 }}>
+                <ConnectionStatus online={online} />
+            </div>
+        </header>
+    );
+};
 
 export const AshbornLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const navigate = useNavigate();
     const location = useLocation();
-    const { username } = useUIStore();
+    const { username, onboardingStep, setUsername, setOnboardingStep } = useUIStore();
     const { level, streak, getXPProgress } = useGamificationStore();
-    const { current: xpCurrent, needed: xpNext, percent: xpPercent } = getXPProgress();
-    const rank = getLevelTitle(level);
+    const { current: xpCurrent = 0, needed: xpNext = 150, percent: xpPercent = 0 } = getXPProgress?.() || {};
+    const rank = level ? getLevelTitle(level) : "Terminal Novice";
     
     // In a real app, this would come from a connection store
     const systemOnline = true; 
@@ -276,23 +320,48 @@ export const AshbornLayout: React.FC<{ children: React.ReactNode }> = ({ childre
     };
 
     return (
-        <div style={{
-            display: "flex", height: "100vh", width: "100%",
-            background: tokens.color.bg.base, color: tokens.color.text.primary,
-            overflow: "hidden",
-            fontFamily: tokens.font.sans,
-        }}>
-            <ActivityBar
-                activePath={location.pathname}
-                onNavigate={(p) => navigate(p)}
-                user={user}
-            />
+        <div 
+            className="al-grid"
+            style={{
+                display: "flex", height: "100vh", width: "100%",
+                background: tokens.color.bg.base, color: tokens.color.text.primary,
+                overflow: "hidden",
+                fontFamily: tokens.font.sans,
+                position: "relative"
+            }}
+        >
+            {/* INITIAL REGISTRATION — Full Screen Overlay */}
+            {onboardingStep === 0 && (
+                <WelcomeModal 
+                    onComplete={(name) => {
+                        setUsername(name);
+                        setOnboardingStep(1);
+                    }} 
+                />
+            )}
 
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
-                <Header user={user} online={systemOnline} />
-                <main style={{ flex: 1, overflow: "hidden", position: "relative" }}>
-                    {children}
-                </main>
+            {/* TOUR OVERLAY — Transparent Backdrop */}
+            {onboardingStep === 1 && <OnboardingWalkthrough />}
+
+            {/* MAIN APP SHELL — Blurred if onboarding */}
+            <div style={{ 
+                display: "flex", width: "100%", height: "100%",
+                filter: onboardingStep === 1 ? "blur(8px) brightness(0.4)" : "none",
+                transition: "filter 0.5s ease",
+                pointerEvents: onboardingStep === 1 ? "none" : "auto"
+            }}>
+                <ActivityBar
+                    activePath={location.pathname}
+                    onNavigate={(p) => navigate(p)}
+                    user={user}
+                />
+
+                <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
+                    <Header user={user} online={systemOnline} />
+                    <main style={{ flex: 1, overflow: "hidden", position: "relative" }}>
+                        {children}
+                    </main>
+                </div>
             </div>
         </div>
     );

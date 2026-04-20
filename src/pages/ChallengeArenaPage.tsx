@@ -1,134 +1,235 @@
 import React from 'react';
 import { useGamificationStore } from '../stores/gamificationStore';
-import { brokenSystemLabs } from '../data/labs/broken_systems';
-import { cn } from '../utils/cn';
 import { useNavigate } from 'react-router-dom';
-import { Shield, Trophy, AlertTriangle, Terminal as TerminalIcon } from 'lucide-react';
+import { 
+    tokens, 
+    Display, 
+    Mono, 
+    Label, 
+    Button, 
+    Badge 
+} from '../components/ui/AshbornDesignSystem';
+
+/**
+ * ChallengeArenaPage — V2 Parity Reconstruction
+ * Elite laboratory for high-stakes system troubleshooting.
+ * Locked until Level 10.
+ */
+const CHALLENGES = [
+    { 
+        name: "Broken Bootloader", 
+        diff: "Extreme", 
+        cat: "System Recovery", 
+        desc: "Fix a system that won't boot. Root cause unknown. Multiple stage failure." 
+    },
+    { 
+        name: "Ghost Process", 
+        diff: "Hard", 
+        cat: "Process Management", 
+        desc: "An undying zombie process consumes 100% CPU. Kill it permanently." 
+    },
+    { 
+        name: "Corrupted FS", 
+        diff: "Hard", 
+        cat: "Filesystem", 
+        desc: "Recover critical database files from a partially corrupted disk partition." 
+    },
+];
 
 const ChallengeArenaPage: React.FC = () => {
     const navigate = useNavigate();
-    const { level, masteryBadge } = useGamificationStore();
+    const { level } = useGamificationStore();
     
-    // Unlock arena at Level 10 (Hacker Rank)
-    const isLocked = level < 10;
+    // V2 Logic: Lock until Level 10 (Hacker Rank)
+    const requiredLevel = 10;
+    const isLocked = level < requiredLevel;
+    const unlockProgress = Math.min(100, (level / requiredLevel) * 100);
 
     return (
-        <div className="flex flex-col gap-8 p-10 bg-brutal-dark h-full overflow-y-auto selection:bg-brutal-red selection:text-brutal-white">
-            {/* Header section with Rank indicator */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b-6 border-brutal-white pb-6 gap-4">
-                <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                        <Shield className="text-brutal-red" size={32} />
-                        <span className="font-mono text-xs uppercase tracking-[0.3em] text-brutal-red font-bold">Terminal Mastery Required</span>
-                    </div>
-                    <h1 className="text-6xl font-heading text-brutal-white uppercase tracking-tighter italic leading-none">
-                        Challenge Arena
-                    </h1>
-                    <p className="text-brutal-gray mt-4 max-w-xl font-mono text-sm leading-relaxed border-l-4 border-brutal-red pl-4">
-                        Elite laboratory for high-stakes system troubleshooting. 
-                        Each scenario is a "Broken System" requiring authoritative outcome-based verification.
-                    </p>
+        <div style={{ 
+            height: '100%', 
+            overflowY: 'auto', 
+            background: tokens.color.bg.base,
+            display: 'flex',
+            flexDirection: 'column'
+        }}>
+            {/* ── ARENA HEADER ── */}
+            <div style={{
+                background: `linear-gradient(180deg, rgba(255,90,90,0.04) 0%, transparent 100%)`,
+                borderBottom: `1px solid ${tokens.color.border.error}`,
+                padding: "32px 32px 28px",
+            }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                    <div className="animate-pulse" style={{ 
+                        width: 8, height: 8, 
+                        background: tokens.color.semantic.error, 
+                        borderRadius: "50%",
+                        boxShadow: `0 0 10px ${tokens.color.semantic.error}`
+                    }} />
+                    <Label color={tokens.color.semantic.error} style={{ fontWeight: 800 }}>
+                        Terminal Mastery Required
+                    </Label>
                 </div>
-                
-                <div className="flex flex-col gap-1 items-end">
-                    <span className="text-xs uppercase font-mono text-brutal-gray tracking-widest">Mastery Status</span>
-                    <div className={cn(
-                        "flex items-center gap-3 p-4 border-4",
-                        masteryBadge === 'kernel_master' ? "bg-brutal-purple border-brutal-white text-brutal-white shadow-brutal" :
-                        masteryBadge === 'sysad' ? "bg-brutal-red border-brutal-white text-brutal-white shadow-brutal" :
-                        masteryBadge === 'hacker' ? "bg-brutal-green border-brutal-black text-brutal-dark shadow-brutal" :
-                        "bg-brutal-white border-brutal-black text-brutal-dark"
-                    )}>
-                        <Trophy size={24} />
-                        <span className="text-2xl font-heading uppercase tracking-tighter">
-                            {masteryBadge === 'kernel_master' ? 'Kernel Master' : masteryBadge}
-                        </span>
-                    </div>
-                </div>
+                <Display size="xl" style={{ marginBottom: 12 }}>Challenge Arena</Display>
+                <p style={{ 
+                    fontFamily: tokens.font.mono, 
+                    fontSize: "13px", 
+                    color: tokens.color.text.secondary, 
+                    lineHeight: 1.7, 
+                    maxWidth: 600, 
+                    borderLeft: `2px solid ${tokens.color.border.error}`, 
+                    paddingLeft: 16 
+                }}>
+                    Elite laboratory for high-stakes system troubleshooting. Each scenario is a 
+                    "Broken System" requiring authoritative outcome-based verification.
+                </p>
             </div>
 
-            {isLocked ? (
-                <div className="flex-1 flex flex-col items-center justify-center border-6 border-dashed border-brutal-white/10 p-20 text-center bg-brutal-black/30">
-                    <div className="relative mb-8">
-                        <TerminalIcon size={120} className="text-brutal-gray opacity-20" />
-                        <div className="absolute inset-0 flex items-center justify-center">
-                            <span className="text-7xl">🔒</span>
-                        </div>
-                    </div>
-                    <h2 className="text-3xl font-heading text-brutal-white uppercase tracking-tighter">Arena Restricted</h2>
-                    <p className="text-brutal-gray mt-4 max-w-md font-mono text-sm">
-                        You must achieve <span className="text-brutal-green font-bold underline">Level 10 (Hacker Rank)</span> to survive these scenarios. 
-                        Return after completing more fundamental training labs.
-                    </p>
-                    <button 
-                        onClick={() => navigate('/labs')}
-                        className="mt-10 bg-brutal-white text-brutal-dark font-heading px-10 py-4 uppercase border-4 border-brutal-black shadow-brutal hover:bg-brutal-green hover:shadow-none transition-all"
-                    >
-                        Return to Training
-                    </button>
-                    
-                    <div className="mt-12 flex gap-4 grayscale opacity-30 select-none pointer-events-none">
-                        {[1, 2, 3].map(i => (
-                            <div key={i} className="w-64 h-40 bg-brutal-dark border-4 border-white/10 flex flex-col p-4">
-                                <div className="h-4 w-2/3 bg-white/10 mb-2" />
-                                <div className="h-4 w-full bg-white/10 mb-2" />
-                                <div className="h-24 w-full bg-white/5 mt-auto" />
+            <div style={{ padding: "32px" }}>
+                {isLocked ? (
+                    <>
+                        {/* ── ACCESS DENIED INTEL CARD ── */}
+                        <div style={{ 
+                            background: tokens.color.semantic.errorBg, 
+                            border: `1px solid ${tokens.color.border.error}`, 
+                            padding: "20px 24px", 
+                            marginBottom: 32, 
+                            display: "flex", 
+                            gap: 20 
+                        }}>
+                            <span style={{ fontSize: 24, flexShrink: 0 }}>⚠️</span>
+                            <div>
+                                <Display size="sm" color={tokens.color.semantic.error} style={{ marginBottom: 6 }}>
+                                    Access Denied — Level {requiredLevel} Required
+                                </Display>
+                                <p style={{ fontFamily: tokens.font.sans, fontSize: "12px", color: tokens.color.text.secondary, lineHeight: 1.7 }}>
+                                    Challenge Arena scenarios involve broken systems under real conditions. 
+                                    Agents below Level {requiredLevel} (Hacker Rank) are not cleared for entry. 
+                                    Complete fundamental training labs to earn clearance.
+                                </p>
                             </div>
-                        ))}
-                    </div>
-                </div>
-            ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-20">
-                    {brokenSystemLabs.map((lab) => (
-                        <div
-                            key={lab.id}
-                            className="group relative flex flex-col bg-brutal-black border-4 border-brutal-white p-8 transition-all hover:translate-x-1 hover:translate-y-1 hover:shadow-none shadow-[10px_10px_0px_0px_rgba(255,255,255,1)]"
+                        </div>
+
+                        {/* ── CLEARANCE PROGRESS ── */}
+                        <div style={{ 
+                            background: tokens.color.bg.surface, 
+                            border: `1px solid ${tokens.color.border.default}`, 
+                            padding: "24px", 
+                            marginBottom: 32 
+                        }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                                <Label color={tokens.color.text.secondary}>Clearance Progress to Level {requiredLevel}</Label>
+                                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                                    <Display size="sm" color={tokens.color.text.tertiary}>Lv{level}</Display>
+                                    <div style={{ width: 32, height: 1, background: tokens.color.border.strong }} />
+                                    <Display size="sm" color={tokens.color.semantic.error}>Lv{requiredLevel}</Display>
+                                </div>
+                            </div>
+                            
+                            <div style={{ height: 8, background: "rgba(255,255,255,0.05)", position: "relative", marginBottom: 12 }}>
+                                <div style={{ 
+                                    height: "100%", 
+                                    width: `${unlockProgress}%`, 
+                                    background: `linear-gradient(90deg, ${tokens.color.lime.base}, ${tokens.color.amber.base})`, 
+                                    transition: "width 1s ease-out",
+                                    boxShadow: `0 0 15px ${tokens.color.lime.alpha[30]}`
+                                }} />
+                            </div>
+                            
+                            <div style={{ display: "flex", justifyContent: "space-between" }}>
+                                <Mono size="xs" color={tokens.color.text.tertiary}>
+                                    {Math.round(unlockProgress)}% to clearance
+                                </Mono>
+                                <Mono size="xs" color={tokens.color.semantic.error}>
+                                    {requiredLevel - level} levels remaining
+                                </Mono>
+                            </div>
+                        </div>
+
+                        {/* ── RESTRICTED OPERATIONS ── */}
+                        <Label style={{ marginBottom: 16, display: "block", color: tokens.color.text.tertiary, letterSpacing: tokens.letterSpacing.widest }}>
+                            Restricted Operations — Preview Only
+                        </Label>
+                        <div style={{ 
+                            display: "grid", 
+                            gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", 
+                            gap: 16, 
+                            marginBottom: 32 
+                        }}>
+                            {CHALLENGES.map((c, i) => (
+                                <div key={i} style={{ 
+                                    position: "relative", 
+                                    background: tokens.color.bg.surface, 
+                                    border: `1px solid ${tokens.color.border.strong}`, 
+                                    padding: "20px", 
+                                    overflow: "hidden" 
+                                }}>
+                                    {/* Blur overlay */}
+                                    <div style={{ 
+                                        position: "absolute", 
+                                        inset: 0, 
+                                        backdropFilter: "blur(6px)", 
+                                        background: "rgba(13,13,15,0.7)", 
+                                        display: "flex", 
+                                        alignItems: "center", 
+                                        justifyContent: "center", 
+                                        flexDirection: "column", 
+                                        gap: 12, 
+                                        zIndex: 10 
+                                    }}>
+                                        <span style={{ fontSize: 32 }}>🔒</span>
+                                        <Mono size="xs" color={tokens.color.text.tertiary} style={{ letterSpacing: ".2em", fontWeight: 800 }}>
+                                            RESTRICTED
+                                        </Mono>
+                                    </div>
+
+                                    <Label color={tokens.color.semantic.error} style={{ marginBottom: 8, display: "block", fontSize: '10px' }}>
+                                        {c.cat}
+                                    </Label>
+                                    <Display size="sm" style={{ marginBottom: 8 }}>{c.name}</Display>
+                                    <p style={{ 
+                                        fontFamily: tokens.font.sans, 
+                                        fontSize: "12px", 
+                                        color: tokens.color.text.secondary, 
+                                        lineHeight: 1.6, 
+                                        marginBottom: 16 
+                                    }}>
+                                        {c.desc}
+                                    </p>
+                                    <div style={{ 
+                                        background: tokens.color.semantic.errorBg, 
+                                        border: `1px solid ${tokens.color.border.error}`, 
+                                        padding: "4px 10px", 
+                                        display: "inline-block" 
+                                    }}>
+                                        <Mono size="2xs" color={tokens.color.semantic.error} style={{ fontWeight: 800 }}>
+                                            DIFFICULTY: {c.diff}
+                                        </Mono>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* ── CTA ── */}
+                        <Button 
+                            variant="outline_lime" 
+                            size="lg" 
+                            full 
+                            onClick={() => navigate('/labs')}
+                            style={{ height: 56 }}
                         >
-                            <div className="flex justify-between items-start mb-6">
-                                <div className="p-3 bg-brutal-red/10 border-2 border-brutal-red text-brutal-red group-hover:bg-brutal-red group-hover:text-brutal-white transition-colors">
-                                    <AlertTriangle size={24} />
-                                </div>
-                                <div className="flex flex-col items-end">
-                                    <span className="text-xs font-mono text-brutal-green bg-brutal-green/10 px-2 py-1 border border-brutal-green/30 font-bold">
-                                        REWARD: {lab.xpReward} XP
-                                    </span>
-                                    <span className="text-[10px] uppercase font-mono text-brutal-gray mt-1">Difficulty: Hard</span>
-                                </div>
-                            </div>
-                            
-                            <h3 className="text-3xl font-heading text-brutal-white uppercase tracking-tighter mb-4 group-hover:text-brutal-red transition-colors leading-tight">
-                                {lab.title}
-                            </h3>
-                            
-                            <p className="text-sm font-mono text-brutal-gray mb-8 line-clamp-4 leading-relaxed border-l-2 border-brutal-white/20 pl-4">
-                                {lab.description}
-                            </p>
-                            
-                            <div className="mt-auto flex flex-col gap-6">
-                                <div className="flex flex-wrap gap-2">
-                                    {lab.tags?.map(tag => (
-                                        <span key={tag} className="text-[10px] uppercase font-bold font-mono px-2 py-0.5 bg-brutal-dark border border-brutal-white/20 text-brutal-gray group-hover:border-brutal-white/40">
-                                            #{tag}
-                                        </span>
-                                    ))}
-                                </div>
-                                
-                                <button
-                                    onClick={() => navigate(`/lab/${lab.id}`)}
-                                    className="w-full bg-brutal-white text-brutal-dark font-heading py-4 uppercase border-4 border-brutal-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-brutal-red hover:text-white hover:shadow-none transition-all active:translate-y-1"
-                                >
-                                    Initialize Scenario
-                                </button>
-                            </div>
-                            
-                            {/* Decorative Corner */}
-                            <div className="absolute top-0 right-0 w-8 h-8 pointer-events-none">
-                                <div className="absolute top-0 right-0 border-t-8 border-r-8 border-brutal-white w-full h-full" />
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            )}
+                            ← Return to Training Labs
+                        </Button>
+                    </>
+                ) : (
+                    <div style={{ textAlign: 'center', padding: '100px 0' }}>
+                        <Display size="xl" color={tokens.color.lime.base}>Clearance Confirmed</Display>
+                        <p style={{ fontFamily: tokens.font.sans, color: tokens.color.text.secondary, marginTop: 16 }}>
+                            Arena protocols initialized. Scenarios loading...
+                        </p>
+                    </div>
+                )}
+            </div>
         </div>
     );
 };

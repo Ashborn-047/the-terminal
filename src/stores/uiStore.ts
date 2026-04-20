@@ -14,10 +14,12 @@ interface UIState {
     lastLeveledUpTo: number;
     username: string;
     highContrast: boolean;
+    tourStep: number;
 
     toggleSidebar: () => void;
     setActiveView: (view: UIState['activeView']) => void;
     setOnboardingStep: (step: number) => void;
+    setTourStep: (step: number) => void;
     completeOnboarding: () => void;
     showLevelUp: (level: number) => void;
     hideLevelUp: () => void;
@@ -36,10 +38,12 @@ export const useUIStore = create<UIState>()(
             lastLeveledUpTo: 1,
             username: 'Guest',
             highContrast: false,
+            tourStep: 0,
 
             toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
             setActiveView: (view) => set({ activeView: view }),
             setOnboardingStep: (step) => set({ onboardingStep: step }),
+            setTourStep: (step) => set({ tourStep: step }),
             completeOnboarding: () => set({ onboardingComplete: true, onboardingStep: 4 }),
             showLevelUp: (level) => set({ levelUpModalOpen: true, lastLeveledUpTo: level }),
             hideLevelUp: () => set({ levelUpModalOpen: false }),

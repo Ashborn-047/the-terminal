@@ -5,7 +5,13 @@ import {
     Card, 
     Button, 
     Badge, 
-    Divider 
+    Divider,
+    SettingsSection,
+    ToggleRow,
+    KeybindRow,
+    Display,
+    Label,
+    Input
 } from '../components/ui/AshbornDesignSystem';
 import { User, Monitor, AlertTriangle, CheckCircle } from 'lucide-react';
 
@@ -41,185 +47,150 @@ export const SettingsPage: React.FC = () => {
     return (
         <div style={{ 
             padding: tokens.space[8], 
-            maxWidth: 1024, 
+            maxWidth: 800, 
             margin: '0 auto', 
             height: '100%', 
             overflowY: 'auto',
-            backgroundColor: tokens.color.bg.base,
+            background: tokens.color.bg.base,
             color: tokens.color.text.primary
         }}>
-            <h1 style={{ 
-                fontFamily: tokens.font.sans, 
-                fontSize: tokens.fontSize['3xl'], 
-                fontWeight: 900, 
-                textTransform: 'uppercase', 
-                color: tokens.color.text.primary, 
-                marginBottom: tokens.space[8],
-                letterSpacing: tokens.letterSpacing.widest,
-                fontStyle: 'italic'
-            }}>
-                System Settings
-            </h1>
+            <Label color={tokens.color.lime.base} style={{ marginBottom: 6 }}>System Configuration</Label>
+            <Display size="lg" style={{ marginBottom: 28 }}>System Settings</Display>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.space[6] }}>
-                {/* Profile Section */}
-                <Card variant="default" style={{ padding: tokens.space[6] }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: tokens.space[6] }}>
-                        <User size={20} style={{ color: tokens.color.lime.base }} />
-                        <h2 style={{ fontFamily: tokens.font.sans, fontSize: tokens.fontSize.md, fontWeight: 800, textTransform: 'uppercase', margin: 0 }}>User Identity</h2>
-                    </div>
-                    
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.space[2] }}>
+                {/* User Identity Section */}
+                <SettingsSection title="User Identity" icon="👤" subtitle="Your node handle and agent credentials">
+                    <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 16 }}>
                         <div style={{ 
-                            width: 64, 
-                            height: 64, 
-                            background: tokens.color.bg.overlay, 
-                            border: `1px solid ${tokens.color.border.default}`,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontSize: 32,
-                            borderRadius: 4
+                            width: 52, height: 52, 
+                            background: tokens.color.lime.base, 
+                            display: "flex", alignItems: "center", justifyContent: "center", 
+                            fontFamily: tokens.font.sans, fontSize: "20px", fontWeight: 800, 
+                            color: tokens.color.text.inverse, flexShrink: 0 
                         }}>
-                            👤
+                            {username?.[0]?.toUpperCase() || 'H'}
                         </div>
                         <div style={{ flex: 1 }}>
-                            <div style={{ fontSize: 9, fontFamily: tokens.font.mono, color: tokens.color.text.tertiary, textTransform: 'uppercase', marginBottom: 4 }}>Current Node Handle</div>
                             {isEditing ? (
                                 <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
                                     <input
                                         type="text"
                                         value={tempUsername}
-                                        onChange={(e) => setTempUsername(e.target.value)}
+                                        onChange={(e) => setTempUsername(e.target.value.toLowerCase())}
                                         style={{ 
-                                            backgroundColor: tokens.color.bg.base,
+                                            background: tokens.color.bg.overlay,
                                             border: `1px solid ${tokens.color.lime.base}`,
                                             padding: '8px 12px',
-                                            color: tokens.color.lime.base,
+                                            color: tokens.color.text.primary,
                                             fontFamily: tokens.font.mono,
-                                            fontSize: tokens.fontSize.lg,
+                                            fontSize: tokens.fontSize.md,
                                             outline: 'none',
-                                            borderRadius: 2
+                                            width: '100%'
                                         }}
                                         autoFocus
                                     />
                                     <Button variant="lime" size="sm" onClick={handleSaveUsername}>UPDATE</Button>
-                                    <button 
-                                        onClick={() => { setIsEditing(false); setTempUsername(username); }}
-                                        style={{ background: 'none', border: 'none', color: tokens.color.text.tertiary, fontSize: 11, cursor: 'pointer', textDecoration: 'underline' }}
-                                    >
-                                        Cancel
-                                    </button>
+                                    <Button variant="ghost" size="sm" onClick={() => { setIsEditing(false); setTempUsername(username); }}>Cancel</Button>
                                 </div>
                             ) : (
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                    <div style={{ fontFamily: tokens.font.sans, fontSize: tokens.fontSize.xl, fontWeight: 800 }}>{username}</div>
-                                    <button 
-                                        onClick={() => setIsEditing(true)}
-                                        style={{ background: 'none', border: 'none', color: tokens.color.lime.base, fontSize: 10, cursor: 'pointer', textDecoration: 'underline', fontWeight: 600 }}
-                                    >
-                                        [REMAP_IDENTITY]
-                                    </button>
-                                </div>
-                            )}
-                            {saveMessage && (
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: tokens.color.lime.base, fontSize: 11, marginTop: 8, fontFamily: tokens.font.mono }}>
-                                    <CheckCircle size={12} /> {saveMessage}
-                                </div>
+                                <>
+                                    <Display size="sm" style={{ marginBottom: 2 }}>{username}</Display>
+                                    <Label style={{ marginBottom: 0 }}>Current node handle</Label>
+                                </>
                             )}
                         </div>
+                        {!isEditing && <Button variant="ghost" size="sm" onClick={() => setIsEditing(true)}>Remap Identity</Button>}
                     </div>
-                </Card>
-
-                {/* Appearance Section */}
-                <Card variant="default" style={{ padding: tokens.space[6] }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: tokens.space[6] }}>
-                        <Monitor size={20} style={{ color: tokens.color.amber.base }} />
-                        <h2 style={{ fontFamily: tokens.font.sans, fontSize: tokens.fontSize.md, fontWeight: 800, textTransform: 'uppercase', margin: 0 }}>Visual Output</h2>
-                    </div>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                        <div style={{ 
-                            padding: tokens.space[4], 
-                            background: tokens.color.bg.overlay, 
-                            border: `1px solid ${tokens.color.border.default}`,
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center'
-                        }}>
-                            <div>
-                                <div style={{ fontSize: 12, fontWeight: 700, fontFamily: tokens.font.sans }}>Workstation Theme</div>
-                                <div style={{ fontSize: 10, color: tokens.color.text.tertiary, fontFamily: tokens.font.mono }}>ACTIVE_PROFILE: ASHBORN_V1.0</div>
-                            </div>
-                            <div style={{ display: 'flex', gap: 8 }}>
-                                <div style={{ width: 16, height: 16, background: tokens.color.lime.base, borderRadius: 2 }}></div>
-                                <div style={{ width: 16, height: 16, background: tokens.color.amber.base, borderRadius: 2 }}></div>
-                                <div style={{ width: 16, height: 16, background: tokens.color.bg.base, border: `1px solid ${tokens.color.border.default}`, borderRadius: 2 }}></div>
-                            </div>
+                    {saveMessage && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: tokens.color.lime.base, fontSize: 11, marginTop: 8, fontFamily: tokens.font.mono }}>
+                            <CheckCircle size={12} /> {saveMessage}
                         </div>
+                    )}
+                    <div style={{ background: tokens.color.bg.base, border: `1px solid ${tokens.color.border.default}`, padding: "8px 12px", display: "flex", justifyContent: "space-between", marginTop: 12 }}>
+                        <Label>Data stored locally</Label>
+                        <span style={{ fontFamily: tokens.font.mono, fontSize: "10px", color: tokens.color.lime.base }}>No account required</span>
+                    </div>
+                </SettingsSection>
 
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }} onClick={toggleHighContrast}>
-                            <div style={{ 
-                                width: 36, 
-                                height: 18, 
-                                background: highContrast ? tokens.color.lime.base : tokens.color.bg.overlay, 
-                                border: `1px solid ${tokens.color.border.default}`,
-                                borderRadius: 10,
-                                position: 'relative',
-                                transition: 'all 0.2s'
-                            }}>
-                                <div style={{ 
-                                    position: 'absolute', 
-                                    top: 2, 
-                                    left: highContrast ? 18 : 2, 
-                                    width: 12, 
-                                    height: 12, 
-                                    background: highContrast ? tokens.color.bg.base : tokens.color.text.tertiary, 
-                                    borderRadius: '50%',
-                                    transition: 'all 0.2s'
-                                }}></div>
-                            </div>
-                            <span style={{ fontSize: 11, fontWeight: 700, fontFamily: tokens.font.sans, textTransform: 'uppercase' }}>High Contrast Telemetry</span>
+                {/* Visual Output Section */}
+                <SettingsSection title="Visual Output" icon="🖥" subtitle="Appearance and display preferences">
+                    <div style={{ marginBottom: 14 }}>
+                        <Label style={{ marginBottom: 8 }}>Workstation Theme</Label>
+                        <div style={{ display: "flex", gap: 6 }}>
+                            {[
+                                { label: "ASHBORN_V2.0", colors: [tokens.color.lime.base, tokens.color.amber.base], active: true },
+                                { label: "MONO_DARK", colors: ["#9A9A9A", "#555555"], active: false },
+                                { label: "ACID_RED", colors: ["#FF5A5A", "#F5A623"], active: false },
+                            ].map((th) => (
+                                <div key={th.label} style={{ 
+                                    display: "flex", alignItems: "center", gap: 6, 
+                                    padding: "6px 10px", 
+                                    background: th.active ? tokens.color.lime.alpha[6] : tokens.color.bg.base, 
+                                    border: `1px solid ${th.active ? tokens.color.lime.alpha[25] : tokens.color.border.default}`, 
+                                    cursor: "pointer" 
+                                }}>
+                                    <div style={{ display: "flex", gap: 3 }}>
+                                        {th.colors.map((c, i) => <div key={i} style={{ width: 10, height: 10, background: c }} />)}
+                                    </div>
+                                    <span style={{ fontFamily: tokens.font.mono, fontSize: "9px", color: th.active ? tokens.color.lime.base : tokens.color.text.tertiary }}>{th.label}</span>
+                                </div>
+                            ))}
                         </div>
                     </div>
-                </Card>
+                    <ToggleRow 
+                        label="High Contrast Telemetry" 
+                        description="Increase border and accent contrast for accessibility" 
+                        value={highContrast} 
+                        onChange={toggleHighContrast} 
+                    />
+                    <ToggleRow 
+                        label="UI Animations" 
+                        description="Smooth transitions and micro-interactions" 
+                        value={true} 
+                        onChange={() => {}} 
+                    />
+                </SettingsSection>
 
-                {/* System Section */}
-                <Card variant="default" style={{ padding: tokens.space[6], border: `1px solid rgba(239, 68, 68, 0.3)` }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: tokens.space[6] }}>
-                        <AlertTriangle size={20} style={{ color: 'rgb(239, 68, 68)' }} />
-                        <h2 style={{ fontFamily: tokens.font.sans, fontSize: tokens.fontSize.md, fontWeight: 800, textTransform: 'uppercase', margin: 0, color: 'rgb(239, 68, 68)' }}>Danger Zone</h2>
+                {/* Terminal Preferences Section */}
+                <SettingsSection title="Terminal Preferences" icon="⌨" subtitle="Configure your shell environment">
+                    <ToggleRow 
+                        label="Auto-verify Objectives" 
+                        description="Automatically check labs when commands match targets" 
+                        value={true} 
+                        onChange={() => {}} 
+                    />
+                    <div style={{ marginTop: 12, background: tokens.color.bg.base, border: `1px solid ${tokens.color.border.default}`, padding: "10px 12px" }}>
+                        <Label style={{ marginBottom: 6 }}>Terminal Preview</Label>
+                        <div style={{ fontFamily: tokens.font.mono, fontSize: `12px`, lineHeight: 1.8, color: tokens.color.text.secondary }}>
+                            <span style={{ color: tokens.color.text.tertiary }}>[agent] hero@ashborn:~$ </span>
+                            <span style={{ color: "#8B8BFF" }}>ls -la</span><br />
+                            <span>total 48</span><br />
+                            <span style={{ color: tokens.color.lime.base }}>drwxr-xr-x  2 hero hero 4096 /home/hero</span>
+                        </div>
                     </div>
-                    
+                </SettingsSection>
+
+                {/* Keybindings Section */}
+                <SettingsSection title="Keybindings" icon="⌨️" subtitle="Default system keyboard shortcuts">
+                    <KeybindRow action="Open terminal" keys={["Ctrl", "T"]} />
+                    <KeybindRow action="Toggle sidebar" keys={["Ctrl", "B"]} />
+                    <KeybindRow action="Next lab step" keys={["Ctrl", "→"]} />
+                    <KeybindRow action="Verify step" keys={["Ctrl", "Enter"]} />
+                </SettingsSection>
+
+                {/* Danger Zone Section */}
+                <SettingsSection title="Danger Zone" accent="danger" icon="⚠" subtitle="Irreversible system actions">
                     <p style={{ 
                         fontFamily: tokens.font.sans, 
-                        fontSize: tokens.fontSize.xs, 
+                        fontSize: "12px", 
                         color: tokens.color.text.secondary, 
-                        marginBottom: tokens.space[6],
-                        maxWidth: 600,
-                        lineHeight: 1.5
+                        lineHeight: 1.7, 
+                        marginBottom: 16 
                     }}>
-                        Purging your workstation will permanently delete all local cache, laboratory progress, and accumulated XP. This action is irreversible.
+                        Purging your workstation permanently deletes all local lab progress, XP, and achievement data. This action cannot be undone.
                     </p>
-                    
-                    <Button 
-                        variant="outline" 
-                        onClick={handleReset}
-                        style={{ 
-                            borderColor: 'rgb(239, 68, 68)', 
-                            color: 'rgb(239, 68, 68)',
-                            fontSize: 10
-                        }}
-                        onMouseOver={(e) => {
-                            e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
-                        }}
-                        onMouseOut={(e) => {
-                            e.currentTarget.style.backgroundColor = 'transparent';
-                        }}
-                    >
-                        UNINSTALL SYSTEM PROFILE
-                    </Button>
-                </Card>
+                    <Button variant="danger" size="md" onClick={handleReset}>UNINSTALL SYSTEM PROFILE</Button>
+                </SettingsSection>
             </div>
         </div>
     );

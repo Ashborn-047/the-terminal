@@ -16,7 +16,10 @@ import {
     tokens, 
     Badge, 
     Button, 
-    Card 
+    Card,
+    Display,
+    Label,
+    Mono
 } from '../components/ui/AshbornDesignSystem';
 
 /**
@@ -80,7 +83,7 @@ const LabView: React.FC = () => {
         return (
             <div style={{ display: 'flex', height: '100%', alignItems: 'center', justifyContent: 'center', backgroundColor: tokens.color.bg.base }}>
                 <Card style={{ padding: 32, textAlign: 'center', border: `1px solid ${tokens.color.amber.base}` }}>
-                    <p style={{ fontFamily: tokens.font.sans, fontSize: tokens.fontSize.lg, fontWeight: 800, textTransform: 'uppercase', color: tokens.color.amber.base, marginBottom: 16 }}>Lab Not Found</p>
+                    <Display size="sm" color={tokens.color.amber.base} style={{ marginBottom: 16 }}>Lab Not Found</Display>
                     <Button variant="outline" onClick={() => navigate('/labs')}>← BACK TO CURRICULUM</Button>
                 </Card>
             </div>
@@ -162,16 +165,9 @@ const LabView: React.FC = () => {
                         <ArrowLeft size={16} />
                     </button>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <span style={{ 
-                            fontFamily: tokens.font.sans, 
-                            fontSize: tokens.fontSize.xs, 
-                            fontWeight: 800, 
-                            textTransform: 'uppercase', 
-                            color: tokens.color.amber.base, 
-                            letterSpacing: tokens.letterSpacing.wide 
-                        }}>
+                        <Label size="xs" weight={800} color={tokens.color.amber.base} style={{ letterSpacing: tokens.letterSpacing.wide }}>
                             {lab.title}
-                        </span>
+                        </Label>
                         <Badge variant={lab.type === 'guided' ? 'lime' : 'amber'}>
                             {lab.type.toUpperCase()}
                         </Badge>
@@ -181,22 +177,22 @@ const LabView: React.FC = () => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                     {/* Time Tracker */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginRight: 8 }} className="hidden sm:flex">
-                        <span style={{ fontFamily: tokens.font.sans, fontSize: 9, fontWeight: 700, textTransform: 'uppercase', color: tokens.color.text.tertiary }}>Session Time</span>
-                        <span style={{ fontFamily: tokens.font.mono, fontSize: 11, fontWeight: 600, color: tokens.color.lime.base }}>
+                        <Label uppercase size="xs" color={tokens.color.text.tertiary}>Session Time</Label>
+                        <Mono size="11px" weight={600} color={tokens.color.lime.base}>
                             {Math.floor(seconds / 60)}:{(seconds % 60).toString().padStart(2, '0')}
-                        </span>
+                        </Mono>
                     </div>
 
                     <div style={{ width: 1, height: 16, background: tokens.color.border.default }} />
 
                     {/* Progress Indicator */}
                     {lab.type === 'guided' && labProgress && lab.steps && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: tokens.font.mono, fontSize: 10, textTransform: 'uppercase' }}>
-                            <span style={{ color: tokens.color.text.tertiary }}>Progress</span>
-                            <span style={{ color: tokens.color.text.primary, fontWeight: 800 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <Label uppercase size="xs" color={tokens.color.text.tertiary}>Progress</Label>
+                            <Mono size="10px" weight={800} color={tokens.color.text.primary}>
                                 {Math.min(labProgress.currentStepIndex + 1, lab.steps.length)}
-                            </span>
-                            <span style={{ color: tokens.color.text.tertiary }}>/ {lab.steps.length}</span>
+                            </Mono>
+                            <Mono size="10px" color={tokens.color.text.tertiary}>/ {lab.steps.length}</Mono>
                         </div>
                     )}
 

@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useGamificationStore, getLevelTitle, ACHIEVEMENTS } from '../stores/gamificationStore';
+import { useUIStore } from '../stores/uiStore';
 import { useLabStore } from '../stores/labStore';
 import { useNavigate } from 'react-router-dom';
 import { BookOpen, Trophy, Zap, Terminal as TerminalIcon } from 'lucide-react';
@@ -13,7 +14,12 @@ import {
     Button, 
     Badge, 
     Card,
-    Divider
+    Divider,
+    ActivitySpark,
+    XPRing,
+    Display,
+    Label,
+    Mono
 } from '../components/ui/AshbornDesignSystem';
 
 /**
@@ -21,10 +27,20 @@ import {
  */
 const HomePage: React.FC = () => {
     const navigate = useNavigate();
-    const { level, totalXpEarned, streak, unlockedAchievements, getXPProgress } = useGamificationStore();
+    const { username } = useUIStore();
+    const { level, totalXpEarned, streak, unlockedAchievements, activityHistory, getXPProgress } = useGamificationStore();
     const { labs, progress } = useLabStore();
     const { current, needed, percent } = getXPProgress();
     const title = getLevelTitle(level);
+
+    const activityData30 = useMemo(() => {
+        return Array.from({ length: 30 }, (_, i) => {
+            const date = new Date();
+            date.setDate(date.getDate() - (29 - i));
+            const dateStr = date.toISOString().split('T')[0];
+            return activityHistory[dateStr] || 0;
+        });
+    }, [activityHistory]);
 
     const labList = Object.values(labs);
     const inProgressLabs = labList.filter(l => progress[l.id]?.status === 'in-progress');
@@ -39,95 +55,130 @@ const HomePage: React.FC = () => {
                 color: tokens.color.text.primary,
             }}
         >
-            {/* Hero Banner */}
+            {/* Hero Banner Section v2 — HUD Layout */}
             <div 
                 style={{
                     background: tokens.color.bg.surface,
-                    border: `1px solid ${tokens.color.border.default}`,
-                    padding: tokens.space[8],
+                    border: `1px solid ${tokens.color.border.strong}`,
+                    padding: "20px 24px",
                     marginBottom: tokens.space[6],
                     position: 'relative',
-                    overflow: 'hidden'
+                    overflow: 'hidden',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 24,
+                    flexWrap: 'wrap'
                 }}
             >
-                <div 
-                    style={{
-                        position: 'absolute',
-                        top: 0,
-                        right: 0,
-                        width: 192,
-                        height: 192,
-                        background: tokens.color.lime.alpha[8],
-                        transform: 'rotate(45deg) translate(64px, -64px)',
-                        pointerEvents: 'none'
-                    }} 
-                />
+                <XPRing level={level} xpCurrent={current} xpNext={needed} size={100} accent="lime" />
                 
-                <h1 style={{ 
-                    fontFamily: tokens.font.sans, 
-                    fontSize: tokens.fontSize['3xl'], 
-                    fontWeight: tokens.fontWeight.black,
-                    textTransform: 'uppercase', 
-                    color: tokens.color.lime.base, 
-                    marginBottom: tokens.space[1],
-                    letterSpacing: tokens.letterSpacing.widest
-                }}>
-                    Command Center
-                </h1>
-                
-                <p style={{ 
-                    fontFamily: tokens.font.sans, 
-                    fontSize: tokens.fontSize.md, 
-                    color: tokens.color.text.secondary,
-                    maxWidth: 512
-                }}>
-                    Welcome back, <span style={{ color: tokens.color.text.primary, fontWeight: tokens.fontWeight.bold }}>{title}</span>.
-                    You're on Level {level} with {totalXpEarned.toLocaleString()} total XP earned.
-                </p>
-                
-                <div style={{ marginTop: tokens.space[4], display: 'flex', gap: tokens.space[3] }}>
-                    <Button 
-                        variant="lime" 
-                        icon={<BookOpen size={14} />}
-                        onClick={() => navigate('/labs')}
-                    >
-                        Start a Lab
-                    </Button>
+                <div style={{ flex: 1, minWidth: 280 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                        <Label color={tokens.color.lime.base} size="xs" uppercase>Command Center</Label>
+                        <div style={{ 
+                            width: 6, height: 6, background: tokens.color.lime.base, 
+                            borderRadius: "50%", animation: "al-pulse 2s infinite" 
+                        }} />
+                    </div>
+
+                    <Display size="xl" style={{ marginBottom: 6 }}>Welcome back, {username || "Learner"}</Display>
+                    
+                    <p style={{ 
+                        fontFamily: tokens.font.sans, 
+                        fontSize: tokens.fontSize.xs, 
+                        color: tokens.color.text.secondary,
+                        maxWidth: 512,
+                        lineHeight: 1.5,
+                        margin: 0
+                    }}>
+                        Agent Status: <span style={{ color: tokens.color.lime.base, fontWeight: 700 }}>{title.toUpperCase()}</span>.
+                        {streak.current >= 3 ? ` Active Streak: ${streak.current} Days.` : " Maintain activity to build system synchronization."}
+                        {needed - current} XP remains until next elevation.
+                    </p>
+                    
+                    <div style={{ marginTop: 14, display: 'flex', gap: 10 }}>
+                        <Button 
+                            variant="lime" 
+                            size="sm"
+                            onClick={() => navigate('/labs')}
+                        >
+                            ▶ Start Training
+                        </Button>
+                        <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => navigate('/labs')}
+                        >
+                            View Curriculum
+                        </Button>
+                    </div>
                 </div>
+
+                {/* Secondary XP HUD */}
+                <div style={{ width: 180, flexShrink: 0 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+                        <Label size="2xs" uppercase>XP Elevation</Label>
+                        <Mono size="2xs">{current.toLocaleString()}/{needed.toLocaleString()}</Mono>
+                    </div>
+                    <div style={{ height: 5, background: "rgba(255,255,255,0.07)", position: 'relative' }}>
+                        <div style={{ 
+                            height: "100%", width: `${percent}%`, 
+                            background: tokens.color.lime.base, 
+                            transition: "width 0.8s ease-out" 
+                        }} />
+                    </div>
+                </div>
+            </div>
+
+            {/* Title for Stats Grid */}
+            <div style={{ marginBottom: 12 }}>
+                <Display size="xs" color={tokens.color.text.tertiary}>System Diagnostics</Display>
             </div>
 
             {/* Stats Grid */}
             <div 
+                id="dashboard-stats-grid"
                 style={{ 
                     display: 'grid', 
                     gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
                     gap: tokens.space[4], 
-                    marginBottom: tokens.space[6] 
+                    marginBottom: tokens.space[8] 
                 }}
             >
-                <StatCard label="Current Level" value={String(level)} accent="lime" icon={<Zap size={16} />} />
-                <StatCard label="Total XP" value={totalXpEarned.toLocaleString()} accent="amber" icon={<Trophy size={16} />} />
-                <StatCard label="Day Streak" value={String(streak.current)} accent="amber" unit="DAYS" />
-                <StatCard label="Labs Completed" value={`${completedLabs.length}/${labList.length}`} accent="neutral" />
-            </div>
-
-            {/* XP Progress */}
-            <Card style={{ marginBottom: tokens.space[6] }}>
-                <ProgressBar 
-                    value={percent} 
-                    label={`Progress to Level ${level + 1}`} 
-                    showValue 
-                    height={4} 
-                />
-                <div style={{ marginTop: 8, textAlign: 'right', fontFamily: tokens.font.mono, fontSize: tokens.fontSize.xs, color: tokens.color.text.tertiary }}>
-                    {current.toLocaleString()} / {needed.toLocaleString()} XP
+                <div id="stat-level" style={{ background: tokens.color.bg.surface, border: `1px solid ${tokens.color.border.default}`, padding: tokens.space[6] }}>
+                    <Label size="2xs" uppercase style={{ marginBottom: 8, letterSpacing: tokens.letterSpacing.widest }}>Current Level</Label>
+                    <Display size="xl" color={tokens.color.amber.base} style={{ lineHeight: 1 }}>{level}</Display>
                 </div>
-            </Card>
+                <div id="stat-xp" style={{ background: tokens.color.bg.surface, border: `1px solid ${tokens.color.border.default}`, padding: tokens.space[6] }}>
+                    <Label size="2xs" uppercase style={{ marginBottom: 8, letterSpacing: tokens.letterSpacing.widest }}>Total XP</Label>
+                    <Display size="xl" color={tokens.color.lime.base} style={{ lineHeight: 1 }}>{totalXpEarned.toLocaleString()}</Display>
+                </div>
+                <div id="stat-streak" style={{ background: tokens.color.bg.surface, border: `1px solid ${tokens.color.border.strong}`, padding: tokens.space[6] }}>
+                    <Label size="2xs" uppercase style={{ marginBottom: 8, letterSpacing: tokens.letterSpacing.widest }}>Day Streak</Label>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+                        <Display size="xl" color={tokens.color.amber.base} style={{ lineHeight: 1 }}>{streak.current}</Display>
+                        <Label size="2xs" color={tokens.color.text.tertiary}>DAYS</Label>
+                    </div>
+                </div>
+                <div id="stat-labs" style={{ background: tokens.color.bg.surface, border: `1px solid ${tokens.color.border.default}`, padding: tokens.space[6] }}>
+                    <Label size="2xs" uppercase style={{ marginBottom: 8, letterSpacing: tokens.letterSpacing.widest }}>Labs Completed</Label>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+                        <Display size="xl" color={tokens.color.text.primary} style={{ lineHeight: 1 }}>{completedLabs.length}</Display>
+                        <Label size="2xs" color={tokens.color.text.tertiary}>/{labList.length}</Label>
+                    </div>
+                </div>
+            </div>
 
             {/* Heatmap & Quests */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                <StreakHeatmap />
-                <QuestList />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <Display size="xs" color={tokens.color.text.tertiary}>Activity Log</Display>
+                    <ActivitySpark data={activityData30} streak={streak.current} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <Display size="xs" color={tokens.color.text.tertiary}>Active Channels</Display>
+                    <QuestList />
+                </div>
             </div>
 
             {/* Skill Tree */}
@@ -138,20 +189,10 @@ const HomePage: React.FC = () => {
             {/* Two Column: In Progress + Achievements */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Continue Learning */}
-                <Card variant="default" style={{ padding: tokens.space[5] }}>
-                    <h2 style={{ 
-                        fontFamily: tokens.font.sans,
-                        fontSize: tokens.fontSize.sm,
-                        fontWeight: tokens.fontWeight.bold,
-                        textTransform: 'uppercase',
-                        color: tokens.color.text.primary,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 8,
-                        marginBottom: tokens.space[4]
-                    }}>
-                        <TerminalIcon size={16} style={{ color: tokens.color.lime.base }} /> Continue Learning
-                    </h2>
+                <Card id="continue-learning-card" variant="default" style={{ padding: tokens.space[6] }}>
+                    <Display size="sm" style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+                        <TerminalIcon size={18} style={{ color: tokens.color.lime.base }} /> Continue Learning
+                    </Display>
                     
                     {inProgressLabs.length > 0 ? (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -210,20 +251,10 @@ const HomePage: React.FC = () => {
                 </Card>
 
                 {/* Recent Achievements */}
-                <Card variant="default" style={{ padding: tokens.space[5] }}>
-                    <h2 style={{ 
-                        fontFamily: tokens.font.sans,
-                        fontSize: tokens.fontSize.sm,
-                        fontWeight: tokens.fontWeight.bold,
-                        textTransform: 'uppercase',
-                        color: tokens.color.text.primary,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 8,
-                        marginBottom: tokens.space[4]
-                    }}>
-                        <Trophy size={16} style={{ color: tokens.color.amber.base }} /> Achievements
-                    </h2>
+                <Card variant="default" style={{ padding: "24px" }}>
+                    <Display size="sm" style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+                        <Trophy size={18} style={{ color: tokens.color.amber.base }} /> Achievements
+                    </Display>
                     
                     {unlockedAchievements.length > 0 ? (
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>

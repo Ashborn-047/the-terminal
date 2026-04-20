@@ -1,138 +1,141 @@
+// Paste Claude's Design System v.2 code here
+
 /**
- * ╔══════════════════════════════════════════════════════════════════╗
- * ║          ASHBORN LINUX TERMINAL — DESIGN SYSTEM                 ║
- * ║          AshbornDesignSystem.jsx                                 ║
- * ╠══════════════════════════════════════════════════════════════════╣
- * ║  This file is the single source of truth for:                   ║
- * ║   1. Design Tokens  (colors, type, spacing, radius, shadows)    ║
- * ║   2. Typography     (scale, weights, font roles)                ║
- * ║   3. Color Palette  (full swatches + semantic mapping)          ║
- * ║   4. Spacing Scale  (4px base grid)                             ║
- * ║   5. UI Components  (Button, Badge, Input, Card, Tag, Toast,    ║
- * ║                      ProgressBar, Kbd, Tooltip, Avatar,         ║
- * ║                      Divider, StatCard, Alert)                  ║
- * ║   6. Motion Tokens  (duration, easing curves)                   ║
- * ║   7. Interactive Showcase (live demo of all components)         ║
- * ╠══════════════════════════════════════════════════════════════════╣
- * ║  FONTS REQUIRED — add to index.html <head>:                     ║
- * ║  <link href="https://fonts.googleapis.com/css2?family=          ║
- * ║    JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;        ║
- * ║    600;700;800&display=swap" rel="stylesheet" />                ║
- * ╚══════════════════════════════════════════════════════════════════╝
+ * ╔══════════════════════════════════════════════════════════════════════╗
+ * ║        ASHBORN LINUX TERMINAL — DESIGN SYSTEM v2                    ║
+ * ║        AshbornDesignSystem_v2.jsx                                   ║
+ * ╠══════════════════════════════════════════════════════════════════════╣
+ * ║  WHAT CHANGED FROM v1:                                              ║
+ * ║   • Typography overhaul — Russo One replaces Syne for display       ║
+ * ║   • Onboarding modal component added                                ║
+ * ║   • Tour step overlay component added                               ║
+ * ║   • Achievement toast redesigned (unified, dismissible)             ║
+ * ║   • ActivitySpark replaces full heatmap on dashboard                ║
+ * ║   • SkillRadar component for Profile page                          ║
+ * ║   • NavSidebar UX fix — bottom avatar now opens UserPopover         ║
+ * ║     (duplicate profile nav icon removed, person slot = Leaderboard) ║
+ * ║   • ArenaGate locked-state component (replaces padlock center)      ║
+ * ║   • Settings expanded: keybindings, terminal prefs, notifications   ║
+ * ║   • AchievementGrid replaces flat list                              ║
+ * ║   • XPRing visual progress component                                ║
+ * ╠══════════════════════════════════════════════════════════════════════╣
+ * ║  FONTS REQUIRED — add to index.html <head>:                         ║
+ * ║  <link href="https://fonts.googleapis.com/css2?family=              ║
+ * ║    Russo+One&family=JetBrains+Mono:wght@400;500;700&family=         ║
+ * ║    Syne:wght@400;600;700;800&display=swap" rel="stylesheet" />      ║
+ * ╚══════════════════════════════════════════════════════════════════════╝
  */
 
 import { useState, useEffect, useRef } from "react";
 
-// ════════════════════════════════════════════════════════════════
-// SECTION 1 — DESIGN TOKENS
-// Import this object anywhere in the codebase for consistent values.
-// Never hardcode colors or spacing directly in components.
-// ════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════════════
+// SECTION 1 — DESIGN TOKENS v2
+// ════════════════════════════════════════════════════════════════════════
 export const tokens = {
 
-    // ── COLOR: BACKGROUNDS ──────────────────────────────────────
-    // Use in order from deepest to highest elevation
     color: {
         bg: {
-            base: "#0D0D0F",   // App root background
-            surface: "#111114",   // Sidebar, header, panels (elevation 1)
-            raised: "#171719",   // Cards, dropdowns (elevation 2)
-            overlay: "#1E1E22",   // Modals, popovers (elevation 3)
-            input: "#0F0F12",   // Text inputs, tab bars (recessed)
+            base: "#0D0D0F",   // App root — the deepest layer
+            surface: "#111114",   // Sidebar, header, panels (elev 1)
+            raised: "#171719",   // Cards, dropdowns (elev 2)
+            overlay: "#1E1E22",   // Modals, popovers (elev 3)
+            input: "#0F0F12",   // Inputs, tab bars (recessed)
+            glass: "rgba(17,17,20,0.85)", // Backdrop blur surfaces
         },
-
-        // ── COLOR: BORDERS ──────────────────────────────────────
         border: {
-            subtle: "rgba(255,255,255,0.05)",  // Dividers, separators
-            default: "rgba(255,255,255,0.07)",  // Panel edges, cards
-            strong: "rgba(255,255,255,0.12)",  // Focus rings, active borders
-            inverse: "rgba(255,255,255,0.20)",  // High-contrast borders
+            subtle: "rgba(255,255,255,0.05)",
+            default: "rgba(255,255,255,0.08)",
+            strong: "rgba(255,255,255,0.14)",
+            inverse: "rgba(255,255,255,0.22)",
+            lime: "rgba(200,241,53,0.25)",
+            amber: "rgba(245,166,35,0.25)",
+            error: "rgba(255,90,90,0.25)",
         },
-
-        // ── COLOR: TEXT ─────────────────────────────────────────
         text: {
-            primary: "#E8E6E0",   // Main readable text
-            secondary: "#9A9A9A",   // Supporting / output text
-            tertiary: "#555555",   // Placeholders, prompts, dim labels
-            disabled: "#333336",   // Locked / unavailable
-            inverse: "#0D0D0F",   // Text on lime/amber backgrounds
+            primary: "#E8E6E0",
+            secondary: "#9A9A9A",
+            tertiary: "#555555",
+            disabled: "#333336",
+            inverse: "#0D0D0F",
         },
 
-        // ── COLOR: ACCENT — LIME (System / Online / Active) ─────
-        // Use for: active states, online indicators, system-ok, cursor, progress
+        // PRIMARY ACCENT — Lime (system-green, online, active, verified)
         lime: {
             50: "#F4FDD4",
             100: "#E5FA9A",
             200: "#D4F55A",
-            base: "#C8F135",   // Primary lime accent
+            base: "#C8F135",
             600: "#A0C420",
             800: "#607514",
-            alpha: {
-                8: "rgba(200,241,53,0.08)",
-                12: "rgba(200,241,53,0.12)",
-                20: "rgba(200,241,53,0.20)",
-                24: "rgba(200,241,53,0.24)",
-            },
+            alpha: { 6: "rgba(200,241,53,0.06)", 10: "rgba(200,241,53,0.10)", 18: "rgba(200,241,53,0.18)", 30: "rgba(200,241,53,0.30)" },
         },
 
-        // ── COLOR: ACCENT — AMBER (XP / Level / Streak / Warnings) ─
-        // Use for: level badge, XP system, streak, root processes, warnings
+        // SECONDARY ACCENT — Amber (XP, level, streak, warnings)
         amber: {
             50: "#FFF4D4",
             100: "#FAD97A",
             200: "#F5BD3A",
-            base: "#F5A623",   // Primary amber accent
+            base: "#F5A623",
             600: "#C47E0E",
             800: "#7A4E08",
-            alpha: {
-                8: "rgba(245,166,35,0.08)",
-                12: "rgba(245,166,35,0.12)",
-                20: "rgba(245,166,35,0.20)",
-                24: "rgba(245,166,35,0.24)",
-            },
+            alpha: { 6: "rgba(245,166,35,0.06)", 10: "rgba(245,166,35,0.10)", 18: "rgba(245,166,35,0.18)", 30: "rgba(245,166,35,0.30)" },
         },
 
-        // ── COLOR: SEMANTIC ─────────────────────────────────────
-        // These are status colors — do not use decoratively
         semantic: {
-            success: "#C8F135",   // Aliased to lime
-            warning: "#F5A623",   // Aliased to amber
-            error: "#FF5A5A",   // Critical errors, destructive actions
-            info: "#5B8BFF",   // Info states, links
+            success: "#C8F135",
+            warning: "#F5A623",
+            error: "#FF5A5A",
+            info: "#5B8BFF",
+            errorBg: "rgba(255,90,90,0.06)",
+            infoBg: "rgba(91,139,255,0.06)",
         },
 
-        // ── COLOR: TERMINAL SYNTAX ──────────────────────────────
-        // Only use inside .al-terminal-body elements
+        // Terminal syntax palette — only use inside terminal body elements
         terminal: {
-            comment: "#3D3D45",   // Comments, annotations
-            prompt: "#555555",   // User@host prompt
-            command: "#8B8BFF",   // Typed commands (soft indigo)
-            output: "#9A9A9A",   // Standard stdout
-            highlight: "#C8F135",   // Anomalous / important lines
-            root: "#F5A623",   // Root-owned processes
-            cursor: "#C8F135",   // Blinking input cursor
-            string: "#A8E6A3",   // String literals
-            error: "#FF5A5A",   // Stderr / errors
+            comment: "#3D3D45",
+            prompt: "#555555",
+            command: "#8B8BFF",
+            output: "#9A9A9A",
+            highlight: "#C8F135",
+            root: "#F5A623",
+            cursor: "#C8F135",
+            string: "#A8E6A3",
+            error: "#FF5A5A",
+            number: "#7EC8E3",
+        },
+
+        // Skill category colors — used in radar chart and advancement tree
+        skills: {
+            filesystem: "#C8F135",  // lime
+            permissions: "#F5A623",  // amber
+            networking: "#5B8BFF",  // blue
+            scripting: "#FF5A5A",  // red
+            processes: "#A8E6A3",  // green
         },
     },
 
-    // ── TYPOGRAPHY ──────────────────────────────────────────────
+    // ── TYPOGRAPHY v2 ────────────────────────────────────────────────
+    // KEY CHANGE: Russo One for all display/heading text.
+    // Russo One is geometric, military-grade, 100% legible at all sizes.
+    // Syne demoted to sub-labels and UI chrome only.
     font: {
-        sans: "'Syne', sans-serif",         // UI chrome: labels, headings, nav
-        mono: "'JetBrains Mono', monospace", // Terminal: all code/data output
+        display: "'Russo One', sans-serif",      // PAGE TITLES, SECTION HEADERS, HERO TEXT
+        sans: "'Syne', sans-serif",           // UI labels, nav, badges, sub-headings
+        mono: "'JetBrains Mono', monospace",  // Terminal, code, data values, XP numbers
     },
 
-    // Type scale — use these sizes, not arbitrary values
     fontSize: {
-        "2xs": "9px",   // Streak number, tiny badges
-        xs: "10px",  // Status bar, XP text, sub-labels
-        sm: "11px",  // Objective steps, tooltip reqs, tab labels
-        base: "12px",  // Terminal body text
-        md: "13px",  // Header username, body copy
-        lg: "15px",  // Card titles
-        xl: "18px",  // Section headings
-        "2xl": "22px",  // Display / hero values
-        "3xl": "28px",  // Large stat numbers
+        "2xs": "9px",
+        xs: "10px",
+        sm: "11px",
+        base: "12px",
+        md: "13px",
+        lg: "15px",
+        xl: "18px",
+        "2xl": "24px",
+        "3xl": "32px",
+        "4xl": "42px",
+        "5xl": "56px",
     },
 
     fontWeight: {
@@ -148,1025 +151,1298 @@ export const tokens = {
         wide: "0.04em",
         wider: "0.08em",
         widest: "0.12em",
+        display: "-0.01em", // Russo One looks best with very slight tightening
     },
 
     lineHeight: {
-        tight: 1.2,
-        snug: 1.4,
+        tight: 1.1,
+        snug: 1.3,
         normal: 1.6,
-        loose: 1.8,   // Terminal line height
+        loose: 1.8,
     },
 
-    // ── SPACING (4px base grid) ──────────────────────────────
-    // Always use multiples of 4. Never use odd values like 3px or 7px.
+    // ── SPACING (4px grid) ──────────────────────────────────────────
     space: {
-        0: "0px",
-        1: "4px",
-        2: "8px",
-        3: "12px",
-        4: "16px",
-        5: "20px",
-        6: "24px",
-        8: "32px",
-        10: "40px",
-        12: "48px",
-        16: "64px",
+        0: "0px", 1: "4px", 2: "8px", 3: "12px", 4: "16px",
+        5: "20px", 6: "24px", 8: "32px", 10: "40px", 12: "48px", 16: "64px",
     },
 
-    // ── BORDER RADIUS ────────────────────────────────────────
-    // Sharp by default — this is a terminal OS aesthetic.
-    // Round only when intentional (pills, avatars).
-    radius: {
-        none: "0px",    // Default for most UI elements
-        sm: "2px",    // Subtle softening (code blocks)
-        full: "9999px", // Pills and avatars only
-    },
-
-    // ── SIZING (fixed dimensions) ────────────────────────────
+    // ── FIXED DIMENSIONS ────────────────────────────────────────────
     size: {
-        sidebar: "64px",   // Activity bar width
-        header: "48px",   // Top header height
-        statusBar: "22px",   // Bottom status bar height
-        tabBar: "36px",   // Terminal tab bar height
-        objPanel: "220px",  // Objective panel width
-        navItem: "40px",   // Nav item height
-        avatar: "32px",   // User avatar size
-        avatarLg: "40px",   // Large avatar
-        icon: "18px",   // Standard icon size
-        iconSm: "12px",   // Small icon (status bar, badges)
-        iconLg: "24px",   // Large icon (empty states)
-        dot: "5px",    // Status indicator dot
-        cursor: "7px",    // Terminal cursor width
-        cursorH: "14px",   // Terminal cursor height
-        activeLine: "2px",    // Active nav indicator width
-        xpTrack: "100px",  // XP progress bar width
-        xpHeight: "4px",    // XP progress bar height
+        // Layout
+        sidebar: "64px",
+        header: "48px",
+        statusBar: "22px",
+        tabBar: "36px",
+        objPanel: "220px",
+        // Onboarding modal
+        onboardModal: "480px",
+        tourModal: "460px",
+        // Components
+        avatar: "32px",
+        avatarLg: "48px",
+        avatarXl: "80px",
+        icon: "18px",
+        iconSm: "12px",
+        dot: "5px",
+        cursor: "7px",
+        cursorH: "14px",
+        activeLine: "2px",
+        xpTrack: "100px",
+        xpHeight: "4px",
+        // Activity spark (replaces heatmap)
+        sparkHeight: "28px",
+        sparkCell: "6px",
+        // Radar chart
+        radarSize: "220px",
     },
 
-    // ── MOTION ───────────────────────────────────────────────
+    radius: {
+        none: "0px",
+        sm: "2px",
+        md: "6px",   // NEW — used for modal inner elements only
+        full: "9999px",
+    },
+
     motion: {
         duration: {
             instant: "80ms",
-            fast: "150ms",   // Hover transitions, icon strokes
-            normal: "250ms",   // Panel slides, tab switches
-            slow: "400ms",   // XP bar fill, level-up
-            crawl: "600ms",   // Page transitions
+            fast: "150ms",
+            normal: "250ms",
+            slow: "400ms",
+            crawl: "600ms",
         },
         easing: {
-            linear: "linear",
-            ease: "ease",
             easeOut: "cubic-bezier(0.0, 0.0, 0.2, 1)",
-            easeIn: "cubic-bezier(0.4, 0.0, 1, 1)",
             spring: "cubic-bezier(0.175, 0.885, 0.32, 1.275)",
-        },
-        // Named animation keyframes (inject via globalStyles)
-        animations: {
-            pulse: "al-pulse 2s ease infinite",   // Status dot
-            blink: "al-blink 1s step-end infinite", // Terminal cursor
-            fadeIn: "al-fadeIn 0.15s ease",        // Tooltips, toasts
-            slideUp: "al-slideUp 0.25s cubic-bezier(0.0,0.0,0.2,1)", // Panels
+            linear: "linear",
         },
     },
 
-    // ── Z-INDEX SCALE ────────────────────────────────────────
-    z: {
-        base: 0,
-        raised: 10,
-        dropdown: 50,
-        tooltip: 100,
-        modal: 200,
-        toast: 300,
-    },
-
-    // ── SHADOWS ───────────────────────────────────────────────
     shadow: {
-        sm: "0 1px 2px rgba(0,0,0,0.4)",
-        md: "0 4px 12px rgba(0,0,0,0.5)",
-        lg: "0 12px 32px rgba(0,0,0,0.6)",
-        lime: "0 0 20px rgba(200,241,53,0.15)",
-        amber: "0 0 20px rgba(245,166,35,0.15)",
+        sm: "0 2px 4px rgba(0,0,0,0.1)",
+        md: "0 4px 12px rgba(0,0,0,0.15)",
+        lg: "0 12px 32px rgba(0,0,0,0.25)",
+        glow: "0 0 20px rgba(200,241,53,0.15)",
+    },
+    z: {
+        base: 0, raised: 10, dropdown: 50,
+        tooltip: 100, modal: 200, toast: 300, critical: 400,
     },
 };
 
-// ════════════════════════════════════════════════════════════════
-// SECTION 2 — GLOBAL CSS (inject once in your app root)
-// ════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════════════
+// SECTION 2 — GLOBAL STYLES v2
+// ════════════════════════════════════════════════════════════════════════
 export const globalStyles = `
-  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;600;700;800&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Russo+One&family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;600;700;800&display=swap');
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    /* Map tokens to CSS custom properties for use in plain CSS files */
     --al-bg-base:      #0D0D0F;
     --al-bg-surface:   #111114;
     --al-bg-raised:    #171719;
     --al-bg-overlay:   #1E1E22;
     --al-bg-input:     #0F0F12;
+    --al-bg-glass:     rgba(17,17,20,0.85);
 
-    --al-border-subtle:  rgba(255,255,255,0.05);
-    --al-border-default: rgba(255,255,255,0.07);
-    --al-border-strong:  rgba(255,255,255,0.12);
+    --al-bd-sub:    rgba(255,255,255,0.05);
+    --al-bd:        rgba(255,255,255,0.08);
+    --al-bd-str:    rgba(255,255,255,0.14);
+    --al-bd-inv:    rgba(255,255,255,0.22);
+    --al-bd-lime:   rgba(200,241,53,0.25);
+    --al-bd-amber:  rgba(245,166,35,0.25);
+    --al-bd-err:    rgba(255,90,90,0.25);
 
-    --al-text-primary:   #E8E6E0;
-    --al-text-secondary: #9A9A9A;
-    --al-text-tertiary:  #555555;
-    --al-text-disabled:  #333336;
+    --al-tx:     #E8E6E0;
+    --al-tx2:    #9A9A9A;
+    --al-tx3:    #555555;
+    --al-tx-dis: #333336;
+    --al-tx-inv: #0D0D0F;
 
-    --al-lime:        #C8F135;
-    --al-lime-alpha:  rgba(200,241,53,0.12);
-    --al-amber:       #F5A623;
-    --al-amber-alpha: rgba(245,166,35,0.12);
-    --al-error:       #FF5A5A;
-    --al-info:        #5B8BFF;
+    --al-lime:   #C8F135;
+    --al-amber:  #F5A623;
+    --al-err:    #FF5A5A;
+    --al-info:   #5B8BFF;
 
-    --al-font-sans: 'Syne', sans-serif;
-    --al-font-mono: 'JetBrains Mono', monospace;
+    --al-lime-a6:  rgba(200,241,53,0.06);
+    --al-lime-a10: rgba(200,241,53,0.10);
+    --al-lime-a18: rgba(200,241,53,0.18);
+    --al-lime-a30: rgba(200,241,53,0.30);
+    --al-amb-a6:   rgba(245,166,35,0.06);
+    --al-amb-a10:  rgba(245,166,35,0.10);
+    --al-amb-a18:  rgba(245,166,35,0.18);
+
+    --al-font-display: 'Russo One', sans-serif;
+    --al-font-sans:    'Syne', sans-serif;
+    --al-font-mono:    'JetBrains Mono', monospace;
   }
 
-  @keyframes al-pulse  { 0%,100%{opacity:1} 50%{opacity:0.35} }
-  @keyframes al-blink  { 0%,100%{opacity:1} 50%{opacity:0}    }
-  @keyframes al-fadeIn { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
-  @keyframes al-slideUp{ from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-  @keyframes al-spin   { to{transform:rotate(360deg)} }
-  @keyframes al-ping   { 0%{transform:scale(1);opacity:1} 75%,100%{transform:scale(1.8);opacity:0} }
+  @keyframes al-pulse   { 0%,100%{opacity:1} 50%{opacity:.35} }
+  @keyframes al-blink   { 0%,100%{opacity:1} 50%{opacity:0}   }
+  @keyframes al-fadeIn  { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes al-slideUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes al-slideIn { from{opacity:0;transform:translateX(-8px)} to{opacity:1;transform:translateX(0)} }
+  @keyframes al-scaleIn { from{opacity:0;transform:scale(0.9)} to{opacity:1;transform:scale(1)} }
+  @keyframes al-ping    { 0%{transform:scale(1);opacity:.8} 100%{transform:scale(2.2);opacity:0} }
+  @keyframes al-drawBar { from{width:0} to{width:100%} }
+  @keyframes al-glitch  {
+    0%,100%{clip-path:inset(0 0 100% 0)}
+    10%{clip-path:inset(10% 0 60% 0);transform:translateX(-2px)}
+    20%{clip-path:inset(40% 0 20% 0);transform:translateX(2px)}
+    30%{clip-path:inset(70% 0 5% 0)}
+    40%{clip-path:inset(0 0 0 0)}
+  }
 
-  /* Scrollbars */
-  ::-webkit-scrollbar         { width:4px; height:4px; }
-  ::-webkit-scrollbar-track   { background:transparent; }
-  ::-webkit-scrollbar-thumb   { background:rgba(255,255,255,0.1); border-radius:2px; }
+  body {
+    background-color: var(--al-bg-base);
+    background-image: 
+      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+
+  ::-webkit-scrollbar       { width:4px; height:4px; }
+  ::-webkit-scrollbar-track { background:transparent; }
+  ::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.10); border-radius:2px; }
   ::-webkit-scrollbar-thumb:hover { background:rgba(255,255,255,0.18); }
 
-  /* Text selection */
-  ::selection { background: rgba(200,241,53,0.25); color: #E8E6E0; }
+  ::selection { background:rgba(200,241,53,0.22); color:#E8E6E0; }
 `;
 
-// ════════════════════════════════════════════════════════════════
-// SECTION 3 — BASE COMPONENT PRIMITIVES
-// ════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════════════
+// SECTION 3 — TYPOGRAPHY COMPONENTS
+// ════════════════════════════════════════════════════════════════════════
 
-// ── BUTTON ──────────────────────────────────────────────────────
-/**
- * BUTTON
- * Variants: "primary" | "secondary" | "ghost" | "danger" | "lime"
- * Sizes:    "sm" | "md" | "lg"
- * Props:    variant, size, disabled, loading, icon, onClick, children
- *
- * Variant usage:
- *   primary   — amber fill. Main CTAs (Start Lab, Submit, Confirm)
- *   lime      — lime fill. System actions (Verify, Run, Connect)
- *   secondary — bordered, no fill. Secondary actions
- *   ghost     — no border or fill. Nav-adjacent actions
- *   danger    — red fill. Destructive actions (Delete, Reset)
- */
-const buttonStyles = {
-    base: {
-        display: "inline-flex", alignItems: "center", justifyContent: "center",
-        gap: "6px", cursor: "pointer", border: "none", outline: "none",
-        fontFamily: tokens.font.sans, fontWeight: tokens.fontWeight.bold,
-        letterSpacing: tokens.letterSpacing.wider, textTransform: "uppercase",
-        transition: `all ${tokens.motion.duration.fast} ${tokens.motion.easing.easeOut}`,
-        userSelect: "none", position: "relative", overflow: "hidden",
-        borderRadius: tokens.radius.none,
-    },
-    sizes: {
-        sm: { padding: "5px 10px", fontSize: tokens.fontSize.xs },
-        md: { padding: "8px 14px", fontSize: tokens.fontSize.sm },
-        lg: { padding: "10px 20px", fontSize: tokens.fontSize.md },
-    },
-    variants: {
-        primary: { background: tokens.color.amber.base, color: tokens.color.text.inverse },
-        lime: { background: tokens.color.lime.base, color: tokens.color.text.inverse },
-        secondary: { background: "transparent", color: tokens.color.text.primary, border: `1px solid ${tokens.color.border.strong}` },
-        ghost: { background: "transparent", color: tokens.color.text.secondary, border: "none" },
-        danger: { background: tokens.color.semantic.error, color: "#fff" },
-    },
-    hover: {
-        primary: { filter: "brightness(1.1)" },
-        lime: { filter: "brightness(1.08)" },
-        secondary: { background: "rgba(255,255,255,0.05)", borderColor: tokens.color.border.inverse },
-        ghost: { color: tokens.color.text.primary, background: "rgba(255,255,255,0.04)" },
-        danger: { filter: "brightness(1.1)" },
-    },
+interface TypographyProps extends React.HTMLAttributes<HTMLDivElement> {
+    size?: keyof typeof tokens.fontSize;
+    color?: string;
+    weight?: keyof typeof tokens.fontWeight;
+    uppercase?: boolean;
+}
+
+export const Display = ({ size = "lg", color = tokens.color.text.primary, weight = 700, uppercase = true, style, children, ...props }: TypographyProps) => (
+    <div {...props} style={{
+        fontFamily: tokens.font.display,
+        fontSize: tokens.fontSize[size] || size,
+        color,
+        fontWeight: weight,
+        textTransform: uppercase ? "uppercase" : "none",
+        letterSpacing: tokens.letterSpacing.display,
+        lineHeight: tokens.lineHeight.tight,
+        ...style
+    }}>
+        {children}
+    </div>
+);
+
+export const Label = ({ size = "base", color = tokens.color.text.secondary, weight = 600, uppercase = false, style, children, ...props }: TypographyProps) => (
+    <div {...props} style={{
+        fontFamily: tokens.font.sans,
+        fontSize: tokens.fontSize[size] || size,
+        color,
+        fontWeight: weight,
+        textTransform: uppercase ? "uppercase" : "none",
+        letterSpacing: tokens.letterSpacing.normal,
+        lineHeight: tokens.lineHeight.snug,
+        ...style
+    }}>
+        {children}
+    </div>
+);
+
+export const Mono = ({ size = "base", color = tokens.color.terminal.output, weight = 400, style, children, ...props }: TypographyProps) => (
+    <div {...props} style={{
+        fontFamily: tokens.font.mono,
+        fontSize: tokens.fontSize[size] || size,
+        color,
+        fontWeight: weight,
+        lineHeight: tokens.lineHeight.normal,
+        ...style
+    }}>
+        {children}
+    </div>
+);
+
+// ════════════════════════════════════════════════════════════════════════
+// SECTION 4 — BASE COMPONENTS
+// ════════════════════════════════════════════════════════════════════════
+
+interface BadgeProps extends React.HTMLAttributes<HTMLDivElement> {
+    variant?: "default" | "lime" | "amber" | "error" | "secondary" | "outline";
+}
+
+export const Badge = ({ variant = "default", children, ...props }: BadgeProps) => {
+    // Robust variant mapping to prevent undefined crashes
+    const variantColors = {
+        default: tokens.color.lime,
+        lime: tokens.color.lime,
+        amber: tokens.color.amber,
+        error: tokens.color.semantic.error,
+        secondary: { base: tokens.color.text.tertiary, alpha: { 10: "rgba(255,255,255,0.1)" } }
+    };
+    
+    const v = (variantColors[variant] || tokens.color.lime) as any;
+    
+    return (
+        <span {...props} style={{
+            display: "inline-flex", alignItems: "center",
+            padding: "2px 8px", background: variant === "outline" ? "transparent" : (v.alpha?.[10] || "rgba(200,241,53,0.1)"),
+            border: `1px solid ${variant === "outline" ? tokens.color.border.default : (v.base || tokens.color.lime.base)}`,
+            borderRadius: "2px", fontFamily: tokens.font.mono, fontSize: "10px", fontWeight: 700,
+            color: v.base || tokens.color.lime.base, textTransform: "uppercase", letterSpacing: "0.05em",
+            ...props.style
+        }}>
+            {children}
+        </span>
+    );
 };
 
-export const Button = ({ variant = "secondary", size = "md", disabled = false, loading = false, icon, onClick, children, ...props }) => {
-    const [hovered, setHovered] = useState(false);
-    const [pressed, setPressed] = useState(false);
+interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+    variant?: "primary" | "secondary" | "danger" | "ghost" | "outline";
+    size?: "sm" | "md" | "lg";
+}
 
-    const style = {
-        ...buttonStyles.base,
-        ...buttonStyles.sizes[size],
-        ...buttonStyles.variants[variant],
-        ...(hovered && !disabled ? buttonStyles.hover[variant] : {}),
-        opacity: disabled ? 0.35 : 1,
-        cursor: disabled ? "not-allowed" : "pointer",
-        transform: pressed && !disabled ? "scale(0.97)" : "scale(1)",
-    };
+export const Button = ({ variant = "primary", size = "md", style, children, ...props }: ButtonProps) => {
+    const isDanger = variant === "danger";
+    const isSecondary = variant === "secondary";
+    const isGhost = variant === "ghost";
+    const isOutline = variant === "outline" || variant === "outline_lime";
+    const isLime = variant === "lime" || variant === "outline_lime";
+
+    const bg = isDanger ? tokens.color.semantic.error : isSecondary ? tokens.color.bg.overlay : isGhost || isOutline ? "transparent" : tokens.color.lime.base;
+    const tx = isDanger || (!isSecondary && !isGhost && !isOutline) ? tokens.color.text.inverse : isSecondary ? tokens.color.text.primary : tokens.color.lime.base;
+    const bd = variant === "outline" ? `1px solid ${tokens.color.border.strong}` : variant === "outline_lime" ? `1px solid ${tokens.color.border.lime}` : isSecondary ? `1px solid ${tokens.color.border.default}` : "none";
 
     return (
-        <button
-            style={style}
-            disabled={disabled || loading}
-            onClick={onClick}
-            onMouseEnter={() => setHovered(true)}
-            onMouseLeave={() => { setHovered(false); setPressed(false); }}
-            onMouseDown={() => setPressed(true)}
-            onMouseUp={() => setPressed(false)}
-            {...props}
-        >
-            {loading && (
-                <span style={{ width: 10, height: 10, border: `2px solid currentColor`, borderTopColor: "transparent", borderRadius: "50%", animation: "al-spin 0.7s linear infinite", display: "inline-block" }} />
-            )}
-            {!loading && icon && <span style={{ fontSize: 14, lineHeight: 1 }}>{icon}</span>}
+        <button {...props} style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 8,
+            padding: size === "sm" ? "6px 12px" : size === "lg" ? "14px 28px" : "10px 20px",
+            background: bg,
+            color: tx,
+            border: bd,
+            fontFamily: tokens.font.sans,
+            fontSize: size === "lg" ? tokens.fontSize.md : tokens.fontSize.sm,
+            fontWeight: 800,
+            textTransform: "uppercase",
+            letterSpacing: ".06em",
+            cursor: "pointer",
+            transition: `all ${tokens.motion.duration.fast} ease`,
+            ...style
+        }}>
             {children}
         </button>
     );
 };
 
-// ── BADGE ────────────────────────────────────────────────────────
-/**
- * BADGE
- * Variants: "lime" | "amber" | "error" | "info" | "ghost" | "level"
- *
- * Usage:
- *   lime   — online status, active, verified, success states
- *   amber  — level indicators, XP, streak, warning
- *   error  — critical errors, offline, destructive
- *   info   — neutral info, tags, categories
- *   ghost  — subtle labels with no semantic urgency
- *   level  — special variant for the LVL badge (amber + mono font)
- */
-const badgeConfig = {
-    lime: { bg: tokens.color.lime.alpha[8], border: tokens.color.lime.alpha[12], color: tokens.color.lime.base },
-    amber: { bg: tokens.color.amber.alpha[8], border: tokens.color.amber.alpha[12], color: tokens.color.amber.base },
-    error: { bg: "rgba(255,90,90,0.08)", border: "rgba(255,90,90,0.15)", color: tokens.color.semantic.error },
-    info: { bg: "rgba(91,139,255,0.08)", border: "rgba(91,139,255,0.15)", color: tokens.color.semantic.info },
-    ghost: { bg: "rgba(255,255,255,0.04)", border: tokens.color.border.default, color: tokens.color.text.tertiary },
-    level: { bg: tokens.color.amber.base, border: "none", color: tokens.color.text.inverse },
-};
+interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
+    elevated?: boolean;
+}
 
-export const Badge = ({ variant = "ghost", children, dot = false, ...props }) => {
-    const cfg = badgeConfig[variant] || badgeConfig.ghost;
-    return (
-        <span 
-          style={{
-            display: "inline-flex", alignItems: "center", gap: 5,
-            padding: "2px 7px",
-            background: cfg.bg,
-            border: cfg.border !== "none" ? `1px solid ${cfg.border}` : "none",
-            color: cfg.color,
-            fontFamily: variant === "level" ? tokens.font.mono : tokens.font.sans,
-            fontSize: tokens.fontSize.xs,
-            fontWeight: tokens.fontWeight.black,
-            letterSpacing: tokens.letterSpacing.wider,
-            textTransform: "uppercase",
-            borderRadius: tokens.radius.none,
-          }}
-          {...props}
-        >
-            {dot && (
-                <span style={{ width: 5, height: 5, borderRadius: "50%", background: cfg.color, animation: "al-pulse 2s infinite", flexShrink: 0 }} />
-            )}
-            {children}
-        </span>
-    );
-};
+export const Card = ({ elevated = false, style, children, ...props }: CardProps) => (
+    <div {...props} style={{
+        background: elevated ? tokens.color.bg.raised : tokens.color.bg.surface,
+        border: `1px solid ${tokens.color.border.default}`,
+        boxShadow: elevated ? tokens.shadow.lg : "none",
+        ...style
+    }}>
+        {children}
+    </div>
+);
 
-// ── INPUT ────────────────────────────────────────────────────────
-/**
- * INPUT
- * Variants: "default" | "mono"
- *
- * mono variant — use inside terminal-adjacent contexts (e.g. command inputs)
- * default      — use in forms, settings, search fields
- *
- * Props: placeholder, value, onChange, prefix, suffix, disabled, error
- */
-export const Input = ({ placeholder, value, onChange, prefix, suffix, disabled = false, error = false, mono = false, ...props }) => {
+export const Input = ({ placeholder, value, onChange, prefix, suffix, disabled, error, mono, style: s, ...props }) => {
     const [focused, setFocused] = useState(false);
     return (
-        <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-            {prefix && (
-                <span style={{
-                    position: "absolute", left: 10,
-                    fontFamily: mono ? tokens.font.mono : tokens.font.sans,
-                    fontSize: tokens.fontSize.sm, color: tokens.color.text.tertiary,
-                    pointerEvents: "none",
-                }}>{prefix}</span>
-            )}
+        <div style={{ position: "relative", display: "flex", alignItems: "center", ...s }}>
+            {prefix && <span style={{ position: "absolute", left: 10, fontFamily: tokens.font.mono, fontSize: "11px", color: tokens.color.text.tertiary, pointerEvents: "none" }}>{prefix}</span>}
             <input
-                value={value}
-                onChange={onChange}
-                placeholder={placeholder}
-                disabled={disabled}
-                onFocus={() => setFocused(true)}
-                onBlur={() => setFocused(false)}
+                value={value} onChange={onChange} placeholder={placeholder} disabled={disabled}
+                onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
                 style={{
-                    width: "100%",
-                    height: 36,
-                    padding: `0 ${suffix ? "32px" : "10px"} 0 ${prefix ? "28px" : "10px"}`,
+                    width: "100%", height: 38,
+                    padding: `0 ${suffix ? "32px" : "12px"} 0 ${prefix ? "26px" : "12px"}`,
                     background: tokens.color.bg.input,
                     border: `1px solid ${error ? tokens.color.semantic.error : focused ? tokens.color.border.strong : tokens.color.border.default}`,
                     color: disabled ? tokens.color.text.disabled : tokens.color.text.primary,
                     fontFamily: mono ? tokens.font.mono : tokens.font.sans,
-                    fontSize: tokens.fontSize.sm,
-                    outline: "none",
+                    fontSize: "12px", outline: "none",
                     transition: `border-color ${tokens.motion.duration.fast}`,
-                    borderRadius: tokens.radius.none,
                     caretColor: tokens.color.lime.base,
                 }}
                 {...props}
             />
-            {suffix && (
-                <span style={{
-                    position: "absolute", right: 10,
-                    fontFamily: tokens.font.mono, fontSize: tokens.fontSize.sm,
-                    color: tokens.color.text.tertiary, pointerEvents: "none",
-                }}>{suffix}</span>
-            )}
+            {suffix && <span style={{ position: "absolute", right: 10, fontFamily: tokens.font.mono, fontSize: "11px", color: tokens.color.text.tertiary, pointerEvents: "none" }}>{suffix}</span>}
         </div>
     );
 };
 
-// ── CARD ─────────────────────────────────────────────────────────
-/**
- * CARD
- * Variants: "default" | "active" | "locked" | "objective"
- *
- * default    — standard raised surface for content grouping
- * active     — lime-accented border, subtle lime background wash
- * locked     — greyed out, reduced opacity, lock indicator
- * objective  — amber-accented, used in objective/mission panels
- */
-export const Card = ({ variant = "default", children, style: extraStyle, ...props }) => {
-    const variants = {
-        default: { bg: tokens.color.bg.raised, border: tokens.color.border.default, opacity: 1 },
-        active: { bg: "rgba(200,241,53,0.04)", border: tokens.color.lime.alpha[20], opacity: 1 },
-        locked: { bg: tokens.color.bg.surface, border: tokens.color.border.subtle, opacity: 0.45 },
-        objective: { bg: "rgba(245,166,35,0.04)", border: tokens.color.amber.alpha[12], opacity: 1 },
-    };
-    const v = variants[variant] || variants.default;
+export const ProgressBar = ({ value = 0, variant = "default", label, showValue, height = 4, animate = true }) => {
+    const c = value > 70 && variant === "health" ? tokens.color.semantic.error : variant === "health" && value > 40 ? tokens.color.amber.base : tokens.color.lime.base;
     return (
-        <div 
-          style={{
-            background: v.bg,
-            border: `1px solid ${v.border}`,
-            opacity: v.opacity,
-            padding: `${tokens.space[3]} ${tokens.space[4]}`,
-            borderRadius: tokens.radius.none,
-            ...extraStyle,
-          }}
-          {...props}
-        >
-            {children}
-        </div>
-    );
-};
-
-// ── PROGRESS BAR ─────────────────────────────────────────────────
-/**
- * PROGRESS BAR
- * Variants: "xp" | "health" | "default"
- *
- * xp      — lime fill, used for XP/level progress in header
- * health  — amber→lime gradient fill, used for system resource meters
- * default — lime fill, generic progress
- *
- * Props: value (0–100), variant, label, showValue
- */
-export const ProgressBar = ({ value = 0, variant = "default", label, showValue = false, height = 4, ...props }) => {
-    const clampedValue = Math.min(100, Math.max(0, value));
-    const fillColor = variant === "health"
-        ? (value > 70 ? tokens.color.semantic.error : value > 40 ? tokens.color.amber.base : tokens.color.lime.base)
-        : tokens.color.lime.base;
-
-    return (
-        <div {...props}>
+        <div>
             {(label || showValue) && (
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
-                    {label && <span style={{ fontFamily: tokens.font.sans, fontSize: tokens.fontSize.xs, color: tokens.color.text.tertiary, textTransform: "uppercase", letterSpacing: tokens.letterSpacing.widest, fontWeight: tokens.fontWeight.bold }}>{label}</span>}
-                    {showValue && <span style={{ fontFamily: tokens.font.mono, fontSize: tokens.fontSize.xs, color: tokens.color.text.secondary }}>{Math.round(clampedValue)}%</span>}
+                    {label && <Label>{label}</Label>}
+                    {showValue && <Mono size="xs" color={tokens.color.text.secondary}>{Math.round(value)}%</Mono>}
                 </div>
             )}
-            <div style={{
-                width: "100%", height,
-                background: "rgba(255,255,255,0.07)",
-                overflow: "hidden",
-                borderRadius: tokens.radius.none,
-            }}>
-                <div style={{
-                    height: "100%",
-                    width: `${clampedValue}%`,
-                    background: fillColor,
-                    transition: `width ${tokens.motion.duration.slow} ${tokens.motion.easing.easeOut}`,
-                }} />
+            <div style={{ width: "100%", height, background: "rgba(255,255,255,0.07)", overflow: "hidden" }}>
+                <div style={{ height: "100%", width: `${Math.min(100, Math.max(0, value))}%`, background: c, transition: animate ? `width ${tokens.motion.duration.slow} ${tokens.motion.easing.easeOut}` : "none" }} />
             </div>
         </div>
     );
 };
 
-// ── STAT CARD ────────────────────────────────────────────────────
-/**
- * STAT CARD
- * Used in dashboards, profile pages, and lab summary views.
- *
- * Props: label, value, unit, accent ("lime" | "amber" | "neutral"), delta
- * delta — optional string like "+12%" shown in accent color
- */
-export const StatCard = ({ label, value, unit, accent = "neutral", delta, ...props }) => {
-    const accentColor = accent === "lime" ? tokens.color.lime.base : accent === "amber" ? tokens.color.amber.base : tokens.color.text.secondary;
-    return (
-        <div 
-          style={{
-            background: tokens.color.bg.surface,
-            border: `1px solid ${tokens.color.border.default}`,
-            padding: `${tokens.space[3]} ${tokens.space[4]}`,
-            display: "flex", flexDirection: "column", gap: 6,
-          }}
-          {...props}
-        >
-            <span style={{ fontFamily: tokens.font.sans, fontSize: tokens.fontSize.xs, color: tokens.color.text.tertiary, textTransform: "uppercase", letterSpacing: tokens.letterSpacing.widest, fontWeight: tokens.fontWeight.bold }}>
-                {label}
-            </span>
-            <div style={{ display: "flex", alignItems: "baseline", gap: 5 }}>
-                <span style={{ fontFamily: tokens.font.mono, fontSize: tokens.fontSize["3xl"], fontWeight: tokens.fontWeight.bold, color: accentColor, lineHeight: 1 }}>
-                    {value}
-                </span>
-                {unit && <span style={{ fontFamily: tokens.font.mono, fontSize: tokens.fontSize.sm, color: tokens.color.text.tertiary }}>{unit}</span>}
-                {delta && <span style={{ fontFamily: tokens.font.mono, fontSize: tokens.fontSize.xs, color: accentColor, marginLeft: 4 }}>{delta}</span>}
-            </div>
+// ─────────────────────────────────────────────────────────────
+// UTILITY COMPONENTS
+// ─────────────────────────────────────────────────────────────
+
+export const Divider = ({ label, vertical, style, ...props }) => {
+    if (vertical) return <div {...props} style={{ width: 1, height: "100%", background: tokens.color.border.subtle, flexShrink: 0, ...style }} />;
+    if (label) return (
+        <div {...props} style={{ display: "flex", alignItems: "center", gap: 10, margin: "14px 0", ...style }}>
+            <div style={{ flex: 1, height: 1, background: tokens.color.border.subtle }} />
+            <Label size="2xs" color={tokens.color.text.tertiary}>{label}</Label>
+            <div style={{ flex: 1, height: 1, background: tokens.color.border.subtle }} />
         </div>
     );
+    return <div {...props} style={{ width: "100%", height: 1, background: tokens.color.border.subtle, margin: "14px 0", ...style }} />;
 };
 
-// ── KBD (Keyboard Key) ────────────────────────────────────────────
-/**
- * KBD
- * Used to display keyboard shortcuts in tooltips, help text, and docs.
- * Renders a single key or combo. Pass children as the key label.
- *
- * Usage: <Kbd>Ctrl</Kbd> + <Kbd>C</Kbd>
- */
-export const Kbd = ({ children, ...props }) => (
-    <kbd 
-      style={{
-        display: "inline-flex", alignItems: "center", justifyContent: "center",
-        padding: "2px 6px",
-        background: tokens.color.bg.raised,
-        border: `1px solid ${tokens.color.border.strong}`,
-        borderBottom: `2px solid ${tokens.color.border.strong}`,
-        fontFamily: tokens.font.mono,
-        fontSize: tokens.fontSize.xs,
-        color: tokens.color.text.secondary,
-        lineHeight: 1.4,
-        borderRadius: tokens.radius.none,
-        userSelect: "none",
-      }}
-      {...props}
-    >
+export const Kbd = ({ children }) => (
+    <kbd style={{ display: "inline-flex", alignItems: "center", padding: "2px 6px", background: tokens.color.bg.raised, border: `1px solid ${tokens.color.border.strong}`, borderBottomWidth: 2, fontFamily: tokens.font.mono, fontSize: "10px", color: tokens.color.text.secondary, borderRadius: 0, userSelect: "none" }}>
         {children}
     </kbd>
 );
 
-// ── TAG ───────────────────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════════════
+// SECTION 5 — NEW COMPONENTS (v2 additions)
+// ════════════════════════════════════════════════════════════════════════
+
 /**
- * TAG
- * Inline labels for categories, difficulty levels, and filters.
- * Variants: "lime" | "amber" | "error" | "info" | "ghost"
+ * XP RING — Circular progress indicator
+ * ─────────────────────────────────────
+ * Shows level + XP progress as an SVG arc ring.
+ * Use on: Dashboard hero, Profile hero
  *
- * Smaller and less prominent than Badge.
- * Tags label content; Badges label status.
+ * Props:
+ *   level      — current level number
+ *   xpCurrent  — current XP in this level
+ *   xpNext     — XP needed for next level
+ *   size       — diameter in px (default 96)
+ *   accent     — "lime" | "amber" (default "lime")
  */
-export const Tag = ({ variant = "ghost", children, onRemove, ...props }) => {
-    const cfg = badgeConfig[variant] || badgeConfig.ghost;
+export const XPRing = ({ level = 1, xpCurrent = 0, xpNext = 150, size = 96, accent = "lime" }) => {
+    const r = (size / 2) - 8;
+    const circ = 2 * Math.PI * r;
+    const pct = Math.min(1, xpCurrent / xpNext);
+    const dash = pct * circ;
+    const color = accent === "amber" ? tokens.color.amber.base : tokens.color.lime.base;
+
     return (
-        <span 
-          style={{
-            display: "inline-flex", alignItems: "center", gap: 4,
-            padding: "1px 6px",
-            background: cfg.bg,
-            border: `1px solid ${cfg.border}`,
-            color: cfg.color,
-            fontFamily: tokens.font.mono,
-            fontSize: tokens.fontSize.xs,
-            borderRadius: tokens.radius.none,
-          }}
-          {...props}
-        >
-            {children}
-            {onRemove && (
-                <span onClick={onRemove} style={{ cursor: "pointer", opacity: 0.6, fontSize: 10, lineHeight: 1 }}>×</span>
-            )}
-        </span>
+        <div style={{ position: "relative", width: size, height: size, flexShrink: 0 }}>
+            <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
+                <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth={4} />
+                <circle
+                    cx={size / 2} cy={size / 2} r={r} fill="none"
+                    stroke={color} strokeWidth={4}
+                    strokeDasharray={`${dash} ${circ}`}
+                    strokeLinecap="square"
+                    style={{ transition: `stroke-dasharray ${tokens.motion.duration.slow} ${tokens.motion.easing.easeOut}` }}
+                />
+            </svg>
+            <div style={{
+                position: "absolute", inset: 0, display: "flex", flexDirection: "column",
+                alignItems: "center", justifyContent: "center", gap: 0,
+            }}>
+                <span style={{ fontFamily: tokens.font.display, fontSize: size > 80 ? "22px" : "16px", color: tokens.color.text.primary, lineHeight: 1 }}>{level}</span>
+                <Label size="2xs" color={tokens.color.text.tertiary} style={{ marginTop: 2 }}>LVL</Label>
+            </div>
+        </div>
     );
 };
 
-// ── ALERT ─────────────────────────────────────────────────────────
 /**
- * ALERT
- * Full-width notification panel for system messages.
- * Variants: "success" | "warning" | "error" | "info"
+ * ACTIVITY SPARK — 30-day compact activity bar
+ * ─────────────────────────────────────────────
+ * Replaces the full heatmap on Dashboard.
+ * Single row of 30 bars, height = activity intensity.
+ * Much more space-efficient and readable at a glance.
  *
- * Props: variant, title, description, onDismiss
+ * Props:
+ *   data — array of 30 numbers (0-4, activity intensity per day)
+ *   streak — current streak count
  */
-export const Alert = ({ variant = "info", title, description, onDismiss, ...props }) => {
-    const configs = {
-        success: { bg: "rgba(200,241,53,0.05)", border: "rgba(200,241,53,0.15)", color: tokens.color.lime.base, icon: "▲" },
-        warning: { bg: "rgba(245,166,35,0.05)", border: "rgba(245,166,35,0.18)", color: tokens.color.amber.base, icon: "!" },
-        error: { bg: "rgba(255,90,90,0.05)", border: "rgba(255,90,90,0.18)", color: tokens.color.semantic.error, icon: "×" },
-        info: { bg: "rgba(91,139,255,0.05)", border: "rgba(91,139,255,0.18)", color: tokens.color.semantic.info, icon: "i" },
+export const ActivitySpark = ({ data = [], streak = 0 }) => {
+    const days = Array.from({ length: 30 }, (_, i) => data[i] || 0);
+    const max = Math.max(...days, 1);
+    return (
+        <div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                <Label color={tokens.color.text.tertiary}>30-day activity</Label>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ color: tokens.color.amber.base, fontSize: 12 }}>▲</span>
+                    <Mono size="xs" color={tokens.color.amber.base}>{streak} day streak</Mono>
+                </div>
+            </div>
+            <div style={{ display: "flex", alignItems: "flex-end", gap: 2, height: 28 }}>
+                {days.map((v, i) => {
+                    const h = v === 0 ? 3 : Math.max(6, (v / max) * 28);
+                    const opacity = v === 0 ? 0.12 : 0.4 + (v / max) * 0.6;
+                    return (
+                        <div key={i} title={`Day ${i + 1}: ${v} commands`} style={{
+                            flex: 1, height: h, background: tokens.color.lime.base,
+                            opacity, transition: "height .3s ease",
+                            cursor: "default",
+                        }} />
+                    );
+                })}
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
+                <Mono size="2xs" color={tokens.color.text.tertiary}>30 days ago</Mono>
+                <Mono size="2xs" color={tokens.color.text.tertiary}>today</Mono>
+            </div>
+        </div>
+    );
+};
+
+/**
+ * SKILL RADAR — SVG spider/radar chart for skill categories
+ * ──────────────────────────────────────────────────────────
+ * Profile-page identity component. Shows progress across
+ * 5 skill domains. Much more identity-forward than a heatmap.
+ *
+ * Props:
+ *   skills — object: { filesystem:0-100, permissions:0-100, networking:0-100, scripting:0-100, processes:0-100 }
+ *   size   — chart diameter in px (default 220)
+ */
+export const SkillRadar = ({ skills = {}, size = 220 }) => {
+    const cx = size / 2, cy = size / 2, r = size / 2 - 24;
+    const axes = [
+        { key: "filesystem", label: "Filesystem", color: tokens.color.skills.filesystem },
+        { key: "permissions", label: "Permissions", color: tokens.color.skills.permissions },
+        { key: "networking", label: "Networking", color: tokens.color.skills.networking },
+        { key: "scripting", label: "Scripting", color: tokens.color.skills.scripting },
+        { key: "processes", label: "Processes", color: tokens.color.skills.processes },
+    ];
+    const n = axes.length;
+    const angle = (i) => (Math.PI * 2 * i) / n - Math.PI / 2;
+
+    const gridLevels = [0.25, 0.5, 0.75, 1];
+    const skillPts = axes.map((a, i) => {
+        const val = (skills[a.key] || 0) / 100;
+        return { x: cx + Math.cos(angle(i)) * r * val, y: cy + Math.sin(angle(i)) * r * val };
+    });
+    const areaPath = skillPts.map((p, i) => `${i === 0 ? "M" : "L"}${p.x},${p.y}`).join(" ") + "Z";
+
+    return (
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+            <svg width={size} height={size}>
+                {/* Grid rings */}
+                {gridLevels.map((lv, gi) => (
+                    <polygon key={gi}
+                        points={axes.map((_, i) => `${cx + Math.cos(angle(i)) * r * lv},${cy + Math.sin(angle(i)) * r * lv}`).join(" ")}
+                        fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={1}
+                    />
+                ))}
+                {/* Axis lines */}
+                {axes.map((_, i) => (
+                    <line key={i}
+                        x1={cx} y1={cy}
+                        x2={cx + Math.cos(angle(i)) * r} y2={cy + Math.sin(angle(i)) * r}
+                        stroke="rgba(255,255,255,0.06)" strokeWidth={1}
+                    />
+                ))}
+                {/* Filled skill area */}
+                <path d={areaPath} fill="rgba(200,241,53,0.10)" stroke={tokens.color.lime.base} strokeWidth={1.5} />
+                {/* Data points */}
+                {skillPts.map((p, i) => (
+                    <circle key={i} cx={p.x} cy={p.y} r={3} fill={axes[i].color} />
+                ))}
+                {/* Axis labels */}
+                {axes.map((a, i) => {
+                    const lx = cx + Math.cos(angle(i)) * (r + 16);
+                    const ly = cy + Math.sin(angle(i)) * (r + 16);
+                    return (
+                        <text key={i} x={lx} y={ly} textAnchor="middle" dominantBaseline="middle"
+                            fill={a.color} fontSize={9} fontFamily={tokens.font.sans} fontWeight={700}
+                            letterSpacing=".08em" style={{ textTransform: "uppercase" }}>
+                            {a.label}
+                        </text>
+                    );
+                })}
+            </svg>
+            {/* Legend */}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 12px", justifyContent: "center", marginTop: 4 }}>
+                {axes.map((a) => (
+                    <div key={a.key} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                        <div style={{ width: 6, height: 6, background: a.color }} />
+                        <Mono size="2xs" color={tokens.color.text.tertiary}>{a.label} {skills[a.key] || 0}%</Mono>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
+
+/**
+ * ACHIEVEMENT GRID — 3-column grid with earned/progress/locked states
+ * ────────────────────────────────────────────────────────────────────
+ * Replaces the flat achievement list on Profile.
+ *
+ * Props:
+ *   achievements — array of { id, icon, name, desc, earned, progress(0-100), xp }
+ */
+export const AchievementGrid = ({ achievements = [] }) => (
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px,1fr))", gap: 8 }}>
+        {achievements.map((a) => (
+            <div key={a.id} style={{
+                background: a.earned ? tokens.color.amber.alpha[6] : tokens.color.bg.surface,
+                border: `1px solid ${a.earned ? tokens.color.border.amber : tokens.color.border.subtle}`,
+                padding: "12px",
+                opacity: a.earned || a.progress > 0 ? 1 : 0.45,
+                position: "relative", overflow: "hidden",
+            }}>
+                {/* Progress bar behind — subtle */}
+                {!a.earned && a.progress > 0 && (
+                    <div style={{ position: "absolute", bottom: 0, left: 0, height: 2, width: `${a.progress}%`, background: tokens.color.lime.base, transition: "width .5s ease" }} />
+                )}
+                <div style={{ fontSize: 20, marginBottom: 8, lineHeight: 1 }}>{a.icon}</div>
+                <div style={{ fontFamily: tokens.font.sans, fontSize: "11px", fontWeight: 700, color: a.earned ? tokens.color.amber.base : tokens.color.text.primary, marginBottom: 3, lineHeight: 1.3 }}>
+                    {a.name}
+                </div>
+                <div style={{ fontFamily: tokens.font.sans, fontSize: "10px", color: tokens.color.text.tertiary, lineHeight: 1.4, marginBottom: 6 }}>{a.desc}</div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <Mono size="2xs" color={a.earned ? tokens.color.amber.base : tokens.color.text.tertiary}>+{a.xp} XP</Mono>
+                    {a.earned && <span style={{ fontSize: 9, color: tokens.color.amber.base, fontFamily: tokens.font.mono, fontWeight: 700 }}>EARNED</span>}
+                    {!a.earned && a.progress > 0 && <Mono size="2xs" color={tokens.color.lime.base}>{a.progress}%</Mono>}
+                </div>
+            </div>
+        ))}
+    </div>
+);
+
+/**
+ * ONBOARDING MODAL — Welcome screen overlay
+ * ──────────────────────────────────────────
+ * Shown on first visit. Full-screen backdrop + centered card.
+ * Props:
+ *   onSubmit — (username: string) => void
+ */
+export const OnboardingModal = ({ onSubmit }) => {
+    const [username, setUsername] = useState("");
+    const [error, setError] = useState("");
+    const valid = username.length >= 2 && /^[a-z0-9_]+$/i.test(username);
+
+    const handleSubmit = () => {
+        if (!valid) { setError("2–16 chars, letters/numbers/underscores only"); return; }
+        onSubmit?.(username);
     };
-    const cfg = configs[variant];
+
     return (
-        <div 
-            style={{
-                display: "flex", alignItems: "flex-start", gap: 10,
-                padding: `${tokens.space[3]} ${tokens.space[4]}`,
-                background: cfg.bg,
-                border: `1px solid ${cfg.border}`,
-                animation: "al-fadeIn 0.2s ease",
-            }}
-            {...props}
-        >
-            <span style={{ fontFamily: tokens.font.mono, fontSize: 11, color: cfg.color, fontWeight: 800, flexShrink: 0, marginTop: 1 }}>
-                {cfg.icon}
-            </span>
-            <div style={{ flex: 1, minWidth: 0 }}>
-                {title && <div style={{ fontFamily: tokens.font.sans, fontSize: tokens.fontSize.sm, fontWeight: tokens.fontWeight.bold, color: tokens.color.text.primary, marginBottom: 2 }}>{title}</div>}
-                {description && <div style={{ fontFamily: tokens.font.sans, fontSize: tokens.fontSize.sm, color: tokens.color.text.secondary, lineHeight: 1.5 }}>{description}</div>}
+        // BACKDROP — full screen, dark with subtle scanlines texture
+        <div style={{
+            position: "fixed", inset: 0, zIndex: tokens.z.modal,
+            background: "rgba(10,10,12,0.98)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            backdropFilter: "blur(4px)",
+            // Add grid background to modal backdrop
+            backgroundImage: `
+                linear-gradient(rgba(200,241,53,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(200,241,53,0.03) 1px, transparent 1px)
+            `,
+            backgroundSize: "32px 32px",
+        }}>
+            {/* MODAL CARD */}
+            <div style={{
+                width: "100%", maxWidth: 460,
+                background: tokens.color.bg.surface,
+                border: `1px solid ${tokens.color.border.strong}`,
+                padding: "40px 36px",
+                animation: `al-scaleIn ${tokens.motion.duration.normal} ${tokens.motion.easing.spring}`,
+            }}>
+                {/* LOGO WORDMARK */}
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 28 }}>
+                    <div style={{ width: 28, height: 28, background: tokens.color.lime.base, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <span style={{ fontFamily: tokens.font.mono, fontSize: "11px", fontWeight: 700, color: tokens.color.text.inverse }}>AL</span>
+                    </div>
+                    <Label size="xs" color={tokens.color.lime.base}>Ashborn Linux</Label>
+                </div>
+
+                {/* HERO TITLE — Russo One, large */}
+                <Display size="xl" color={tokens.color.lime.base} style={{ marginBottom: 8 }}>The Terminal</Display>
+                <Display size="md" style={{ marginBottom: 16 }}>Welcome, Learner</Display>
+
+                <p style={{ fontFamily: tokens.font.sans, fontSize: "13px", color: tokens.color.text.secondary, lineHeight: 1.6, marginBottom: 28 }}>
+                    You're about to begin your journey to Linux mastery. Choose a handle to get started.
+                </p>
+
+                {/* USERNAME INPUT */}
+                <Label style={{ marginBottom: 6 }}>Choose your handle</Label>
+                <Input
+                    placeholder="enter_username"
+                    value={username}
+                    onChange={(e) => { setUsername(e.target.value.toLowerCase()); setError(""); }}
+                    mono
+                    error={!!error}
+                    style={{ marginBottom: error ? 6 : 16 }}
+                />
+                {error && <p style={{ fontFamily: tokens.font.mono, fontSize: "10px", color: tokens.color.semantic.error, marginBottom: 10 }}>{error}</p>}
+
+                {/* SUBMIT */}
+                <Button variant="lime" size="lg" onClick={handleSubmit} style={{ width: "100%" }}>
+                    Initialize Session →
+                </Button>
+
+                <p style={{ fontFamily: tokens.font.mono, fontSize: "9px", color: tokens.color.text.tertiary, textAlign: "center", marginTop: 16, letterSpacing: ".08em" }}>
+                    PROGRESS SAVED LOCALLY · NO ACCOUNT REQUIRED
+                </p>
             </div>
-            {onDismiss && (
-                <button onClick={onDismiss} style={{ background: "none", border: "none", cursor: "pointer", color: tokens.color.text.tertiary, fontSize: 16, lineHeight: 1, padding: 0, flexShrink: 0 }}>×</button>
-            )}
         </div>
     );
 };
 
-// ── DIVIDER ───────────────────────────────────────────────────────
 /**
- * DIVIDER
- * Horizontal or vertical rule for separating sections.
- * direction: "horizontal" | "vertical"
- * label: optional centered text label
+ * TOUR STEP OVERLAY — Guided tour modal
+ * ──────────────────────────────────────
+ * Appears after onboarding. Steps through key UI concepts.
+ * Props:
+ *   step      — { title, body, prompt } current step object
+ *   stepNum   — current step (1-indexed)
+ *   totalSteps— total number of steps
+ *   onSkip    — () => void
+ *   onNext    — (command: string) => void
  */
-export const Divider = ({ label, direction = "horizontal" }) => {
-    if (direction === "vertical") {
-        return <div style={{ width: 1, height: "100%", background: tokens.color.border.default, flexShrink: 0 }} />;
-    }
-    if (label) {
-        return (
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <div style={{ flex: 1, height: 1, background: tokens.color.border.subtle }} />
-                <span style={{ fontFamily: tokens.font.sans, fontSize: tokens.fontSize["2xs"], color: tokens.color.text.tertiary, textTransform: "uppercase", letterSpacing: tokens.letterSpacing.widest, fontWeight: tokens.fontWeight.bold, whiteSpace: "nowrap" }}>{label}</span>
-                <div style={{ flex: 1, height: 1, background: tokens.color.border.subtle }} />
-            </div>
-        );
-    }
-    return <div style={{ width: "100%", height: 1, background: tokens.color.border.subtle }} />;
-};
+export const TourOverlay = ({ step, stepNum, totalSteps, onSkip, onNext }) => {
+    const [cmd, setCmd] = useState("");
 
-// ── AVATAR ────────────────────────────────────────────────────────
-/**
- * AVATAR
- * Sizes: "sm" (24px) | "md" (32px) | "lg" (40px)
- * Shows user initials. Optionally show online/offline dot.
- *
- * Props: initials, size, online, onClick
- */
-export const Avatar = ({ initials = "?", size = "md", online, onClick }) => {
-    const sizeMap = { sm: 24, md: 32, lg: 40 };
-    const px = sizeMap[size];
     return (
-        <div style={{ position: "relative", display: "inline-flex", flexShrink: 0 }}>
-            <div
-                onClick={onClick}
-                style={{
-                    width: px, height: px,
-                    background: tokens.color.lime.base,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    fontFamily: tokens.font.sans,
-                    fontSize: size === "sm" ? 9 : size === "md" ? 12 : 14,
-                    fontWeight: tokens.fontWeight.black,
-                    color: tokens.color.text.inverse,
-                    cursor: onClick ? "pointer" : "default",
-                    userSelect: "none",
-                }}
-            >
-                {initials}
+        <div style={{
+            position: "fixed", inset: 0, zIndex: tokens.z.modal,
+            background: "rgba(10,10,12,0.75)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            backdropFilter: "blur(2px)",
+        }}>
+            <div style={{
+                width: "100%", maxWidth: 440,
+                background: tokens.color.bg.surface,
+                border: `1px solid ${tokens.color.lime.alpha[30]}`,
+                animation: `al-slideUp ${tokens.motion.duration.normal}`,
+            }}>
+                {/* STEP HEADER */}
+                <div style={{
+                    display: "flex", alignItems: "center", justifyContent: "space-between",
+                    padding: "12px 16px",
+                    borderBottom: `1px solid ${tokens.color.border.subtle}`,
+                    background: tokens.color.lime.alpha[6],
+                }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <div style={{ display: "flex", gap: 3 }}>
+                            {Array.from({ length: totalSteps }).map((_, i) => (
+                                <div key={i} style={{ width: i < stepNum ? 16 : 8, height: 3, background: i < stepNum ? tokens.color.lime.base : "rgba(255,255,255,0.15)", transition: "width .3s" }} />
+                            ))}
+                        </div>
+                        <Mono size="xs" color={tokens.color.lime.base}>{stepNum}/{totalSteps}</Mono>
+                    </div>
+                    <button onClick={onSkip} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: tokens.font.sans, fontSize: "10px", color: tokens.color.text.tertiary, letterSpacing: ".06em", textTransform: "uppercase" }}>
+                        Skip Tour
+                    </button>
+                </div>
+
+                {/* STEP BODY */}
+                <div style={{ padding: "24px 20px 20px" }}>
+                    <Display size="sm" style={{ marginBottom: 10 }}>{step.title}</Display>
+                    <p style={{ fontFamily: tokens.font.sans, fontSize: "13px", color: tokens.color.text.secondary, lineHeight: 1.6, marginBottom: 20 }}>
+                        {step.body}
+                    </p>
+
+                    {step.prompt && (
+                        <>
+                            <Label style={{ marginBottom: 6 }}>Interactive Prompt</Label>
+                            <Input
+                                prefix="$"
+                                placeholder={step.prompt}
+                                value={cmd}
+                                onChange={(e) => setCmd(e.target.value)}
+                                mono
+                                style={{ marginBottom: 6 }}
+                            />
+                            <p style={{ fontFamily: tokens.font.mono, fontSize: "9px", color: tokens.color.text.tertiary, marginBottom: 16 }}>
+                                Type command and press Enter
+                            </p>
+                        </>
+                    )}
+
+                    <div style={{ display: "flex", gap: 8 }}>
+                        <Button variant="lime" size="md" onClick={() => { onNext?.(cmd); setCmd(""); }} style={{ flex: 1 }}>
+                            {stepNum < totalSteps ? "Next →" : "Enter Terminal"}
+                        </Button>
+                    </div>
+                </div>
             </div>
-            {online !== undefined && (
-                <span style={{
-                    position: "absolute", bottom: 1, right: 1,
-                    width: 7, height: 7,
-                    background: online ? tokens.color.lime.base : tokens.color.text.tertiary,
-                    borderRadius: "50%",
-                    border: `1.5px solid ${tokens.color.bg.base}`,
-                }} />
-            )}
         </div>
     );
 };
 
-// ── TOAST ─────────────────────────────────────────────────────────
 /**
- * TOAST
- * Transient notification. Auto-dismisses after `duration` ms.
- * variants: "success" | "warning" | "error" | "info"
+ * ACHIEVEMENT TOAST — Unified XP + achievement notification
+ * ──────────────────────────────────────────────────────────
+ * FIXED: Was two separate disconnected components.
+ * Now: Single unified toast with XP flash + achievement name.
+ * Auto-dismisses after 4s. Can stack.
  *
- * Use the useToast() hook to trigger toasts from anywhere.
+ * Props:
+ *   xp          — XP gained (number)
+ *   achievement — { icon, name, desc } (optional, null for XP-only)
+ *   onDone      — () => void — callback after dismiss
  */
-export const Toast = ({ variant = "success", message, onDone }) => {
+export const AchievementToast = ({ xp, achievement, onDone }) => {
     useEffect(() => {
-        const t = setTimeout(onDone, 3000);
+        const t = setTimeout(onDone, 4000);
         return () => clearTimeout(t);
     }, [onDone]);
 
-    const colors = {
-        success: tokens.color.lime.base,
-        warning: tokens.color.amber.base,
-        error: tokens.color.semantic.error,
-        info: tokens.color.semantic.info,
-    };
-
     return (
-        <div 
-            data-testid="toast"
-            style={{
-                display: "flex", alignItems: "center", gap: 10,
-                padding: "10px 14px",
-                background: tokens.color.bg.overlay,
-                border: `1px solid ${colors[variant]}`,
-                borderLeft: `3px solid ${colors[variant]}`,
-                fontFamily: tokens.font.sans, fontSize: tokens.fontSize.sm,
-                color: tokens.color.text.primary,
-                animation: "al-slideUp 0.25s ease",
-                minWidth: 240,
+        <div style={{
+            background: tokens.color.bg.overlay,
+            border: `1px solid ${tokens.color.border.amber}`,
+            borderLeft: `3px solid ${tokens.color.amber.base}`,
+            overflow: "hidden",
+            width: 280,
+            animation: `al-slideUp ${tokens.motion.duration.normal}`,
         }}>
-            <span style={{ color: colors[variant], fontFamily: tokens.font.mono, fontWeight: 800, fontSize: 11, flexShrink: 0 }}>
-                {variant === "success" ? "OK" : variant === "warning" ? "!" : variant === "error" ? "ERR" : "i"}
-            </span>
-            {message}
+            {/* XP FLASH ROW */}
+            <div style={{
+                display: "flex", alignItems: "center", gap: 8, padding: "10px 12px",
+                borderBottom: achievement ? `1px solid ${tokens.color.border.subtle}` : "none",
+                background: tokens.color.amber.alpha[6],
+            }}>
+                <span style={{ fontSize: 14, color: tokens.color.lime.base }}>⚡</span>
+                <span style={{ fontFamily: tokens.font.display, fontSize: "18px", color: tokens.color.lime.base, letterSpacing: "-0.01em" }}>+{xp} XP</span>
+                {/* Dismiss */}
+                <button onClick={onDone} style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: tokens.color.text.tertiary, fontSize: 14, lineHeight: 1 }}>×</button>
+            </div>
+            {/* ACHIEVEMENT ROW */}
+            {achievement && (
+                <div style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "10px 12px" }}>
+                    <div style={{ width: 28, height: 28, background: tokens.color.amber.alpha[10], border: `1px solid ${tokens.color.border.amber}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>
+                        {achievement.icon}
+                    </div>
+                    <div>
+                        <div style={{ fontFamily: tokens.font.sans, fontSize: "11px", fontWeight: 700, color: tokens.color.amber.base, letterSpacing: ".04em", marginBottom: 2 }}>
+                            {achievement.name}
+                        </div>
+                        <div style={{ fontFamily: tokens.font.sans, fontSize: "10px", color: tokens.color.text.secondary }}>{achievement.desc}</div>
+                    </div>
+                </div>
+            )}
+            {/* Countdown bar */}
+            <div style={{ height: 2, background: "rgba(255,255,255,0.06)" }}>
+                <div style={{ height: "100%", background: tokens.color.amber.base, animation: "al-drawBar 4s linear forwards", "--target-w": "100%" }} />
+            </div>
         </div>
     );
 };
 
-// ════════════════════════════════════════════════════════════════
-// SECTION 4 — INTERACTIVE DESIGN SYSTEM SHOWCASE
-// This is the default export — a living documentation page
-// that renders all components with their variants.
-// Remove this in production and import individual components.
-// ════════════════════════════════════════════════════════════════
-const Section = ({ title, children }) => (
-    <div style={{ marginBottom: tokens.space[8] }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: tokens.space[4] }}>
-            <div style={{ width: 2, height: 14, background: tokens.color.lime.base, flexShrink: 0 }} />
-            <span style={{ fontFamily: tokens.font.mono, fontSize: tokens.fontSize.xs, color: tokens.color.lime.base, fontWeight: tokens.fontWeight.bold, textTransform: "uppercase", letterSpacing: tokens.letterSpacing.widest }}>
-                {title}
-            </span>
+/**
+ * USER POPOVER — Bottom avatar click target
+ * ──────────────────────────────────────────
+ * NAVIGATION FIX: Bottom avatar no longer hard-links to /profile.
+ * Instead it opens this popover with quick stats + nav options.
+ * The person icon in the nav sidebar routes to /profile directly.
+ *
+ * Props:
+ *   user       — { username, level, rank, xpCurrent, xpNext, streakDays }
+ *   onProfile  — () => void → goes to /profile
+ *   onSettings — () => void → goes to /settings
+ *   onLogout   — () => void (optional — clear local data)
+ *   onClose    — () => void
+ */
+export const UserPopover = ({ user, onProfile, onSettings, onLogout, onClose }) => (
+    <div style={{
+        position: "absolute", bottom: "calc(100% + 8px)", left: "calc(100% + 8px)",
+        width: 220,
+        background: tokens.color.bg.overlay,
+        border: `1px solid ${tokens.color.border.strong}`,
+        zIndex: tokens.z.dropdown,
+        animation: `al-fadeIn ${tokens.motion.duration.fast}`,
+    }}>
+        {/* User identity */}
+        <div style={{ padding: "12px 14px", borderBottom: `1px solid ${tokens.color.border.subtle}` }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                <div style={{ width: 36, height: 36, background: tokens.color.lime.base, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: tokens.font.sans, fontSize: "14px", fontWeight: 800, color: tokens.color.text.inverse, flexShrink: 0 }}>
+                    {user?.initial || "?"}
+                </div>
+                <div>
+                    <div style={{ fontFamily: tokens.font.mono, fontSize: "12px", fontWeight: 700, color: tokens.color.text.primary }}>{user?.username}</div>
+                    <Badge variant="level">LVL {user?.level}</Badge>
+                </div>
+            </div>
+            <ProgressBar value={user ? (user.xpCurrent / user.xpNext) * 100 : 0} height={3} />
+            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
+                <Mono size="2xs" color={tokens.color.text.tertiary}>{user?.rank}</Mono>
+                <Mono size="2xs" color={tokens.color.lime.base}>{user?.xpCurrent}/{user?.xpNext} XP</Mono>
+            </div>
         </div>
-        {children}
+        {/* Quick links */}
+        {[
+            { label: "View Profile", action: onProfile },
+            { label: "System Settings", action: onSettings },
+        ].map((item) => (
+            <button key={item.label} onClick={() => { item.action?.(); onClose?.(); }} style={{
+                width: "100%", display: "block", padding: "10px 14px",
+                background: "none", border: "none", borderBottom: `1px solid ${tokens.color.border.subtle}`,
+                cursor: "pointer", textAlign: "left",
+                fontFamily: tokens.font.sans, fontSize: "11px", fontWeight: 600,
+                color: tokens.color.text.secondary, letterSpacing: ".04em",
+                transition: `background ${tokens.motion.duration.fast}`,
+            }}
+                onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.04)"}
+                onMouseLeave={(e) => e.currentTarget.style.background = "none"}
+            >
+                {item.label}
+            </button>
+        ))}
+        {onLogout && (
+            <button onClick={() => { onLogout(); onClose?.(); }} style={{
+                width: "100%", display: "block", padding: "10px 14px",
+                background: "none", border: "none", cursor: "pointer", textAlign: "left",
+                fontFamily: tokens.font.sans, fontSize: "11px", fontWeight: 600,
+                color: tokens.color.semantic.error, letterSpacing: ".04em",
+            }}>
+                Clear Local Data
+            </button>
+        )}
     </div>
 );
 
-const Row = ({ children, gap = 8 }) => (
-    <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", gap }}>
-        {children}
-    </div>
-);
+/**
+ * ARENA GATE — Locked challenge arena state
+ * ──────────────────────────────────────────
+ * Replaces the empty padlock-center screen.
+ * Shows: urgency intel brief + locked challenge previews + real CTA.
+ *
+ * Props:
+ *   userLevel     — current user level
+ *   requiredLevel — level needed (default 10)
+ *   challenges    — array of { name, difficulty, category } (blurred previews)
+ *   onReturn      — () => void — CTA handler
+ */
+export const ArenaGate = ({ userLevel = 1, requiredLevel = 10, challenges = [], onReturn }) => {
+    const pct = Math.min(100, (userLevel / requiredLevel) * 100);
+    return (
+        <div style={{ padding: "32px 24px" }}>
+            {/* INTEL BRIEF */}
+            <div style={{
+                background: "rgba(239, 68, 68, 0.08)",
+                border: `1px solid ${tokens.color.semantic.error}`,
+                borderLeft: `3px solid ${tokens.color.semantic.error}`,
+                padding: "20px 24px", marginBottom: 24,
+                display: "flex", alignItems: "flex-start", gap: 16,
+            }}>
+                <span style={{ fontSize: 24, flexShrink: 0, color: tokens.color.semantic.error }}>⚠</span>
+                <div>
+                    <div style={{ fontFamily: tokens.font.display, fontSize: "16px", color: tokens.color.semantic.error, marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        Access Denied — Clearance Level {requiredLevel} Required
+                    </div>
+                    <p style={{ fontFamily: tokens.font.sans, fontSize: "12px", color: tokens.color.text.secondary, lineHeight: 1.7, maxWidth: 500 }}>
+                        Challenge Arena scenarios involve broken systems under simulated combat conditions. Agents below Level {requiredLevel} (Hacker Rank) are not cleared for entry. 
+                        Complete fundamental labs to earn required cryptographic clearance.
+                    </p>
+                </div>
+            </div>
 
-const Label = ({ children }) => (
-    <div style={{ fontFamily: tokens.font.mono, fontSize: tokens.fontSize["2xs"], color: tokens.color.text.tertiary, textTransform: "uppercase", letterSpacing: tokens.letterSpacing.widest, marginBottom: 6 }}>
-        {children}
-    </div>
-);
+            {/* PROGRESS TO UNLOCK */}
+            <div style={{ marginBottom: 24 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                    <Label color={tokens.color.text.secondary}>Clearance Progress</Label>
+                    <Mono size="xs" color={tokens.color.text.secondary}>Level {userLevel} / {requiredLevel}</Mono>
+                </div>
+                <ProgressBar value={pct} height={6} />
+                <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
+                    <Mono size="2xs" color={tokens.color.text.tertiary}>Current: {userLevel}</Mono>
+                    <Mono size="2xs" color={tokens.color.semantic.error}>Required: {requiredLevel}</Mono>
+                </div>
+            </div>
 
-const ColorSwatch = ({ name, value, textColor = "#E8E6E0" }) => (
-    <div style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 80 }}>
-        <div style={{ width: "100%", height: 36, background: value, border: `1px solid rgba(255,255,255,0.08)` }} />
-        <div style={{ fontFamily: tokens.font.mono, fontSize: 9, color: tokens.color.text.tertiary, lineHeight: 1.4 }}>
-            <div style={{ color: tokens.color.text.secondary, fontWeight: 700 }}>{name}</div>
-            <div>{value}</div>
+            {/* BLURRED CHALLENGE PREVIEWS */}
+            {challenges.length > 0 && (
+                <>
+                    <Label style={{ marginBottom: 10 }}>Restricted Operations</Label>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px,1fr))", gap: 8, marginBottom: 24 }}>
+                        {challenges.map((c, i) => (
+                            <div key={i} style={{
+                                background: tokens.color.bg.surface, border: `1px solid ${tokens.color.border.subtle}`,
+                                padding: "14px", filter: "blur(3px)", userSelect: "none", pointerEvents: "none",
+                                position: "relative", overflow: "hidden",
+                            }}>
+                                <div style={{ position: "absolute", inset: 0, background: "rgba(13,13,15,0.5)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                    <span style={{ fontSize: 18 }}>🔒</span>
+                                </div>
+                                <div style={{ fontFamily: tokens.font.display, fontSize: "12px", color: tokens.color.text.primary, marginBottom: 4 }}>{c.name}</div>
+                                <Badge variant={c.difficulty === "hard" ? "error" : "amber"}>{c.difficulty}</Badge>
+                            </div>
+                        ))}
+                    </div>
+                </>
+            )}
+
+            {/* CTA */}
+            <Button variant="outline_lime" size="lg" onClick={onReturn} style={{ width: "100%" }}>
+                ← Return to Training Labs
+            </Button>
+        </div>
+    );
+};
+
+/**
+ * STAT CARD — Dashboard metric display
+ */
+export const StatCard = ({ label, value, unit, accent = "neutral", color, delta, icon, ...props }) => {
+    const c = color || (accent === "lime" ? tokens.color.lime.base : accent === "amber" ? tokens.color.amber.base : tokens.color.text.secondary);
+    return (
+        <div {...props} style={{ background: tokens.color.bg.surface, border: `1px solid ${tokens.color.border.strong}`, padding: tokens.space[6] }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                <Label size="2xs" uppercase>{label}</Label>
+                {icon && <span style={{ fontSize: 12, opacity: .5 }}>{icon}</span>}
+            </div>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
+                <span style={{ fontFamily: tokens.font.display, fontSize: "28px", color: c, lineHeight: 1, letterSpacing: "-0.01em" }}>{value}</span>
+                {unit && <Mono size="sm" color={tokens.color.text.tertiary}>{unit}</Mono>}
+                {delta && <Mono size="xs" color={c} style={{ marginLeft: 4 }}>{delta}</Mono>}
+            </div>
+        </div>
+    );
+};
+
+/**
+ * SETTINGS SECTION CARD
+ * ─────────────────────
+ * Wrapper for settings page sections.
+ * accent: "default" | "danger" | "lime"
+ */
+export const SettingsSection = ({ title, subtitle, icon, accent = "default", children }) => {
+    const borderColors = { default: tokens.color.border.default, danger: tokens.color.border.error, lime: tokens.color.border.lime };
+    const titleColors = { default: tokens.color.text.primary, danger: tokens.color.semantic.error, lime: tokens.color.lime.base };
+    return (
+        <div style={{
+            border: `1px solid ${borderColors[accent]}`,
+            background: accent === "danger" ? tokens.color.semantic.errorBg : tokens.color.bg.surface,
+            marginBottom: 16,
+        }}>
+            {/* Section header */}
+            <div style={{ padding: "18px 24px", borderBottom: `1px solid ${borderColors[accent]}`, display: "flex", alignItems: "center", gap: 12 }}>
+                {icon && <span style={{ fontSize: 16, opacity: .8 }}>{icon}</span>}
+                <div>
+                    <Display size="sm" color={titleColors[accent]}>{title}</Display>
+                    {subtitle && <p style={{ fontFamily: tokens.font.sans, fontSize: "11px", color: tokens.color.text.tertiary, marginTop: 3 }}>{subtitle}</p>}
+                </div>
+            </div>
+            <div style={{ padding: "24px" }}>{children}</div>
+        </div>
+    );
+};
+
+/**
+ * SETTINGS TOGGLE ROW
+ */
+export const ToggleRow = ({ label, description, value, onChange }) => {
+    return (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 0", borderBottom: `1px solid ${tokens.color.border.subtle}` }}>
+            <div>
+                <div style={{ fontFamily: tokens.font.sans, fontSize: "12px", fontWeight: 600, color: tokens.color.text.primary, marginBottom: 2 }}>{label}</div>
+                {description && <div style={{ fontFamily: tokens.font.sans, fontSize: "10px", color: tokens.color.text.tertiary }}>{description}</div>}
+            </div>
+            <div
+                onClick={() => onChange?.(!value)}
+                style={{
+                    width: 36, height: 20, borderRadius: "10px", flexShrink: 0,
+                    background: value ? tokens.color.lime.base : "rgba(255,255,255,0.1)",
+                    position: "relative", cursor: "pointer",
+                    transition: `background ${tokens.motion.duration.fast}`,
+                }}
+            >
+                <div style={{
+                    width: 14, height: 14, borderRadius: "50%", background: "#fff",
+                    position: "absolute", top: 3, left: value ? 19 : 3,
+                    transition: `left ${tokens.motion.duration.fast}`,
+                }} />
+            </div>
+        </div>
+    );
+};
+
+/**
+ * KEYBINDING ROW — Settings page keybinding display
+ */
+export const KeybindRow = ({ action, keys }) => (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 0", borderBottom: `1px solid ${tokens.color.border.subtle}` }}>
+        <span style={{ fontFamily: tokens.font.sans, fontSize: "11px", color: tokens.color.text.secondary }}>{action}</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
+            {keys.map((k, i) => (
+                <span key={i}>
+                    <Kbd>{k}</Kbd>
+                    {i < keys.length - 1 && <span style={{ fontFamily: tokens.font.mono, fontSize: "10px", color: tokens.color.text.tertiary, margin: "0 2px" }}>+</span>}
+                </span>
+            ))}
         </div>
     </div>
 );
 
-const TypeSample = ({ label, style: s, sample = "The quick terminal" }) => (
-    <div style={{ marginBottom: 16 }}>
-        <div style={{ fontFamily: tokens.font.mono, fontSize: 9, color: tokens.color.text.tertiary, marginBottom: 4, textTransform: "uppercase", letterSpacing: tokens.letterSpacing.widest }}>{label}</div>
-        <div style={s}>{sample}</div>
-    </div>
-);
+// ════════════════════════════════════════════════════════════════════════
+// SECTION 6 — NAVIGATION UX FIX DOCUMENTATION
+// ════════════════════════════════════════════════════════════════════════
+/**
+ * NAV ARCHITECTURE — BEFORE vs AFTER
+ * ────────────────────────────────────
+ * BEFORE (broken):
+ *   Sidebar nav item [person icon]  → /profile
+ *   Sidebar bottom [avatar button]  → /profile
+ *   = Two separate paths to the same destination = confusion
+ *
+ * AFTER (fixed):
+ *   Sidebar nav item [person icon]  → REMOVED or repurposed to Leaderboard (/leaderboard)
+ *   Sidebar bottom [avatar button]  → opens UserPopover (inline quick-access)
+ *   UserPopover → "View Profile"    → /profile
+ *   UserPopover → "System Settings" → /settings
+ *   = Single purposeful path per destination
+ *
+ * IMPLEMENTATION NOTES for agent:
+ *   1. Remove the "Profile & Medals" item from NAV_ITEMS array
+ *      (or change its path to "/leaderboard" and update icon + label)
+ *   2. Bottom avatar onClick → toggle `popoverOpen` state (NOT router.push)
+ *   3. Render <UserPopover> inside the sidebar, positioned absolute
+ *      above the avatar, when popoverOpen === true
+ *   4. Close popover on click-outside (use useClickOutside hook)
+ *   5. UserPopover's "View Profile" → router.push("/profile")
+ *   6. UserPopover's "System Settings" → router.push("/settings")
+ */
+export const NAV_ARCHITECTURE_NOTES = "See JSDoc above for full nav fix documentation";
 
-export default function AshbornDesignSystem() {
+// ════════════════════════════════════════════════════════════════════════
+// DEFAULT EXPORT — Design System v2 Documentation Page
+// ════════════════════════════════════════════════════════════════════════
+export default function AshbornDesignSystemV2() {
     const [toasts, setToasts] = useState([]);
-    const [loading, setLoading] = useState(false);
-    const [inputVal, setInputVal] = useState("");
-    const [progress, setProgress] = useState(65);
-    const [alerts, setAlerts] = useState(["warning", "error"]);
+    const [showOnboard, setShowOnboard] = useState(false);
+    const [showTour, setShowTour] = useState(false);
+    const [toggles, setToggles] = useState({ notifications: true, highContrast: false, sounds: true, animations: true });
+    const [xp, setXp] = useState(65);
 
     useEffect(() => {
-        const style = document.createElement("style");
-        style.textContent = globalStyles;
-        document.head.appendChild(style);
-        return () => style.remove();
+        const s = document.createElement("style");
+        s.textContent = globalStyles;
+        document.head.appendChild(s);
+        return () => s.remove();
     }, []);
 
-    const addToast = (variant) => {
-        const messages = { success: "Lab verified successfully.", warning: "CPU usage above 80%.", error: "Connection lost to sandbox.", info: "New lab available: Networking II." };
-        const id = Date.now();
-        setToasts((t) => [...t, { id, variant, message: messages[variant] }]);
-    };
-
-    const handleLoadingDemo = () => {
-        setLoading(true);
-        setTimeout(() => setLoading(false), 2000);
-    };
+    const mockUser = { username: "HERO@TERMINAL", initial: "H", level: 6, rank: "System Guardian", xpCurrent: 1156, xpNext: 1500, streakDays: 3 };
+    const mockSkills = { filesystem: 72, permissions: 45, networking: 30, scripting: 18, processes: 60 };
+    const mockActivity = [0, 0, 1, 0, 2, 1, 0, 0, 3, 2, 1, 0, 0, 2, 4, 3, 2, 1, 0, 0, 1, 2, 3, 2, 1, 0, 0, 2, 3, 4];
+    const mockAchievements = [
+        { id: 1, icon: "⚡", name: "First Command", desc: "Execute your first command", earned: true, xp: 100, progress: 100 },
+        { id: 2, icon: "📁", name: "Navigator", desc: "Use cd to move 10 directories", earned: false, xp: 75, progress: 40 },
+        { id: 3, icon: "🔑", name: "Key Holder", desc: "Change file permissions", earned: false, xp: 150, progress: 0 },
+        { id: 4, icon: "🔥", name: "On Fire", desc: "3-day activity streak", earned: true, xp: 200, progress: 100 },
+        { id: 5, icon: "🌐", name: "Networker", desc: "Connect to a remote host", earned: false, xp: 250, progress: 0 },
+        { id: 6, icon: "📜", name: "Scriptor", desc: "Write your first shell script", earned: false, xp: 300, progress: 10 },
+    ];
 
     return (
-        <div style={{ background: tokens.color.bg.base, color: tokens.color.text.primary, fontFamily: tokens.font.sans, minHeight: "100vh", padding: `${tokens.space[8]} ${tokens.space[6]}`, maxWidth: 900 }}>
+        <div style={{ background: tokens.color.bg.base, color: tokens.color.text.primary, fontFamily: tokens.font.sans, minHeight: "100vh", padding: "32px 24px", maxWidth: 900 }}>
 
-            {/* HEADER */}
-            <div style={{ marginBottom: tokens.space[10], borderBottom: `1px solid ${tokens.color.border.default}`, paddingBottom: tokens.space[6] }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-                    <div style={{ width: 20, height: 20, background: tokens.color.lime.base, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                        <span style={{ fontFamily: tokens.font.mono, fontSize: 10, fontWeight: 800, color: "#0D0D0F" }}>AL</span>
+            {/* SYSTEM HEADER */}
+            <div style={{ marginBottom: 40, paddingBottom: 24, borderBottom: `1px solid ${tokens.color.border.default}` }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                    <div style={{ width: 22, height: 22, background: tokens.color.lime.base, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <span style={{ fontFamily: tokens.font.mono, fontSize: "9px", fontWeight: 700, color: tokens.color.text.inverse }}>AL</span>
                     </div>
-                    <span style={{ fontFamily: tokens.font.mono, fontSize: tokens.fontSize.xs, color: tokens.color.lime.base, letterSpacing: tokens.letterSpacing.widest, textTransform: "uppercase" }}>Ashborn Linux</span>
+                    <Label color={tokens.color.lime.base}>Ashborn Linux</Label>
                 </div>
-                <h1 style={{ fontFamily: tokens.font.sans, fontSize: tokens.fontSize["3xl"], fontWeight: tokens.fontWeight.black, color: tokens.color.text.primary, lineHeight: 1.1, marginBottom: 8 }}>Design System</h1>
-                <p style={{ fontFamily: tokens.font.sans, fontSize: tokens.fontSize.md, color: tokens.color.text.secondary, lineHeight: 1.6 }}>
-                    Single source of truth for colors, typography, spacing, and UI components.
+                <Display size="xl" style={{ marginBottom: 6 }}>Design System v2</Display>
+                <p style={{ fontFamily: tokens.font.sans, fontSize: "13px", color: tokens.color.text.secondary, lineHeight: 1.6 }}>
+                    Full overhaul addressing UX bottlenecks. New typography, new components, nav architecture fix.
                 </p>
             </div>
 
-            {/* ── COLOR PALETTE ── */}
-            <Section title="Color Palette">
-                <Label>Backgrounds — elevation order</Label>
-                <Row gap={8}>
-                    {Object.entries(tokens.color.bg).map(([k, v]) => <ColorSwatch key={k} name={k} value={v} />)}
-                </Row>
-                <div style={{ marginTop: 16 }} />
-                <Label>Accent — Lime (system / online / active)</Label>
-                <Row gap={8}>
-                    {["50", "100", "200", "base", "600", "800"].map((k) => <ColorSwatch key={k} name={k} value={tokens.color.lime[k] || tokens.color.lime.base} />)}
-                </Row>
-                <div style={{ marginTop: 16 }} />
-                <Label>Accent — Amber (XP / level / streak)</Label>
-                <Row gap={8}>
-                    {["50", "100", "200", "base", "600", "800"].map((k) => <ColorSwatch key={k} name={k} value={tokens.color.amber[k] || tokens.color.amber.base} />)}
-                </Row>
-                <div style={{ marginTop: 16 }} />
-                <Label>Semantic</Label>
-                <Row gap={8}>
-                    {Object.entries(tokens.color.semantic).map(([k, v]) => <ColorSwatch key={k} name={k} value={v} />)}
-                </Row>
-                <div style={{ marginTop: 16 }} />
-                <Label>Terminal Syntax</Label>
-                <div style={{ background: tokens.color.bg.input, padding: 16, border: `1px solid ${tokens.color.border.default}` }}>
-                    {Object.entries(tokens.color.terminal).map(([k, v]) => (
-                        <span key={k} style={{ fontFamily: tokens.font.mono, fontSize: tokens.fontSize.sm, color: v, marginRight: 16, display: "inline-block", marginBottom: 4 }}>{k}</span>
-                    ))}
-                </div>
-            </Section>
-
-            {/* ── TYPOGRAPHY ── */}
-            <Section title="Typography">
-                <Label>Sans — Syne (UI chrome)</Label>
-                <TypeSample label="3xl / 800 — Display" style={{ fontFamily: tokens.font.sans, fontSize: tokens.fontSize["3xl"], fontWeight: 800, color: tokens.color.text.primary, lineHeight: 1.1 }} sample="System Guardian" />
-                <TypeSample label="xl / 700 — Heading" style={{ fontFamily: tokens.font.sans, fontSize: tokens.fontSize.xl, fontWeight: 700, color: tokens.color.text.primary }} sample="Lab 7: Process Management" />
-                <TypeSample label="md / 600 — Body Bold" style={{ fontFamily: tokens.font.sans, fontSize: tokens.fontSize.md, fontWeight: 600, color: tokens.color.text.primary }} sample="Current Objective" />
-                <TypeSample label="sm / 400 — Body" style={{ fontFamily: tokens.font.sans, fontSize: tokens.fontSize.sm, fontWeight: 400, color: tokens.color.text.secondary, lineHeight: 1.6 }} sample="Use the kill command to terminate the rogue process on PID 156." />
-                <TypeSample label="xs / 700 — Label" style={{ fontFamily: tokens.font.sans, fontSize: tokens.fontSize.xs, fontWeight: 700, color: tokens.color.text.tertiary, textTransform: "uppercase", letterSpacing: tokens.letterSpacing.widest }} sample="Verifier Status" />
-                <Divider label="mono" />
-                <div style={{ marginTop: 16 }} />
-                <Label>Mono — JetBrains Mono (terminal / data)</Label>
-                <div style={{ background: tokens.color.bg.input, padding: 16, border: `1px solid ${tokens.color.border.default}` }}>
-                    <TypeSample label="base / terminal output" style={{ fontFamily: tokens.font.mono, fontSize: tokens.fontSize.base, color: tokens.color.terminal.output, lineHeight: 1.8 }} sample="hero@linux-lab:~$ ps aux" />
-                    <TypeSample label="sm / command" style={{ fontFamily: tokens.font.mono, fontSize: tokens.fontSize.sm, color: tokens.color.terminal.command }} sample="kill -9 156" />
-                    <TypeSample label="xs / status bar" style={{ fontFamily: tokens.font.mono, fontSize: tokens.fontSize.xs, color: tokens.color.terminal.highlight }} sample="1156 / 1500 XP" />
-                </div>
-            </Section>
-
-            {/* ── BUTTONS ── */}
-            <Section title="Buttons">
-                <Label>Variants</Label>
-                <Row gap={8}>
-                    <Button variant="primary">Start Lab</Button>
-                    <Button variant="lime">Verify</Button>
-                    <Button variant="secondary">Cancel</Button>
-                    <Button variant="ghost">Skip</Button>
-                    <Button variant="danger">Reset VM</Button>
-                </Row>
-                <div style={{ marginTop: 12 }} />
-                <Label>Sizes</Label>
-                <Row gap={8}>
-                    <Button variant="primary" size="sm">Small</Button>
-                    <Button variant="primary" size="md">Medium</Button>
-                    <Button variant="primary" size="lg">Large</Button>
-                </Row>
-                <div style={{ marginTop: 12 }} />
-                <Label>States</Label>
-                <Row gap={8}>
-                    <Button variant="primary" disabled>Disabled</Button>
-                    <Button variant="lime" loading={loading} onClick={handleLoadingDemo}>{loading ? "Running..." : "Run Command"}</Button>
-                    <Button variant="secondary" icon="▲">With Icon</Button>
-                </Row>
-            </Section>
-
-            {/* ── BADGES ── */}
-            <Section title="Badges">
-                <Row gap={8}>
-                    <Badge variant="lime" dot>Online</Badge>
-                    <Badge variant="amber" dot>Streak Active</Badge>
-                    <Badge variant="level">LVL 6</Badge>
-                    <Badge variant="error">Offline</Badge>
-                    <Badge variant="info">Novice</Badge>
-                    <Badge variant="ghost">Draft</Badge>
-                </Row>
-            </Section>
-
-            {/* ── TAGS ── */}
-            <Section title="Tags">
-                <Row gap={6}>
-                    <Tag variant="lime">bash</Tag>
-                    <Tag variant="amber">root</Tag>
-                    <Tag variant="error">deprecated</Tag>
-                    <Tag variant="info">networking</Tag>
-                    <Tag variant="ghost">lab-7</Tag>
-                    <Tag variant="ghost" onRemove={() => { }}>removable</Tag>
-                </Row>
-            </Section>
-
-            {/* ── PROGRESS ── */}
-            <Section title="Progress Bars">
-                <div style={{ display: "flex", flexDirection: "column", gap: 16, maxWidth: 400 }}>
-                    <div>
-                        <ProgressBar value={progress} label="XP Progress" showValue />
-                    </div>
-                    <div>
-                        <ProgressBar value={82} variant="health" label="CPU Usage" showValue height={6} />
-                    </div>
-                    <div>
-                        <ProgressBar value={34} variant="health" label="Memory" showValue height={6} />
-                    </div>
-                    <Row gap={8}>
-                        <Button variant="secondary" size="sm" onClick={() => setProgress((p) => Math.max(0, p - 10))}>−10%</Button>
-                        <Button variant="secondary" size="sm" onClick={() => setProgress((p) => Math.min(100, p + 10))}>+10%</Button>
-                    </Row>
-                </div>
-            </Section>
-
-            {/* ── INPUT ── */}
-            <Section title="Input">
-                <div style={{ display: "flex", flexDirection: "column", gap: 10, maxWidth: 340 }}>
-                    <Input placeholder="Search commands..." value={inputVal} onChange={(e) => setInputVal(e.target.value)} />
-                    <Input placeholder="$ enter command" mono prefix="$" />
-                    <Input placeholder="Find PID..." suffix="PID" />
-                    <Input placeholder="Error state" error />
-                    <Input placeholder="Disabled input" disabled />
-                </div>
-            </Section>
-
-            {/* ── KEYBOARD SHORTCUTS ── */}
-            <Section title="Keyboard">
-                <Row gap={6}>
-                    <Kbd>Ctrl</Kbd><span style={{ color: tokens.color.text.tertiary }}>+</span>
-                    <Kbd>C</Kbd>
-                    <span style={{ color: tokens.color.text.tertiary, margin: "0 8px" }}>kill process</span>
-                    <Kbd>Tab</Kbd>
-                    <span style={{ color: tokens.color.text.tertiary, margin: "0 8px" }}>autocomplete</span>
-                    <Kbd>↑</Kbd>
-                    <span style={{ color: tokens.color.text.tertiary, margin: "0 8px" }}>history</span>
-                </Row>
-            </Section>
-
-            {/* ── STAT CARDS ── */}
-            <Section title="Stat Cards">
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 8 }}>
-                    <StatCard label="Total XP" value="4,821" accent="lime" delta="+120" />
-                    <StatCard label="Current Level" value="6" accent="amber" />
-                    <StatCard label="Labs Done" value="18" accent="neutral" unit="/ 40" />
-                    <StatCard label="Streak" value="3" accent="amber" unit="days" />
-                </div>
-            </Section>
-
-            {/* ── CARDS ── */}
-            <Section title="Cards">
-                <div style={{ display: "flex", flexDirection: "column", gap: 8, maxWidth: 400 }}>
-                    <Card variant="default">
-                        <Label>Default Card</Label>
-                        <p style={{ fontFamily: tokens.font.sans, fontSize: tokens.fontSize.sm, color: tokens.color.text.secondary }}>Standard raised surface for content grouping.</p>
-                    </Card>
-                    <Card variant="active">
-                        <Label>Active / Selected Card</Label>
-                        <p style={{ fontFamily: tokens.font.sans, fontSize: tokens.fontSize.sm, color: tokens.color.text.secondary }}>Lime-accented. Use for currently selected labs or active states.</p>
-                    </Card>
-                    <Card variant="objective">
-                        <Label>Objective Card</Label>
-                        <p style={{ fontFamily: tokens.font.sans, fontSize: tokens.fontSize.sm, color: tokens.color.text.secondary }}>Amber-accented. Use in mission/objective/task panels.</p>
-                    </Card>
-                    <Card variant="locked">
-                        <Label>Locked Card</Label>
-                        <p style={{ fontFamily: tokens.font.sans, fontSize: tokens.fontSize.sm, color: tokens.color.text.secondary }}>Greyed out. Used for content gated behind level/progress requirements.</p>
-                    </Card>
-                </div>
-            </Section>
-
-            {/* ── ALERTS ── */}
-            <Section title="Alerts">
-                <div style={{ display: "flex", flexDirection: "column", gap: 8, maxWidth: 480 }}>
-                    <Alert variant="success" title="Lab Verified" description="All steps completed successfully. +120 XP awarded." />
-                    {alerts.includes("warning") && (
-                        <Alert variant="warning" title="High CPU Usage" description="Process consuming 89% CPU. Consider terminating." onDismiss={() => setAlerts((a) => a.filter((x) => x !== "warning"))} />
-                    )}
-                    {alerts.includes("error") && (
-                        <Alert variant="error" title="Connection Lost" description="Sandbox connection dropped. Attempting to reconnect..." onDismiss={() => setAlerts((a) => a.filter((x) => x !== "error"))} />
-                    )}
-                    <Alert variant="info" title="New Lab Available" description="Networking II has been unlocked. Start when ready." />
-                    {(!alerts.includes("warning") || !alerts.includes("error")) && (
-                        <Button variant="ghost" size="sm" onClick={() => setAlerts(["warning", "error"])}>Restore dismissed alerts</Button>
-                    )}
-                </div>
-            </Section>
-
-            {/* ── AVATARS ── */}
-            <Section title="Avatars">
-                <Row gap={12}>
-                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-                        <Avatar initials="H" size="sm" online={true} />
-                        <Label>sm / online</Label>
-                    </div>
-                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-                        <Avatar initials="H" size="md" online={true} />
-                        <Label>md / online</Label>
-                    </div>
-                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-                        <Avatar initials="H" size="lg" online={false} />
-                        <Label>lg / offline</Label>
-                    </div>
-                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-                        <Avatar initials="H" size="lg" />
-                        <Label>lg / no status</Label>
-                    </div>
-                </Row>
-            </Section>
-
-            {/* ── DIVIDERS ── */}
-            <Section title="Dividers">
-                <div style={{ display: "flex", flexDirection: "column", gap: 16, maxWidth: 400 }}>
-                    <Divider />
-                    <Divider label="or continue with" />
-                    <div style={{ display: "flex", alignItems: "center", height: 40, gap: 12 }}>
-                        <span style={{ fontFamily: tokens.font.mono, fontSize: tokens.fontSize.sm, color: tokens.color.text.secondary }}>left</span>
-                        <Divider direction="vertical" />
-                        <span style={{ fontFamily: tokens.font.mono, fontSize: tokens.fontSize.sm, color: tokens.color.text.secondary }}>right</span>
-                    </div>
-                </div>
-            </Section>
-
-            {/* ── TOASTS ── */}
-            <Section title="Toasts">
-                <Row gap={8}>
-                    <Button variant="secondary" size="sm" onClick={() => addToast("success")}>Success Toast</Button>
-                    <Button variant="secondary" size="sm" onClick={() => addToast("warning")}>Warning Toast</Button>
-                    <Button variant="secondary" size="sm" onClick={() => addToast("error")}>Error Toast</Button>
-                    <Button variant="secondary" size="sm" onClick={() => addToast("info")}>Info Toast</Button>
-                </Row>
-            </Section>
-
-            {/* ── MOTION TOKENS ── */}
-            <Section title="Motion Tokens">
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, maxWidth: 500 }}>
-                    {Object.entries(tokens.motion.duration).map(([k, v]) => (
-                        <div key={k} style={{ background: tokens.color.bg.surface, border: `1px solid ${tokens.color.border.default}`, padding: "10px 12px", display: "flex", justifyContent: "space-between" }}>
-                            <span style={{ fontFamily: tokens.font.sans, fontSize: tokens.fontSize.xs, color: tokens.color.text.secondary, textTransform: "uppercase", letterSpacing: tokens.letterSpacing.wider }}>{k}</span>
-                            <span style={{ fontFamily: tokens.font.mono, fontSize: tokens.fontSize.xs, color: tokens.color.lime.base }}>{v}</span>
+            {/* ── TYPOGRAPHY v2 ── */}
+            <div style={{ marginBottom: 40 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}><div style={{ width: 2, height: 14, background: tokens.color.lime.base }} /><Label color={tokens.color.lime.base}>Typography v2</Label></div>
+                <div style={{ background: tokens.color.bg.surface, border: `1px solid ${tokens.color.border.default}`, padding: 20, marginBottom: 8 }}>
+                    <Label style={{ marginBottom: 12 }}>Russo One — Display / Headings</Label>
+                    {[["2xl", "56px"], ["xl", "42px"], ["lg", "32px"], ["md", "24px"], ["sm", "18px"]].map(([s, px]) => (
+                        <div key={s} style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 10, borderBottom: `1px solid ${tokens.color.border.subtle}`, paddingBottom: 10 }}>
+                            <Mono size="xs" color={tokens.color.text.tertiary} style={{ minWidth: 50 }}>{px}</Mono>
+                            <Display size={s}>The Terminal</Display>
                         </div>
                     ))}
                 </div>
-            </Section>
+                <div style={{ background: tokens.color.bg.input, border: `1px solid ${tokens.color.border.default}`, padding: 20 }}>
+                    <Label style={{ marginBottom: 12 }}>JetBrains Mono — Code / Data</Label>
+                    <div style={{ fontFamily: tokens.font.mono, fontSize: "12px", color: tokens.color.terminal.prompt, lineHeight: 2 }}>
+                        <span style={{ color: tokens.color.terminal.prompt }}>[novice] hero@linux-lab:~$ </span>
+                        <span style={{ color: tokens.color.terminal.command }}>ps aux</span><br />
+                        <span style={{ color: tokens.color.terminal.output }}>hero   156   8.9   rogue_proc</span><br />
+                        <span style={{ color: tokens.color.terminal.highlight }}>hero   189   0.0   bash</span>
+                    </div>
+                </div>
+            </div>
 
-            {/* ── SPACING SCALE ── */}
-            <Section title="Spacing Scale (4px grid)">
-                <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", gap: 8 }}>
-                    {Object.entries(tokens.space).map(([k, v]) => (
-                        <div key={k} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                            <div style={{ width: parseInt(v) > 0 ? v : "4px", height: v === "0px" ? "4px" : v, background: tokens.color.lime.alpha[12], border: `1px solid ${tokens.color.lime.alpha[20]}`, maxWidth: 80 }} />
-                            <span style={{ fontFamily: tokens.font.mono, fontSize: 8, color: tokens.color.text.tertiary }}>{v}</span>
+            {/* ── XP RING ── */}
+            <div style={{ marginBottom: 40 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}><div style={{ width: 2, height: 14, background: tokens.color.lime.base }} /><Label color={tokens.color.lime.base}>XP Ring</Label></div>
+                <div style={{ display: "flex", gap: 24, alignItems: "center" }}>
+                    <XPRing level={6} xpCurrent={1156} xpNext={1500} size={96} accent="lime" />
+                    <XPRing level={6} xpCurrent={1156} xpNext={1500} size={120} accent="amber" />
+                    <XPRing level={1} xpCurrent={10} xpNext={150} size={64} accent="lime" />
+                </div>
+            </div>
+
+            {/* ── ACTIVITY SPARK ── */}
+            <div style={{ marginBottom: 40 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}><div style={{ width: 2, height: 14, background: tokens.color.lime.base }} /><Label color={tokens.color.lime.base}>Activity Spark (replaces heatmap)</Label></div>
+                <div style={{ background: tokens.color.bg.surface, border: `1px solid ${tokens.color.border.default}`, padding: "16px 20px", maxWidth: 500 }}>
+                    <ActivitySpark data={mockActivity} streak={3} />
+                </div>
+                <p style={{ fontFamily: tokens.font.sans, fontSize: "11px", color: tokens.color.text.tertiary, marginTop: 8 }}>
+                    Space used: ~56px total height (vs ~180px for the old heatmap grid)
+                </p>
+            </div>
+
+            {/* ── SKILL RADAR ── */}
+            <div style={{ marginBottom: 40 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}><div style={{ width: 2, height: 14, background: tokens.color.lime.base }} /><Label color={tokens.color.lime.base}>Skill Radar (Profile page)</Label></div>
+                <div style={{ display: "flex", gap: 24, alignItems: "flex-start", flexWrap: "wrap" }}>
+                    <div style={{ background: tokens.color.bg.surface, border: `1px solid ${tokens.color.border.default}`, padding: 20 }}>
+                        <SkillRadar skills={mockSkills} size={220} />
+                    </div>
+                    <div style={{ background: tokens.color.bg.surface, border: `1px solid ${tokens.color.border.default}`, padding: 16 }}>
+                        <SkillRadar skills={{ filesystem: 5, permissions: 0, networking: 0, scripting: 0, processes: 10 }} size={180} />
+                        <p style={{ fontFamily: tokens.font.sans, fontSize: "10px", color: tokens.color.text.tertiary, marginTop: 8, textAlign: "center" }}>New user state</p>
+                    </div>
+                </div>
+            </div>
+
+            {/* ── ACHIEVEMENT GRID ── */}
+            <div style={{ marginBottom: 40 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}><div style={{ width: 2, height: 14, background: tokens.color.lime.base }} /><Label color={tokens.color.lime.base}>Achievement Grid (replaces flat list)</Label></div>
+                <AchievementGrid achievements={mockAchievements} />
+            </div>
+
+            {/* ── ACHIEVEMENT TOAST (FIXED) ── */}
+            <div style={{ marginBottom: 40 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}><div style={{ width: 2, height: 14, background: tokens.color.lime.base }} /><Label color={tokens.color.lime.base}>Achievement Toast (unified, fixed)</Label></div>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
+                    <Button variant="secondary" size="sm" onClick={() => setToasts(t => [...t, { id: Date.now(), xp: 10, achievement: { icon: "⚡", name: "First Command!", desc: "Execute your first command" } }])}>
+                        Fire XP + Achievement
+                    </Button>
+                    <Button variant="secondary" size="sm" onClick={() => setToasts(t => [...t, { id: Date.now(), xp: 50, achievement: null }])}>
+                        XP Only Toast
+                    </Button>
+                </div>
+            </div>
+
+            {/* ── ARENA GATE ── */}
+            <div style={{ marginBottom: 40 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}><div style={{ width: 2, height: 14, background: tokens.color.lime.base }} /><Label color={tokens.color.lime.base}>Arena Gate (locked state redesign)</Label></div>
+                <div style={{ border: `1px solid ${tokens.color.border.default}`, maxWidth: 600 }}>
+                    <ArenaGate
+                        userLevel={1}
+                        requiredLevel={10}
+                        challenges={[
+                            { name: "Broken Bootloader", difficulty: "hard", category: "system" },
+                            { name: "Ghost Process", difficulty: "hard", category: "processes" },
+                            { name: "Corrupted Filesystem", difficulty: "extreme", category: "filesystem" },
+                        ]}
+                        onReturn={() => { }}
+                    />
+                </div>
+            </div>
+
+            {/* ── SETTINGS COMPONENTS ── */}
+            <div style={{ marginBottom: 40 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}><div style={{ width: 2, height: 14, background: tokens.color.lime.base }} /><Label color={tokens.color.lime.base}>Settings Components (expanded)</Label></div>
+                <SettingsSection title="User Identity" icon="👤" subtitle="Your node handle and authentication">
+                    <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+                        <div style={{ width: 48, height: 48, background: tokens.color.lime.base, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: tokens.font.sans, fontSize: "18px", fontWeight: 800, color: tokens.color.text.inverse, flexShrink: 0 }}>H</div>
+                        <div>
+                            <Display size="sm">hero</Display>
+                            <Label style={{ marginTop: 2 }}>Current node handle</Label>
                         </div>
-                    ))}
-                </div>
-            </Section>
+                        <Button variant="ghost" size="sm" style={{ marginLeft: "auto" }}>Remap Identity</Button>
+                    </div>
+                </SettingsSection>
+                <SettingsSection title="Notifications" icon="🔔">
+                    <ToggleRow label="Achievement alerts" description="Show toast when earning achievements" value={toggles.notifications} onChange={(v) => setToggles(t => ({ ...t, notifications: v }))} />
+                    <ToggleRow label="Audio feedback" description="Play sounds on commands and XP gain" value={toggles.sounds} onChange={(v) => setToggles(t => ({ ...t, sounds: v }))} />
+                    <ToggleRow label="Animations" description="Enable UI transitions and effects" value={toggles.animations} onChange={(v) => setToggles(t => ({ ...t, animations: v }))} />
+                </SettingsSection>
+                <SettingsSection title="Keybindings" icon="⌨️" subtitle="Default keyboard shortcuts">
+                    <KeybindRow action="Open terminal" keys={["Ctrl", "T"]} />
+                    <KeybindRow action="Toggle sidebar" keys={["Ctrl", "B"]} />
+                    <KeybindRow action="Next lab" keys={["Ctrl", "→"]} />
+                    <KeybindRow action="Verify step" keys={["Ctrl", "Enter"]} />
+                    <KeybindRow action="Command history up" keys={["↑"]} />
+                </SettingsSection>
+                <SettingsSection title="Danger Zone" accent="danger" icon="⚠" subtitle="Irreversible actions — proceed with caution">
+                    <p style={{ fontFamily: tokens.font.sans, fontSize: "12px", color: tokens.color.text.secondary, lineHeight: 1.6, marginBottom: 16 }}>
+                        Purging your workstation will permanently delete all local lab progress, XP, and accumulated data. This action cannot be undone.
+                    </p>
+                    <Button variant="danger" size="md">Uninstall System Profile</Button>
+                </SettingsSection>
+            </div>
 
-            {/* TOAST CONTAINER — fixed bottom right */}
-            {toasts.length > 0 && (
-                <div style={{ position: "fixed", bottom: 20, right: 20, display: "flex", flexDirection: "column", gap: 8, zIndex: tokens.z.toast }}>
-                    {toasts.map((toast) => (
-                        <Toast key={toast.id} variant={toast.variant} message={toast.message} onDone={() => setToasts((t) => t.filter((x) => x.id !== toast.id))} />
-                    ))}
+            {/* ── NAV UX FIX DOC ── */}
+            <div style={{ marginBottom: 40 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}><div style={{ width: 2, height: 14, background: tokens.color.lime.base }} /><Label color={tokens.color.lime.base}>Nav Architecture Fix</Label></div>
+                <div style={{ background: tokens.color.bg.surface, border: `1px solid ${tokens.color.border.default}`, padding: "16px 20px" }}>
+                    <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
+                        <div style={{ flex: 1, minWidth: 200 }}>
+                            <Badge variant="error" style={{ marginBottom: 12 }}>BEFORE — broken</Badge>
+                            <div style={{ marginTop: 8 }}>
+                                {["Nav: Person icon → /profile", "Bottom: Avatar button → /profile", "= Two routes, same dest = confusion"].map((t, i) => (
+                                    <div key={i} style={{ fontFamily: tokens.font.mono, fontSize: "10px", color: i < 2 ? tokens.color.semantic.error : tokens.color.text.tertiary, marginBottom: 4 }}>{t}</div>
+                                ))}
+                            </div>
+                        </div>
+                        <div style={{ flex: 1, minWidth: 200 }}>
+                            <Badge variant="lime" style={{ marginBottom: 12 }}>AFTER — fixed</Badge>
+                            <div style={{ marginTop: 8 }}>
+                                {["Nav: Person icon → /leaderboard", "Bottom: Avatar → UserPopover (inline)", "Popover: 'View Profile' → /profile", "Popover: 'Settings' → /settings"].map((t, i) => (
+                                    <div key={i} style={{ fontFamily: tokens.font.mono, fontSize: "10px", color: tokens.color.lime.base, marginBottom: 4 }}>{t}</div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
                 </div>
+            </div>
+
+            {/* MODALS */}
+            {showOnboard && <OnboardingModal onSubmit={(u) => { console.log(u); setShowOnboard(false); }} />}
+            {showTour && (
+                <TourOverlay
+                    step={{ title: "The Command Line", body: "This is your terminal. You type commands here and the system responds. Let's try your first command!", prompt: "pwd" }}
+                    stepNum={1} totalSteps={4}
+                    onSkip={() => setShowTour(false)}
+                    onNext={() => setShowTour(false)}
+                />
             )}
+            <div style={{ display: "flex", gap: 8, marginBottom: 40, flexWrap: "wrap" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", marginBottom: 8 }}><div style={{ width: 2, height: 14, background: tokens.color.lime.base }} /><Label color={tokens.color.lime.base}>Modal Components</Label></div>
+                <Button variant="secondary" size="sm" onClick={() => setShowOnboard(true)}>Preview Onboarding Modal</Button>
+                <Button variant="secondary" size="sm" onClick={() => setShowTour(true)}>Preview Tour Overlay</Button>
+            </div>
+
+            {/* TOAST CONTAINER */}
+            <div style={{ position: "fixed", bottom: 20, right: 20, display: "flex", flexDirection: "column", gap: 8, zIndex: tokens.z.toast }}>
+                {toasts.map((t) => (
+                    <AchievementToast key={t.id} xp={t.xp} achievement={t.achievement} onDone={() => setToasts(ts => ts.filter(x => x.id !== t.id))} />
+                ))}
+            </div>
         </div>
     );
 }

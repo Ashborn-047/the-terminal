@@ -44,7 +44,7 @@ test.describe('Curriculum and Lab Flow', () => {
         await page.goto('/');
         
         // Wait for activity bar to be visible and select the specific navigation button
-        const curriculumLink = page.locator('aside').getByRole('button', { name: 'Curriculum' });
+        const curriculumLink = page.getByTestId('nav-item-curriculum');
         await expect(curriculumLink).toBeVisible({ timeout: 15000 });
         await curriculumLink.click();
 

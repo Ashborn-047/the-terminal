@@ -2,20 +2,19 @@ import React, { Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AshbornLayout as MainLayout } from './components/layout/AshbornLayout';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { WelcomeModal } from './components/onboarding/WelcomeModal';
+import { OnboardingModal } from './components/ui/AshbornDesignSystem';
 import { useUIStore } from './stores/uiStore';
 import { useLabStore } from './stores/labStore';
 import { INITIAL_LABS } from './data/labs/initial';
 import { logger } from './utils/logger';
 import { ToastProvider } from './components/ToastNotification';
-import { OnboardingWalkthrough } from './components/onboarding/OnboardingWalkthrough';
 import { LevelUpModal } from './components/gamification/LevelUpModal';
 import { ProtectedRoute } from './components/layout/ProtectedRoute';
 import { ConnectionBanner } from './components/ui/ConnectionBanner';
 import { spacetime } from './lib/spacetime';
 import { initSpacetimeSync } from './lib/spacetime/sync';
 import { globalStyles, tokens } from './components/ui/AshbornDesignSystem';
-
+import { useBootSequence, ColdBootScreen, WarmBootScreen } from './components/layout/BootSequence';
 // Lazy-loaded pages for code splitting
 const HomePage = React.lazy(() => import('./pages/HomePage'));
 const LabsPage = React.lazy(() => import('./pages/LabsPage'));
@@ -52,6 +51,7 @@ function AppContent() {
   const { setLabs, labs } = useLabStore();
   const [isAppReady, setIsAppReady] = React.useState(false);
   const [isServicesStarted, setIsServicesStarted] = React.useState(false);
+  const { bootState, bootType, user, onBootComplete } = useBootSequence();
 
   // Initialize SpacetimeDB subscription
   React.useEffect(() => {
@@ -121,9 +121,15 @@ function AppContent() {
   const handleOnboardingComplete = (name: string) => {
     logger.info('Onboarding complete for user:', name);
     setUsername(name);
-    // Advance to walkthrough phase (step 2)
-    setOnboardingStep(2);
+    setOnboardingStep(1); // Step 1 is the Tour Overlay
   };
+
+  // The Boot Sequence comes first and overtakes the screen
+  if (bootState === 'booting') {
+    return bootType === 'cold'
+      ? <ColdBootScreen onComplete={onBootComplete} />
+      : <WarmBootScreen user={user} onComplete={onBootComplete} />;
+  }
 
   // Readiness Gate — ensuring the "Healing" architecture is strictly respected
   if (!isAppReady) {
@@ -134,9 +140,6 @@ function AppContent() {
     <div style={{ height: '100%', width: '100%', backgroundColor: tokens.color.bg.base, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
       <ConnectionBanner />
       <MainLayout>
-        {onboardingStep === 0 && (
-          <WelcomeModal onComplete={handleOnboardingComplete} />
-        )}
         <ErrorBoundary section="Main Content">
           <Suspense fallback={<PageLoader />}>
             <Routes>
@@ -153,7 +156,6 @@ function AppContent() {
             </Routes>
           </Suspense>
         </ErrorBoundary>
-        <OnboardingWalkthrough />
         <LevelUpModal />
       </MainLayout>
     </div>

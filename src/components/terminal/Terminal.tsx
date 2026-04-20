@@ -14,8 +14,7 @@ import { TabCompleter } from '../../features/command-engine/shell/completion';
 import { useTerminalStore } from '../../stores/terminalStore';
 import { useGamificationStore } from '../../stores/gamificationStore';
 import { useHardcoreStore } from '../../stores/hardcoreStore';
-import { Signal } from '../../features/command-engine/types';
-import { tokens, Button } from '../ui/AshbornDesignSystem';
+import { tokens, Button, Display, Mono } from '../ui/AshbornDesignSystem';
 
 export const TerminalComponent: React.FC = () => {
     const terminalRef = useRef<HTMLDivElement>(null);
@@ -32,6 +31,26 @@ export const TerminalComponent: React.FC = () => {
     
     const [inputBuffer, setInputBuffer] = useState('');
     const inputBufferRef = useRef('');
+
+    const getPrompt = () => {
+        const hostname = 'linux-lab';
+        const user = userId || 'hero';
+        const path = cwd === `/home/${user}` ? '~' : cwd;
+        
+        const { streak, masteryBadge } = useGamificationStore.getState();
+        const streakText = streak.current >= 3 ? `\x1b[1;31m🔥 ${streak.current}d\x1b[0m ` : '';
+        
+        let badgeTitle = (masteryBadge || 'NOVICE').toUpperCase().replace('_', ' ');
+        if (masteryBadge === 'kernel_master') badgeTitle = 'KERNEL';
+        const badgeText = `\x1b[1;33m[${badgeTitle}]\x1b[0m `;
+        
+        // V2 Aesthetics: Use tokens and proper ANSI colors
+        const userColor = '\x1b[1;32m'; // Bold Lime
+        const pathColor = '\x1b[1;34m'; // Bold Blue
+        const reset = '\x1b[0m';
+        
+        return `${reset}${streakText}${badgeText}${userColor}${user}@${hostname}${reset}:${pathColor}${path}${reset}\x1b[32m$\x1b[0m `;
+    };
 
     useEffect(() => {
         if (!terminalRef.current) return;
@@ -133,11 +152,12 @@ export const TerminalComponent: React.FC = () => {
                 useTerminalStore.getState().setEngineStatus('ready');
                 console.info('[Terminal] Visual readiness confirmed. Engine is READY.');
             } else {
-                // Poll every 50ms until visible (max 10 seconds for safety in CI)
-                if (Date.now() - bootStart < 10000) {
+                // Poll every 50ms until visible
+                const timeout = isTesting ? 1000 : 10000; // Faster fallback for CI
+                if (Date.now() - bootStart < timeout) {
                     setTimeout(checkVisualReadiness, 50);
                 } else {
-                    console.warn('[Terminal] Visual readiness timeout. Forcing READY signal.', {
+                    console.warn(`[Terminal] Visual readiness timeout after ${timeout}ms. Forcing READY signal.`, {
                         prompt: promptExists,
                         text: text.substring(0, 100)
                     });
@@ -146,6 +166,7 @@ export const TerminalComponent: React.FC = () => {
             }
         };
 
+        term.write('\x1b[?25h'); // Show cursor
         checkVisualReadiness();
 
         // Handle Input
@@ -224,22 +245,6 @@ export const TerminalComponent: React.FC = () => {
         };
     }, []);
 
-    const getPrompt = () => {
-        const { streak, masteryBadge } = useGamificationStore.getState();
-        const { profile: hcProfile } = useHardcoreStore.getState();
-        
-        // Streak badge only if streak >= 3
-        const streakText = streak.current >= 3 ? `\x1b[1;31m🔥 ${streak.current}d\x1b[0m ` : '';
-        
-        let badgeTitle = masteryBadge.toUpperCase();
-        if (masteryBadge === 'kernel_master') badgeTitle = 'KERNEL';
-        const badgeText = `\x1b[1;33m[${badgeTitle}]\x1b[0m `;
-        
-        const currentCwd = shellEnvRef.current?.get('PWD') || cwd;
-        const displayCwd = currentCwd === '/' ? '/' : currentCwd.split('/').pop();
-        
-        return `${streakText}${badgeText}\x1b[1;37m${userId}@linux-lab:${displayCwd}$\x1b[0m `;
-    };
 
     const handleExecute = async (input: string) => {
         const term = xtermRef.current;
@@ -252,8 +257,10 @@ export const TerminalComponent: React.FC = () => {
         }
 
         try {
+            console.log('[Terminal] Executing command:', trimmed);
             // Using executeCommand from useTerminal hook to ensure side effects (labs, XP, etc.) are handled
             const result = await executeCommand(trimmed);
+            console.log('[Terminal] Command result received:', { exitCode: result?.exitCode, outputLen: result?.output?.length });
             
             if (result && result.stream) {
                 for await (const chunk of result.stream) {
@@ -339,7 +346,7 @@ export const TerminalComponent: React.FC = () => {
                         <Button 
                             variant="danger"
                             size="lg"
-                            style={{ mt: tokens.space[6], marginTop: tokens.space[6] }}
+                            style={{ marginTop: tokens.space[6] }}
                             onClick={() => window.location.reload()}
                         >
                             Respawn
@@ -347,9 +354,23 @@ export const TerminalComponent: React.FC = () => {
                     </div>
                 )}
 
+                {/* Header / Status Bar */}
+                <div style={{ height: '36px', borderBottom: `1px solid ${tokens.color.border.default}`, display: 'flex', alignItems: 'center', padding: '0 12px' }}>
+                    <Display size="sm" color={tokens.color.lime.base} style={{ letterSpacing: '0.1em' }}>LOCAL_SUBSYSTEM</Display>
+                    <div style={{ marginLeft: 'auto', display: 'flex', gap: 12 }}>
+                        <Mono size="xs" color={tokens.color.text.tertiary}>TTY: /dev/pts/0</Mono>
+                        <Mono size="xs" color={tokens.color.text.tertiary}>MODE: Master</Mono>
+                    </div>
+                </div>
+
                 <div 
                     ref={terminalRef} 
-                    style={{ width: '100%', height: '100%', overflow: 'hidden' }}
+                    style={{ 
+                        width: '100%', 
+                        height: '100%', 
+                        overflow: 'hidden',
+                        backgroundColor: tokens.color.bg.base // Visual safety against flickering
+                    }}
                     data-testid="terminal-container" 
                     data-engine-status={engineStatus}
                 />

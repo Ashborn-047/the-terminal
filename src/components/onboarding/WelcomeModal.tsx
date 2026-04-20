@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useUIStore } from '../../stores/uiStore';
 import { trackEvent } from '../../utils/analytics';
-import { tokens, Card, Input, Button, Alert } from '../ui/AshbornDesignSystem';
+import { tokens, Card, Input, Button, Display } from '../ui/AshbornDesignSystem';
 
 /**
  * WelcomeModal — per user_onboarding.md §5.1
@@ -50,15 +49,25 @@ export const WelcomeModal: React.FC<WelcomeModalProps> = ({ onComplete }) => {
     };
 
     return (
-        <div style={{
-            position: "fixed", inset: 0,
-            background: "rgba(13,13,15,0.95)",
-            backdropFilter: "blur(4px)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            zIndex: tokens.z.modal,
-            padding: tokens.space[4]
-        }}>
-            <Card style={{ maxWidth: 480, width: "100%", padding: tokens.space[8] }}>
+        <div 
+            className="al-grid"
+            style={{
+                position: "fixed", inset: 0,
+                background: tokens.color.bg.base,
+                backgroundImage: `radial-gradient(circle at 2px 2px, rgba(255,255,255,0.03) 1px, transparent 0)`,
+                backgroundSize: '24px 24px',
+                display: "flex", alignItems: "center", justifyContent: "center",
+                zIndex: tokens.z.modal,
+                padding: tokens.space[4]
+            }}
+        >
+            <div style={{
+                position: "fixed", inset: 0,
+                background: "radial-gradient(circle at 50% 50%, rgba(20,20,25,0) 0%, rgba(10,10,12,0.8) 100%)",
+                pointerEvents: "none"
+            }} />
+
+            <Card style={{ maxWidth: 480, width: "100%", padding: tokens.space[8], position: "relative", zIndex: 1 }}>
                 {/* ASCII Art Logo */}
                 <pre style={{ 
                     fontFamily: tokens.font.mono, fontSize: 10, 
@@ -72,13 +81,9 @@ export const WelcomeModal: React.FC<WelcomeModalProps> = ({ onComplete }) => {
    |_| |_| |_|\\___|   |_|\\___|_|  |_| |_| |_|_|_| |_|\\__,_|_|`}
                 </pre>
 
-                <h1 style={{ 
-                    fontFamily: tokens.font.sans, fontSize: tokens.fontSize["2xl"], 
-                    fontWeight: 800, textTransform: "uppercase", 
-                    color: tokens.color.text.primary, marginBottom: tokens.space[2] 
-                }}>
+                <Display size="lg" style={{ marginBottom: 16 }}>
                     Welcome, Learner
-                </h1>
+                </Display>
                 
                 <p style={{ 
                     fontFamily: tokens.font.sans, fontSize: tokens.fontSize.sm, 
@@ -96,8 +101,8 @@ export const WelcomeModal: React.FC<WelcomeModalProps> = ({ onComplete }) => {
                         mono
                     />
                     {error && (
-                        <div style={{ marginTop: tokens.space[2] }}>
-                             <Alert variant="error" description={error} />
+                        <div style={{ marginTop: tokens.space[2], color: "rgb(239, 68, 68)", fontSize: 10, fontFamily: tokens.font.mono, textTransform: 'uppercase', fontWeight: 700 }}>
+                             [ERROR]: {error}
                         </div>
                     )}
                 </div>
