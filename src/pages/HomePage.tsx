@@ -93,7 +93,7 @@ const HomePage: React.FC = () => {
                         }} />
                     </div>
 
-                    <Display size="xl" style={{ marginBottom: 6 }}>Welcome back, {username || "Learner"}</Display>
+                    <Display as="h1" size="xl" style={{ marginBottom: 6 }}>Welcome back, {username || "Learner"}</Display>
                     
                     <p style={{ 
                         fontFamily: tokens.font.sans, 

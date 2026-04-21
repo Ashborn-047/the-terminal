@@ -315,15 +315,16 @@ export const globalStyles = `
 // SECTION 3 — TYPOGRAPHY COMPONENTS
 // ════════════════════════════════════════════════════════════════════════
 
-interface TypographyProps extends React.HTMLAttributes<HTMLDivElement> {
+interface TypographyProps extends React.HTMLAttributes<HTMLElement> {
+    as?: React.ElementType;
     size?: keyof typeof tokens.fontSize;
     color?: string;
     weight?: keyof typeof tokens.fontWeight;
     uppercase?: boolean;
 }
 
-export const Display = ({ size = "lg", color = tokens.color.text.primary, weight = 700, uppercase = true, style, children, ...props }: TypographyProps) => (
-    <div {...props} style={{
+export const Display = ({ as: Component = "div", size = "lg", color = tokens.color.text.primary, weight = 700, uppercase = true, style, children, ...props }: TypographyProps) => (
+    <Component {...props} style={{
         fontFamily: tokens.font.display,
         fontSize: tokens.fontSize[size] || size,
         color,
@@ -334,11 +335,11 @@ export const Display = ({ size = "lg", color = tokens.color.text.primary, weight
         ...style
     }}>
         {children}
-    </div>
+    </Component>
 );
 
-export const Label = ({ size = "base", color = tokens.color.text.secondary, weight = 600, uppercase = false, style, children, ...props }: TypographyProps) => (
-    <div {...props} style={{
+export const Label = ({ as: Component = "div", size = "base", color = tokens.color.text.secondary, weight = 600, uppercase = false, style, children, ...props }: TypographyProps) => (
+    <Component {...props} style={{
         fontFamily: tokens.font.sans,
         fontSize: tokens.fontSize[size] || size,
         color,
@@ -349,11 +350,11 @@ export const Label = ({ size = "base", color = tokens.color.text.secondary, weig
         ...style
     }}>
         {children}
-    </div>
+    </Component>
 );
 
-export const Mono = ({ size = "base", color = tokens.color.terminal.output, weight = 400, style, children, ...props }: TypographyProps) => (
-    <div {...props} style={{
+export const Mono = ({ as: Component = "div", size = "base", color = tokens.color.terminal.output, weight = 400, style, children, ...props }: TypographyProps) => (
+    <Component {...props} style={{
         fontFamily: tokens.font.mono,
         fontSize: tokens.fontSize[size] || size,
         color,
@@ -362,7 +363,7 @@ export const Mono = ({ size = "base", color = tokens.color.terminal.output, weig
         ...style
     }}>
         {children}
-    </div>
+    </Component>
 );
 
 // ════════════════════════════════════════════════════════════════════════

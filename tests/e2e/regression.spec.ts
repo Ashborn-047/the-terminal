@@ -47,19 +47,19 @@ test.describe('Full Regression Flow', () => {
         await step1Input.fill('pwd');
         await page.keyboard.press('Enter');
 
-        // Step 3b: Type ls
-        await expect(page.getByRole('heading', { name: 'Your Location' })).toBeVisible();
+        // Step 3b: Type ls -la
+        await expect(page.getByRole('heading', { name: 'Your First Output' })).toBeVisible();
         const step2Input = page.getByTestId('walkthrough-input');
-        await step2Input.fill('ls');
+        await step2Input.fill('ls -la');
         await page.keyboard.press('Enter');
 
-        // Step 3c: Click Next
-        await expect(page.getByRole('heading', { name: 'Directory Contents' })).toBeVisible();
-        await page.getByRole('button', { name: 'Next →' }).click();
+        // Step 3c: Click Next Step
+        await expect(page.getByRole('heading', { name: 'Navigation Basics' })).toBeVisible();
+        await page.getByRole('button', { name: 'Next Step →' }).click();
 
-        // Step 3d: Start Learning
-        await expect(page.getByRole('heading', { name: /The Curriculum|FOUNDATIONS/i })).toBeVisible();
-        await page.getByRole('button', { name: 'Start Learning!' }).click();
+        // Step 3d: Enter Terminal
+        await expect(page.getByRole('heading', { name: "You're Ready" })).toBeVisible();
+        await page.getByRole('button', { name: 'Enter Terminal' }).click();
 
         // ──────────────────────────────────────────────
         // STEP 4: Redirected to first lab
@@ -166,6 +166,10 @@ test.describe('Full Regression Flow', () => {
         // Home
         await page.goto('');
         await expect(page.locator('body')).toContainText('Terminal', { timeout: 10000 });
+
+        // Dashboard
+        await page.goto('/');
+        await expect(page.getByRole('heading', { name: /Dashboard|Terminal|Welcome|Command Center/i })).toBeVisible({ timeout: 10000 });
 
         // Labs
         await page.goto('labs');

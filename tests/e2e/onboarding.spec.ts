@@ -30,19 +30,19 @@ test.describe('User Onboarding Flow', () => {
         await step1Input.fill('pwd');
         await page.keyboard.press('Enter');
 
-        // 6. Walkthrough Step 2: ls
-        await expect(page.getByRole('heading', { name: 'Your Location' })).toBeVisible();
+        // 6. Walkthrough Step 2: ls -la
+        await expect(page.getByRole('heading', { name: 'Your First Output' })).toBeVisible();
         const step2Input = page.getByTestId('walkthrough-input');
-        await step2Input.fill('ls');
+        await step2Input.fill('ls -la');
         await page.keyboard.press('Enter');
 
         // 7. Walkthrough Step 3: Next
-        await expect(page.getByRole('heading', { name: 'Directory Contents' })).toBeVisible();
-        await page.getByRole('button', { name: 'Next →' }).click();
+        await expect(page.getByRole('heading', { name: 'Navigation Basics' })).toBeVisible();
+        await page.getByRole('button', { name: 'Next Step →' }).click();
 
         // 8. Walkthrough Step 4: Start Learning
-        await expect(page.getByRole('heading', { name: 'The Curriculum' })).toBeVisible();
-        await page.getByRole('button', { name: 'Start Learning!' }).click();
+        await expect(page.getByRole('heading', { name: "You're Ready" })).toBeVisible();
+        await page.getByRole('button', { name: 'Enter Terminal' }).click();
 
         // 9. Verify redirect to first lab §3.3
         await expect(page).toHaveURL(/\/lab\/lab-1-1/);

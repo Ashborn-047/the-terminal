@@ -91,7 +91,7 @@ const LabsPage: React.FC = () => {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 24, marginBottom: 16 }}>
                         <span style={{ fontSize: 48 }}>{activeModule?.icon}</span>
                         <div>
-                            <Display size="lg" color={tokens.color.amber.base} data-testid="lab-module-title">
+                            <Display as="h1" size="lg" color={tokens.color.amber.base} data-testid="lab-module-title">
                                 {activeModule?.title || 'Curriculum'}
                             </Display>
                             <div style={{ marginTop: 8 }}>

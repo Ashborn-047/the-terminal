@@ -49,19 +49,19 @@ export const OnboardingWalkthrough: React.FC = () => {
             setInputValue('');
             trackEvent(`tour_step_${nextStep}_complete` as any);
         } else {
-            // Tour complete — advance to dashboard
+            // Tour complete — advance to first lab
             trackEvent('tour_completed');
-            setOnboardingStep(2); // Level 2 means "Tour Finished, Enter Dashboard"
+            setOnboardingStep(3); // Level 3 means "In first lab"
             setTourStep(0); // Reset for future use if needed
-            navigate('/');
+            navigate('/lab/lab-1-1');
         }
     };
 
     const handleSkip = () => {
         trackEvent('tour_skipped');
-        setOnboardingStep(2);
+        setOnboardingStep(3);
         setTourStep(0);
-        navigate('/');
+        navigate('/lab/lab-1-1');
     };
 
     const handleTerminalSubmit = (e: React.FormEvent) => {
@@ -126,7 +126,7 @@ export const OnboardingWalkthrough: React.FC = () => {
 
                 {/* BODY */}
                 <div style={{ padding: "32px 24px 24px" }}>
-                    <Display size="sm" style={{ marginBottom: 12 }}>{cur.title}</Display>
+                    <Display as="h2" size="sm" style={{ marginBottom: 12 }}>{cur.title}</Display>
                     <p style={{ 
                         fontFamily: tokens.font.sans, fontSize: "13px", 
                         color: tokens.color.text.secondary, lineHeight: 1.7, 
@@ -144,6 +144,7 @@ export const OnboardingWalkthrough: React.FC = () => {
                                     placeholder={cur.prompt} 
                                     value={inputValue} 
                                     onChange={(e) => setInputValue(e.target.value)} 
+                                    data-testid="walkthrough-input"
                                     mono 
                                     autoFocus
                                     style={{ marginBottom: 8 }} 
