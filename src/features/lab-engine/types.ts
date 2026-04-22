@@ -15,10 +15,11 @@ export interface VerificationCondition {
 export interface LabStep {
     id: string;
     instruction: string;
+    actionText?: string;            // The primary objective, shown in Hard Mode
     expectedCommand?: string;
     alternativeCommands?: string[]; // Any of these also pass the step
     requiredSequence?: string[];    // All must be entered in order to pass
-    hint?: string;
+    hints?: string[];               // Max 3 tiered hints (Concept, Command, Example)
     solution?: string; // Revealed command(s) for the step
     regexMatch?: boolean; // If true, expectedCommand is treated as a regex
 }
@@ -60,6 +61,8 @@ export interface Lab {
     requiredLevel?: number;
 }
 
+export type DifficultyMode = 'BEGINNER' | 'NORMAL' | 'HARD';
+
 export interface LabProgress {
     labId: string;
     status: 'locked' | 'available' | 'in-progress' | 'completed';
@@ -67,7 +70,7 @@ export interface LabProgress {
     sequenceIndex?: number; // Tracks progress within a requiredSequence step
     completedAt?: number;
     verified: boolean;
-    hintsUsed?: number[]; // indices of steps where hints were used (Guided) or hint indices (DIY)
+    hintsUsed?: Record<number, number[]>; // stepIndex -> array of hint levels used (0 for DIY)
     solutionRevealed?: boolean; // True if the user revealed the solution
     startTime?: number;   // UNIX timestamp when lab started/resumed
     totalTimeSpent?: number; // Cumulative seconds spent

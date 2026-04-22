@@ -2,9 +2,10 @@ import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLabStore } from '../stores/labStore';
 import { useFeatureAccess } from '../hooks/useFeatureAccess';
+import { useGamificationStore } from '../stores/gamificationStore';
 import { LabCard } from '../components/lab/LabComponents';
 import { ModuleNavBar } from '../components/lab/ModuleNavBar';
-import { Lock } from 'lucide-react';
+import { Lock, Settings } from 'lucide-react';
 import { MODULES } from '../data/modules';
 import { 
     tokens, 
@@ -22,6 +23,7 @@ const LabsPage: React.FC = () => {
     const { moduleId } = useParams();
     const { labs, progress, startLab } = useLabStore();
     const features = useFeatureAccess();
+    const { difficultyMode, setDifficultyMode } = useGamificationStore();
 
     // Default to module 1 if none specified
     const activeModuleId = moduleId ? parseInt(moduleId) : 1;

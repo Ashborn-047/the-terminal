@@ -47,7 +47,7 @@ export const useLabStore = create<LabState>()(
                             status: 'in-progress',
                             currentStepIndex: 0,
                             verified: false,
-                            hintsUsed: [],
+                            hintsUsed: {},
                             startTime: now,
                             totalTimeSpent: 0
                         },

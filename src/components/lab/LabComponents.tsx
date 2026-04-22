@@ -113,18 +113,31 @@ export const LabCard: React.FC<LabCardProps> = ({ lab, status, onStart }) => {
 // ======================================================================
 //  GuidedLabInstructions
 // ======================================================================
+import { useGamificationStore } from '../../stores/gamificationStore';
+import { useLabStore } from '../../stores/labStore';
+import { HINT_PENALTIES, SOLUTION_COST_HARD_MODE } from '../../config/progression';
+
 interface GuidedLabProps {
     lab: Lab;
     currentStepIndex: number;
-    onHintUsed?: (stepIndex: number) => void;
+    onHintUsed?: (stepIndex: number, hintLevel: number) => void;
     onRevealSolution?: () => void;
     solutionRevealed?: boolean;
 }
 
 export const GuidedLabInstructions: React.FC<GuidedLabProps> = ({ lab, currentStepIndex, onHintUsed, onRevealSolution, solutionRevealed }) => {
-    const [showHint, setShowHint] = useState(false);
-
     const isComplete = !lab.steps || currentStepIndex >= lab.steps.length;
+    const difficultyMode = useGamificationStore((s) => s.difficultyMode);
+    const xpBalance = useGamificationStore((s) => s.xp);
+    const hintsUsedRecord = useLabStore((s) => s.progress[lab.id]?.hintsUsed) || {};
+    const usedHintsForStep = hintsUsedRecord[currentStepIndex] || [];
+
+    // Calculate how many hints are available
+    const stepHints = lab.steps?.[currentStepIndex]?.hints || [];
+    const nextHintLevel = usedHintsForStep.length;
+    const hasMoreHints = nextHintLevel < stepHints.length;
+
+    const [showCostWarning, setShowCostWarning] = useState(false);
 
     if (isComplete) {
         return (
@@ -153,79 +166,94 @@ export const GuidedLabInstructions: React.FC<GuidedLabProps> = ({ lab, currentSt
                 marginBottom: tokens.space[8], 
                 paddingLeft: tokens.space[4],
                 borderLeft: `2px solid ${tokens.color.lime.base}`,
+                fontFamily: difficultyMode === 'HARD' ? tokens.font.display : undefined,
             }}>
-                {step.instruction}
+                {difficultyMode === 'HARD'
+                    ? (step.actionText || 'OPERATIONAL OBJECTIVE: Complete the current task.')
+                    : step.instruction}
             </Label>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {step.hint && (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
-                        {!showHint ? (
-                            <button
-                                onClick={() => {
-                                    setShowHint(true);
-                                    onHintUsed?.(currentStepIndex);
-                                }}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 6,
-                                    fontSize: 10,
-                                    fontWeight: 700,
-                                    textTransform: 'uppercase',
-                                    color: tokens.color.amber.base,
-                                    background: 'none',
-                                    border: 'none',
-                                    borderBottom: `1px solid ${tokens.color.amber.base}`,
-                                    padding: '2px 0',
-                                    cursor: 'pointer',
-                                    fontFamily: tokens.font.mono
-                                }}
-                            >
-                                <HelpCircle size={10} /> [GET_HINT]
-                            </button>
-                        ) : (
-                            <div style={{ 
-                                background: 'rgba(245,166,35,0.05)', 
-                                border: `1px solid ${tokens.color.amber.base}`, 
-                                padding: '8px 12px', 
-                                fontSize: 11, 
-                                color: tokens.color.amber.base,
-                                flex: 1,
-                                fontFamily: tokens.font.mono
-                            }}>
-                                💡 {step.hint}
-                            </div>
-                        )}
+                {usedHintsForStep.map(level => (
+                    <div key={level} style={{
+                        background: 'rgba(245,166,35,0.05)',
+                        border: `2px solid ${tokens.color.amber.base}`,
+                        boxShadow: `4px 4px 0px ${tokens.color.amber.base}`,
+                        padding: '8px 12px',
+                        fontSize: 11,
+                        color: tokens.color.amber.base,
+                        fontFamily: tokens.font.mono,
+                        marginBottom: 8
+                    }}>
+                        💡 <strong>[LEVEL {level + 1} HINT]:</strong> {stepHints[level]}
+                    </div>
+                ))}
 
-                        {!solutionRevealed && step.solution && (
-                            <button
-                                onClick={() => {
-                                    if (window.confirm("Revealing the solution will reduce your XP reward for this lab by 75%. Continue?")) {
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+                    {hasMoreHints && (
+                        <button
+                            onClick={() => {
+                                onHintUsed?.(currentStepIndex, nextHintLevel);
+                            }}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 6,
+                                fontSize: 10,
+                                fontWeight: 700,
+                                textTransform: 'uppercase',
+                                color: tokens.color.amber.base,
+                                background: 'none',
+                                border: 'none',
+                                borderBottom: `1px solid ${tokens.color.amber.base}`,
+                                padding: '2px 0',
+                                cursor: 'pointer',
+                                fontFamily: tokens.font.mono
+                            }}
+                        >
+                            <HelpCircle size={10} /> [GET_HINT_L{nextHintLevel + 1}] (-{HINT_PENALTIES[nextHintLevel]} REWARD XP)
+                        </button>
+                    )}
+
+                    {!solutionRevealed && step.solution && (
+                        <button
+                            onClick={() => {
+                                if (difficultyMode === 'HARD') {
+                                    if (xpBalance < SOLUTION_COST_HARD_MODE) {
+                                        alert(`Insufficient XP. Protocol bypass requires ${SOLUTION_COST_HARD_MODE} XP. Your balance: ${xpBalance} XP.`);
+                                        return;
+                                    }
+                                    if (window.confirm(`Revealing the solution in SYSTEM OPERATIONAL mode will cost ${SOLUTION_COST_HARD_MODE} XP from your global balance. Proceed?`)) {
+                                        useGamificationStore.getState().spendXp(SOLUTION_COST_HARD_MODE);
                                         onRevealSolution?.();
                                     }
-                                }}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 6,
-                                    fontSize: 10,
-                                    fontWeight: 700,
-                                    textTransform: 'uppercase',
-                                    color: "rgb(239, 68, 68)",
-                                    background: 'none',
-                                    border: 'none',
-                                    borderBottom: "1px solid rgb(239, 68, 68)",
-                                    padding: '2px 0',
-                                    cursor: 'pointer',
-                                    fontFamily: tokens.font.mono
-                                }}
-                            >
-                                <AlertTriangle size={10} /> [SHOW_SOLUTION]
-                            </button>
-                        )}
-                    </div>
-                )}
+                                } else {
+                                    if (window.confirm("Revealing the solution will heavily penalize your XP reward for this lab. Continue?")) {
+                                        onRevealSolution?.();
+                                    }
+                                }
+                            }}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 6,
+                                fontSize: 10,
+                                fontWeight: 700,
+                                textTransform: 'uppercase',
+                                color: difficultyMode === 'HARD' && xpBalance < SOLUTION_COST_HARD_MODE ? tokens.color.text.tertiary : "rgb(239, 68, 68)",
+                                background: 'none',
+                                border: 'none',
+                                borderBottom: `1px solid ${difficultyMode === 'HARD' && xpBalance < SOLUTION_COST_HARD_MODE ? tokens.color.text.tertiary : "rgb(239, 68, 68)"}`,
+                                padding: '2px 0',
+                                cursor: difficultyMode === 'HARD' && xpBalance < SOLUTION_COST_HARD_MODE ? 'not-allowed' : 'pointer',
+                                fontFamily: tokens.font.mono
+                            }}
+                            title={difficultyMode === 'HARD' && xpBalance < SOLUTION_COST_HARD_MODE ? "Insufficient XP to bypass protocol" : undefined}
+                        >
+                            <AlertTriangle size={10} /> {difficultyMode === 'HARD' ? `[BYPASS_PROTOCOL (-${SOLUTION_COST_HARD_MODE} XP)]` : '[SHOW_SOLUTION]'}
+                        </button>
+                    )}
+                </div>
 
                 {solutionRevealed && step.solution && (
                     <div style={{ 
@@ -356,63 +384,108 @@ export const DIYLabInstructions: React.FC<DIYLabProps> = ({ lab, vfs, userId, on
                     </p>
                 )}
 
-                {/* Hints */}
-                {lab.hints && lab.hints.length > 0 && (
-                    <div style={{ marginTop: 16 }}>
-                        {hintIndex < 0 ? (
+                {/* Hints & Solutions */}
+                <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    {usedHints.map(level => (
+                        <div key={level} style={{
+                            background: 'rgba(245,166,35,0.05)',
+                            border: `2px solid ${tokens.color.amber.base}`,
+                            boxShadow: `4px 4px 0px ${tokens.color.amber.base}`,
+                            padding: '12px',
+                            fontSize: 12,
+                            color: tokens.color.amber.base,
+                            fontFamily: tokens.font.mono
+                        }}>
+                            💡 <strong>[LEVEL {level + 1} HINT]:</strong> {labHints[level]}
+                        </div>
+                    ))}
+
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+                        {hasMoreHints && (
                             <button
                                 onClick={() => {
-                                    setHintIndex(0);
-                                    onHintUsed?.(0);
+                                    onHintUsed?.(0, nextHintLevel);
                                 }}
                                 style={{
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: 6,
-                                    fontSize: 11,
+                                    fontSize: 10,
+                                    fontWeight: 700,
+                                    textTransform: 'uppercase',
                                     color: tokens.color.amber.base,
                                     background: 'none',
                                     border: 'none',
+                                    borderBottom: `1px solid ${tokens.color.amber.base}`,
+                                    padding: '2px 0',
                                     cursor: 'pointer',
-                                    fontFamily: tokens.font.sans,
-                                    fontWeight: 500
+                                    fontFamily: tokens.font.mono
                                 }}
-                                onMouseOver={(e) => e.currentTarget.style.textDecoration = 'underline'}
-                                onMouseOut={(e) => e.currentTarget.style.textDecoration = 'none'}
                             >
-                                <HelpCircle size={14} /> Need a hint?
+                                <HelpCircle size={10} /> [GET_HINT_L{nextHintLevel + 1}] (-{HINT_PENALTIES[nextHintLevel]} REWARD XP)
                             </button>
-                        ) : (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                                {lab.hints.slice(0, hintIndex + 1).map((hint, i) => (
-                                    <div key={i} style={{ 
-                                        background: 'rgba(245,166,35,0.05)', 
-                                        border: `1px solid ${tokens.color.amber.base}`, 
-                                        padding: '8px 12px', 
-                                        fontSize: 11, 
-                                        color: tokens.color.amber.base,
-                                        fontFamily: tokens.font.mono
-                                    }}>
-                                        💡 Hint {i + 1}: {hint}
-                                    </div>
-                                ))}
-                                {hintIndex < lab.hints.length - 1 && (
-                                    <Button
-                                        variant="outline"
-                                        size="xs"
-                                        onClick={() => {
-                                            setHintIndex(hintIndex + 1);
-                                            onHintUsed?.(hintIndex + 1);
-                                        }}
-                                        style={{ alignSelf: 'flex-start' }}
-                                    >
-                                        MORE HELP
-                                    </Button>
-                                )}
-                            </div>
+                        )}
+
+                        {!solutionRevealed && lab.solution && (
+                            <button
+                                onClick={() => {
+                                    if (difficultyMode === 'HARD') {
+                                        if (xpBalance < SOLUTION_COST_HARD_MODE) {
+                                            alert(`Insufficient XP. Protocol bypass requires ${SOLUTION_COST_HARD_MODE} XP. Your balance: ${xpBalance} XP.`);
+                                            return;
+                                        }
+                                        if (window.confirm(`Revealing the solution in SYSTEM OPERATIONAL mode will cost ${SOLUTION_COST_HARD_MODE} XP from your global balance. Proceed?`)) {
+                                            useGamificationStore.getState().spendXp(SOLUTION_COST_HARD_MODE);
+                                            onRevealSolution?.();
+                                        }
+                                    } else {
+                                        if (window.confirm("Revealing the solution will heavily penalize your XP reward for this lab. Continue?")) {
+                                            onRevealSolution?.();
+                                        }
+                                    }
+                                }}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 6,
+                                    fontSize: 10,
+                                    fontWeight: 700,
+                                    textTransform: 'uppercase',
+                                    color: difficultyMode === 'HARD' && xpBalance < SOLUTION_COST_HARD_MODE ? tokens.color.text.tertiary : "rgb(239, 68, 68)",
+                                    background: 'none',
+                                    border: 'none',
+                                    borderBottom: `1px solid ${difficultyMode === 'HARD' && xpBalance < SOLUTION_COST_HARD_MODE ? tokens.color.text.tertiary : "rgb(239, 68, 68)"}`,
+                                    padding: '2px 0',
+                                    cursor: difficultyMode === 'HARD' && xpBalance < SOLUTION_COST_HARD_MODE ? 'not-allowed' : 'pointer',
+                                    fontFamily: tokens.font.mono,
+                                    marginLeft: 'auto'
+                                }}
+                                title={difficultyMode === 'HARD' && xpBalance < SOLUTION_COST_HARD_MODE ? "Insufficient XP to bypass protocol" : undefined}
+                            >
+                                <AlertTriangle size={10} /> {difficultyMode === 'HARD' ? `[BYPASS_PROTOCOL (-${SOLUTION_COST_HARD_MODE} XP)]` : '[SHOW_SOLUTION]'}
+                            </button>
                         )}
                     </div>
-                )}
+
+                    {solutionRevealed && lab.solution && (
+                        <div style={{
+                            background: 'rgba(239, 68, 68, 0.05)',
+                            border: "2px solid rgb(239, 68, 68)",
+                            boxShadow: `4px 4px 0px rgb(239, 68, 68)`,
+                            padding: '12px',
+                            fontSize: 11,
+                            color: "rgb(239, 68, 68)",
+                            fontFamily: tokens.font.mono
+                        }}>
+                            <div style={{ fontWeight: 700, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <AlertTriangle size={12} /> SOLUTION PROTOCOL OVERRIDE:
+                            </div>
+                            <pre style={{ margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
+                                {lab.solution}
+                            </pre>
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );

@@ -7,7 +7,8 @@ import { useUIStore } from './uiStore';
 import { spacetime } from '../lib/spacetime';
 import { logger } from '../utils/logger';
 import { HardcoreProfile, MasteryBadge } from '../features/lab-engine/hardcore';
-import { XP_BASE, XP_MULTIPLIER, STREAK_BONUS_TIERS, HARDCORE_XP_MULTIPLIER, BASE_LAB_XP } from '../config/progression';
+import { XP_BASE, XP_MULTIPLIER, STREAK_BONUS_TIERS, HARDCORE_XP_MULTIPLIER, BASE_LAB_XP, DIFFICULTY_MULTIPLIERS } from '../config/progression';
+import { DifficultyMode } from '../features/lab-engine/types';
 import { useQuestStore } from './questStore';
 import { useHardcoreStore } from './hardcoreStore';
 import { VFS } from '../features/vfs/vfs';
@@ -123,6 +124,7 @@ interface GamificationState {
     xp: number;
     level: number;
     totalXpEarned: number;
+    difficultyMode: DifficultyMode;
     streak: {
         current: number;
         longest: number;
@@ -172,6 +174,8 @@ interface GamificationState {
     dismissMigrationNotice: () => void;
     calculateReplayXp: (labId: string, baseXp: number) => number;
     calculateTotalXpGain: (totalBase: number) => number;
+    setDifficultyMode: (mode: DifficultyMode) => void;
+    spendXp: (amount: number) => boolean;
 }
 
 export const useGamificationStore = create<GamificationState>()(
@@ -180,6 +184,7 @@ export const useGamificationStore = create<GamificationState>()(
             xp: 0,
             level: 1,
             totalXpEarned: 0,
+            difficultyMode: 'NORMAL',
             streak: { current: 0, longest: 0, lastActivityDate: null, freezesRemaining: 1 },
             counters: {},
             activityHistory: {},
@@ -201,6 +206,17 @@ export const useGamificationStore = create<GamificationState>()(
                 { type: 'complete_labs', title: 'Lab Marathon: {{target}} Labs', baseTarget: 3, xpReward: 250 },
                 { type: 'earn_xp', title: 'XP Hunter: {{target}} XP', baseTarget: 1000, xpReward: 200 },
             ],
+
+            setDifficultyMode: (mode) => set({ difficultyMode: mode }),
+
+            spendXp: (amount) => {
+                const state = get();
+                if (state.xp >= amount) {
+                    set({ xp: state.xp - amount });
+                    return true;
+                }
+                return false;
+            },
 
             addXp: (amount) => {
                 set((state) => {
@@ -566,6 +582,12 @@ export const useGamificationStore = create<GamificationState>()(
             calculateTotalXpGain: (totalBase: number) => {
                 let multiplier = 1.0;
                 
+                // Difficulty Multiplier
+                const diffMode = get().difficultyMode;
+                if (diffMode && DIFFICULTY_MULTIPLIERS[diffMode]) {
+                    multiplier *= DIFFICULTY_MULTIPLIERS[diffMode];
+                }
+
                 // Hardcore boost
                 const hcProfile = useHardcoreStore.getState().profile;
                 if (hcProfile?.isActive) multiplier *= HARDCORE_XP_MULTIPLIER;

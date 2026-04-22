@@ -73,7 +73,9 @@ test.describe('Full Regression Flow', () => {
         
         // Step 5a: pwd
         await typeCommand(page, 'pwd');
-        await expect(page.getByText(/Step.*2.*\/.*2/).first()).toBeVisible({ timeout: 5000 });
+        // Wait for the lab to progress to step 2. We use regex to match "Step 2" or "STEP 2"
+        // with any subsequent characters since it renders as "Step 2 / 2"
+        await expect(page.getByText(/Step 2/i).first()).toBeVisible({ timeout: 5000 });
 
         // Step 5b: ls
         await typeCommand(page, 'ls');

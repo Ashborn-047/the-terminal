@@ -25,6 +25,7 @@ const CommandReferencePage = React.lazy(() => import('./pages/CommandReferencePa
 const ChatPage = React.lazy(() => import('./pages/ChatPage.tsx'));
 const SettingsPage = React.lazy(() => import('./pages/SettingsPage.tsx'));
 const ChallengeArenaPage = React.lazy(() => import('./pages/ChallengeArenaPage.tsx'));
+const AboutLinuxPage = React.lazy(() => import('./pages/AboutLinuxPage.tsx'));
 
 const PageLoader = () => (
   <div style={{
@@ -177,6 +178,7 @@ function AppContent() {
               <Route path="/chat" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
               <Route path="/challenge-arena" element={<ProtectedRoute><ChallengeArenaPage /></ProtectedRoute>} />
+              <Route path="/about" element={<AboutLinuxPage />} />
             </Routes>
           </Suspense>
         </ErrorBoundary>

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useUIStore } from '../stores/uiStore';
+import { useGamificationStore } from '../stores/gamificationStore';
 import { 
     tokens, 
     Button, 
@@ -24,6 +25,8 @@ export const SettingsPage: React.FC = () => {
         themePreset,
         setThemePreset
     } = useUIStore();
+
+    const { difficultyMode, setDifficultyMode } = useGamificationStore();
     const [tempUsername, setTempUsername] = useState(username);
     const [isEditing, setIsEditing] = useState(false);
     const [saveMessage, setSaveMessage] = useState('');

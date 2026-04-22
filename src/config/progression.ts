@@ -12,3 +12,13 @@ export const STREAK_BONUS_TIERS = [
 export const HARDCORE_XP_MULTIPLIER = 1.5;
 
 export const BASE_LAB_XP = 250;
+
+export const DIFFICULTY_MULTIPLIERS: Record<string, number> = {
+    BEGINNER: 1.0,
+    NORMAL: 1.5,
+    HARD: 3.0,
+};
+
+export const HINT_PENALTIES = [10, 25, 50]; // Level 1, 2, 3
+
+export const SOLUTION_COST_HARD_MODE = 200;
