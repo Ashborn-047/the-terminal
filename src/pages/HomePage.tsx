@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { Terminal as TerminalIcon } from 'lucide-react';
 import { SkillTree } from '../components/gamification/SkillTree';
 import { QuestList } from '../components/gamification/QuestList';
+import { DailyQuests } from '../components/gamification/DailyQuests';
 import { 
     tokens, 
     Button, 
@@ -282,6 +283,9 @@ const HomePage: React.FC = () => {
                     <Display size="xs" color={tokens.color.text.tertiary} style={{ marginBottom: 12 }}>Terminal Missions</Display>
                     <QuestList />
                 </Card>
+                <div style={{ minHeight: 300 }}>
+                    <DailyQuests />
+                </div>
             </div>
 
             {/* Skill Tree */}
