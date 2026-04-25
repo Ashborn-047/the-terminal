@@ -106,7 +106,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     { id: 'completionist', name: 'Completionist', description: 'Complete all labs in a module', category: 'milestone', icon: '🏁', hidden: false, xpReward: 250, criteria: { type: 'counter', target: 'modules-completed', threshold: 1 } },
 ];
 
-export type QuestType = 'earn_xp' | 'execute_commands' | 'complete_labs';
+export type QuestType = 'earn_xp' | 'execute_commands' | 'complete_labs' | 'complete_module' | 'find_easter_egg' | 'reach_level';
 
 export interface DailyQuest {
     id: string;
@@ -200,15 +200,26 @@ export const useGamificationStore = create<GamificationState>()(
                 { type: 'execute_commands', title: 'Terminal Mastery: {{target}} Commands', baseTarget: 50, xpReward: 100 },
                 { type: 'complete_labs', title: 'Lab Marathon: {{target}} Labs', baseTarget: 3, xpReward: 250 },
                 { type: 'earn_xp', title: 'XP Hunter: {{target}} XP', baseTarget: 1000, xpReward: 200 },
+                { type: 'complete_module', title: 'Complete a Module ({{target}})', baseTarget: 1, xpReward: 300 },
+                { type: 'find_easter_egg', title: 'Discover {{target}} hidden Easter Eggs', baseTarget: 1, xpReward: 150 },
+                { type: 'reach_level', title: 'Level Up {{target}} time(s)', baseTarget: 1, xpReward: 200 },
             ],
 
             addXp: (amount) => {
+                get().updateQuestProgress('earn_xp', amount);
+
                 set((state) => {
                     const newXp = state.xp + amount;
                     let newLevel = state.level;
+                    let leveledUp = false;
                     
                     while (newXp >= xpForLevel(newLevel + 1)) {
                         newLevel++;
+                        leveledUp = true;
+                    }
+
+                    if (leveledUp) {
+                        get().updateQuestProgress('reach_level', 1);
                     }
 
                     // Calculate badge

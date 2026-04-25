@@ -379,6 +379,7 @@ export function useTerminal() {
                         const completedInModule = moduleLabs.filter(l => progress[l.id]?.status === 'completed');
                         if (completedInModule.length === moduleLabs.length) {
                             incrementCounter('modules-completed');
+                            updateQuestProgress('complete_module', 1);
                         }
                     }
                 }
