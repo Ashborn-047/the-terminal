@@ -8,6 +8,7 @@ import { toastEmitter } from '../components/ToastNotification';
 import { motion } from 'motion/react';
 import { BookOpen, CheckCircle, Lock } from 'lucide-react';
 
+<<<<<<< HEAD
 const TrackSection = ({ title, chapters, level, completedChapterIds, onStartChapter }: any) => (
     <>
         <h2 className="text-2xl text-lime-400 font-heading tracking-wider uppercase mb-6 mt-8 border-b border-gray-800 pb-2" style={{ fontFamily: 'Russo One' }}>
@@ -53,12 +54,22 @@ const TrackSection = ({ title, chapters, level, completedChapterIds, onStartChap
 
 export const ChaptersPage: React.FC = () => {
     const { level, awardXP, completedChapterIds, markChapterCompleted } = useGamificationStore();
+=======
+export const ChaptersPage: React.FC = () => {
+    const { level, awardXP } = useGamificationStore();
+>>>>>>> origin/feat/linux-simulator-expansion-935369745345634572
     const [selectedChapter, setSelectedChapter] = useState<ChapterMetadata | null>(null);
     const [sessionQuestions, setSessionQuestions] = useState<ChapterAssessment[]>([]);
     const [currentStepIndex, setCurrentStepIndex] = useState(0);
     const [inputValue, setInputValue] = useState('');
     const [isCompleted, setIsCompleted] = useState(false);
 
+<<<<<<< HEAD
+=======
+    // Simplistic tracking for demo, could be stored in gamificationStore
+    const [completedChapterIds, setCompletedChapterIds] = useState<Set<string>>(new Set());
+
+>>>>>>> origin/feat/linux-simulator-expansion-935369745345634572
     const terminalState = useTerminal();
 
     const handleStartChapter = async (chapter: ChapterMetadata) => {
@@ -66,6 +77,7 @@ export const ChaptersPage: React.FC = () => {
 
         setSelectedChapter(chapter);
 
+<<<<<<< HEAD
         try {
             // Dynamically fetch random questions for this chapter
             // We pull 5 questions to make it a quick drill session
@@ -80,6 +92,16 @@ export const ChaptersPage: React.FC = () => {
             toastEmitter.emit({ type: 'error', title: 'Error', message: 'Failed to load chapter content.', duration: 3000 });
             setSelectedChapter(null);
         }
+=======
+        // Dynamically fetch random questions for this chapter
+        // We pull 5 questions to make it a quick drill session
+        const questions = await QuestionProvider.fetchSessionQuestions(chapter.id, 5);
+        setSessionQuestions(questions);
+
+        setCurrentStepIndex(0);
+        setIsCompleted(false);
+        setInputValue('');
+>>>>>>> origin/feat/linux-simulator-expansion-935369745345634572
     };
 
     const handleAnswerSubmit = () => {
@@ -101,7 +123,11 @@ export const ChaptersPage: React.FC = () => {
         }
     };
 
+<<<<<<< HEAD
     const handleStepAdvance = useCallback(() => {
+=======
+    const handleStepAdvance = () => {
+>>>>>>> origin/feat/linux-simulator-expansion-935369745345634572
         if (!selectedChapter || sessionQuestions.length === 0) return;
         if (currentStepIndex < sessionQuestions.length - 1) {
             setCurrentStepIndex(prev => prev + 1);
@@ -109,6 +135,7 @@ export const ChaptersPage: React.FC = () => {
         } else {
             handleChapterComplete(selectedChapter);
         }
+<<<<<<< HEAD
     }, [selectedChapter, sessionQuestions, currentStepIndex]);
 
     const handleChapterComplete = (chapter: ChapterMetadata) => {
@@ -134,12 +161,30 @@ export const ChaptersPage: React.FC = () => {
                     icon: '🛠️'
                 });
             }
+=======
+    };
+
+    const handleChapterComplete = (chapter: ChapterMetadata) => {
+        setIsCompleted(true);
+        if (!completedChapterIds.has(chapter.id)) {
+            awardXP(chapter.xpReward);
+            setCompletedChapterIds(prev => new Set(prev).add(chapter.id));
+>>>>>>> origin/feat/linux-simulator-expansion-935369745345634572
 
             // Log chapter completion via spacetime (stubbed)
             import('../lib/spacetime/index').then(({ spacetime }) => {
                 (spacetime as any).completeChapter?.(chapter.id);
             }).catch(e => console.error(e));
 
+<<<<<<< HEAD
+=======
+            toastEmitter.emit({
+                type: 'achievement',
+                title: 'Chapter Completed!',
+                message: `Earned ${chapter.xpReward} XP`,
+                icon: '📚'
+            });
+>>>>>>> origin/feat/linux-simulator-expansion-935369745345634572
         } else {
             toastEmitter.emit({
                 type: 'info',
@@ -162,11 +207,15 @@ export const ChaptersPage: React.FC = () => {
 
             let isMet = false;
             if (currentAssessment.regexMatch) {
+<<<<<<< HEAD
                 try {
                     isMet = new RegExp(currentAssessment.correctAnswer).test(lastCommand.command);
                 } catch (e) {
                     console.error('Invalid regex:', currentAssessment.correctAnswer);
                 }
+=======
+                isMet = new RegExp(currentAssessment.correctAnswer).test(lastCommand.command);
+>>>>>>> origin/feat/linux-simulator-expansion-935369745345634572
             } else {
                 isMet = lastCommand.command.trim() === currentAssessment.correctAnswer.trim();
             }
@@ -175,7 +224,11 @@ export const ChaptersPage: React.FC = () => {
                 handleStepAdvance();
             }
         }
+<<<<<<< HEAD
     }, [terminalState.history, sessionQuestions, currentStepIndex, isCompleted, handleStepAdvance, selectedChapter]);
+=======
+    }, [terminalState.history, sessionQuestions, currentStepIndex, isCompleted]);
+>>>>>>> origin/feat/linux-simulator-expansion-935369745345634572
 
     if (selectedChapter && sessionQuestions.length > 0) {
         const assessment = sessionQuestions[currentStepIndex];
@@ -291,6 +344,7 @@ export const ChaptersPage: React.FC = () => {
                     </p>
                 </header>
 
+<<<<<<< HEAD
                 <TrackSection 
                     title="Track 1: System Administration I"
                     chapters={sysadmin1Chapters}
@@ -306,10 +360,87 @@ export const ChaptersPage: React.FC = () => {
                     completedChapterIds={completedChapterIds}
                     onStartChapter={handleStartChapter}
                 />
+=======
+                <h2 className="text-2xl text-lime-400 font-heading tracking-wider uppercase mb-6 mt-8 border-b border-gray-800 pb-2" style={{ fontFamily: 'Russo One' }}>
+                    Track 1: System Administration I
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
+                    {sysadmin1Chapters.map((chapter, idx) => {
+                        const locked = level < chapter.requiredLevel;
+                        const completed = completedChapterIds.has(chapter.id);
+
+                        return (
+                            <motion.div
+                                key={chapter.id}
+                                whileHover={locked ? {} : { scale: 1.02, borderColor: 'var(--color-lime-base)' }}
+                                onClick={() => handleStartChapter(chapter)}
+                                className={`relative p-6 border-4 flex flex-col justify-between transition-colors duration-300 ${locked ? 'border-gray-800 bg-gray-900/50 opacity-75' : 'border-gray-700 bg-gray-900/80 cursor-pointer'}`}
+                            >
+                                <div>
+                                    <div className="text-lime-500 font-mono text-sm mb-2 uppercase tracking-widest">Chapter {idx + 1} | {chapter.objectiveCode}</div>
+                                    <div className="flex justify-between items-start mb-4">
+                                        <h3 className="font-heading text-2xl uppercase tracking-wider text-white" style={{ fontFamily: 'Russo One, sans-serif' }}>{chapter.title}</h3>
+                                        {completed && !locked && <CheckCircle className="text-lime-500 w-6 h-6" />}
+                                        {locked && <Lock className="text-gray-500 w-6 h-6" />}
+                                    </div>
+                                    <p className="text-gray-400 text-sm mb-6 line-clamp-3">{chapter.description}</p>
+                                </div>
+
+                                {locked ? (
+                                    <div className="w-full py-3 bg-gray-800/80 border border-gray-700 flex items-center justify-center gap-2 text-gray-400 font-bold uppercase tracking-widest text-sm">
+                                        <Lock size={16} /> Requires Level {chapter.requiredLevel}
+                                    </div>
+                                ) : (
+                                    <div className="w-full py-3 bg-gray-800 border border-gray-700 flex items-center justify-center gap-2 text-white font-bold uppercase tracking-widest hover:bg-gray-700 transition-colors">
+                                        <BookOpen size={16} /> {completed ? 'Review Chapter' : 'Begin Chapter'}
+                                    </div>
+                                )}
+                            </motion.div>
+                        );
+                    })}
+                </div>
+
+                <h2 className="text-2xl text-lime-400 font-heading tracking-wider uppercase mb-6 mt-8 border-b border-gray-800 pb-2" style={{ fontFamily: 'Russo One' }}>
+                    Track 2: System Administration II
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
+                    {sysadmin2Chapters.map((chapter, idx) => {
+                        const locked = level < chapter.requiredLevel;
+                        const completed = completedChapterIds.has(chapter.id);
+
+                        return (
+                            <motion.div
+                                key={chapter.id}
+                                whileHover={locked ? {} : { scale: 1.02, borderColor: 'var(--color-lime-base)' }}
+                                onClick={() => handleStartChapter(chapter)}
+                                className={`relative p-6 border-4 flex flex-col justify-between transition-colors duration-300 ${locked ? 'border-gray-800 bg-gray-900/50 opacity-75' : 'border-gray-700 bg-gray-900/80 cursor-pointer'}`}
+                            >
+                                <div>
+                                    <div className="text-lime-500 font-mono text-sm mb-2 uppercase tracking-widest">Chapter {idx + 1} | {chapter.objectiveCode}</div>
+                                    <div className="flex justify-between items-start mb-4">
+                                        <h3 className="font-heading text-2xl uppercase tracking-wider text-white" style={{ fontFamily: 'Russo One, sans-serif' }}>{chapter.title}</h3>
+                                        {completed && !locked && <CheckCircle className="text-lime-500 w-6 h-6" />}
+                                        {locked && <Lock className="text-gray-500 w-6 h-6" />}
+                                    </div>
+                                    <p className="text-gray-400 text-sm mb-6 line-clamp-3">{chapter.description}</p>
+                                </div>
+
+                                {locked ? (
+                                    <div className="w-full py-3 bg-gray-800/80 border border-gray-700 flex items-center justify-center gap-2 text-gray-400 font-bold uppercase tracking-widest text-sm">
+                                        <Lock size={16} /> Requires Level {chapter.requiredLevel}
+                                    </div>
+                                ) : (
+                                    <div className="w-full py-3 bg-gray-800 border border-gray-700 flex items-center justify-center gap-2 text-white font-bold uppercase tracking-widest hover:bg-gray-700 transition-colors">
+                                        <BookOpen size={16} /> {completed ? 'Review Chapter' : 'Begin Chapter'}
+                                    </div>
+                                )}
+                            </motion.div>
+                        );
+                    })}
+                </div>
             </div>
         </div>
     );
 };
 
 export default ChaptersPage;
-

@@ -24,7 +24,10 @@ export interface Chapter {
     requiredLevel: number;
     xpReward: number;
     pools: ChapterPool[]; // Multiple pools to rotate questions on replay
+<<<<<<< HEAD
     nonRotating?: boolean; // If true, questions do not rotate on replay
+=======
+>>>>>>> origin/feat/linux-simulator-expansion-935369745345634572
 }
 
 export const chaptersData: Chapter[] = [
@@ -64,7 +67,11 @@ export const chaptersData: Chapter[] = [
                         type: 'finale_terminal',
                         question: 'Navigate to /var/log, list all files showing hidden ones, and print the working directory.',
                         correctAnswer: 'cd /var/log && ls -a && pwd',
+<<<<<<< HEAD
 
+=======
+                        regexMatch: true,
+>>>>>>> origin/feat/linux-simulator-expansion-935369745345634572
                         hint: 'Use && to chain commands'
                     }
                 ]
@@ -97,7 +104,11 @@ export const chaptersData: Chapter[] = [
                         type: 'finale_terminal',
                         question: 'Go to the root directory and list its contents.',
                         correctAnswer: 'cd / && ls',
+<<<<<<< HEAD
 
+=======
+                        regexMatch: true,
+>>>>>>> origin/feat/linux-simulator-expansion-935369745345634572
                         hint: 'Root is /'
                     }
                 ]
@@ -130,7 +141,11 @@ export const chaptersData: Chapter[] = [
                         type: 'finale_terminal',
                         question: 'Print the phrase "Linux is powerful" to the terminal.',
                         correctAnswer: 'echo "Linux is powerful"',
+<<<<<<< HEAD
 
+=======
+                        regexMatch: true,
+>>>>>>> origin/feat/linux-simulator-expansion-935369745345634572
                         hint: 'Use the echo command.'
                     }
                 ]
@@ -163,7 +178,11 @@ export const chaptersData: Chapter[] = [
                         type: 'finale_terminal',
                         question: 'List the 10 most recently executed commands in your session.',
                         correctAnswer: 'history | tail -n 10',
+<<<<<<< HEAD
 
+=======
+                        regexMatch: true,
+>>>>>>> origin/feat/linux-simulator-expansion-935369745345634572
                         hint: 'Use the history command.'
                     }
                 ]
@@ -187,7 +206,11 @@ export const chaptersData: Chapter[] = [
                         question: 'Where are system-wide configuration files typically stored?',
                         options: ['/bin', '/usr', '/etc', '/var'],
                         correctAnswer: '/etc',
+<<<<<<< HEAD
                         explanation: '/etc historically stood for "et cetera" but now contains system-wide configuration files.'
+=======
+                        explanation: '/etc stands for "editable text configuration" and holds system configs.'
+>>>>>>> origin/feat/linux-simulator-expansion-935369745345634572
                     },
                     {
                         id: 'c2-p1-q2',
@@ -200,7 +223,11 @@ export const chaptersData: Chapter[] = [
                         type: 'finale_terminal',
                         question: 'Create a directory called "testdir", navigate into it, and create a file "hello.txt".',
                         correctAnswer: 'mkdir testdir && cd testdir && touch hello.txt',
+<<<<<<< HEAD
 
+=======
+                        regexMatch: true
+>>>>>>> origin/feat/linux-simulator-expansion-935369745345634572
                     }
                 ]
             },
@@ -226,7 +253,11 @@ export const chaptersData: Chapter[] = [
                         type: 'finale_terminal',
                         question: 'Copy the file /etc/passwd to your current directory.',
                         correctAnswer: 'cp /etc/passwd .',
+<<<<<<< HEAD
 
+=======
+                        regexMatch: true,
+>>>>>>> origin/feat/linux-simulator-expansion-935369745345634572
                         hint: 'Use a dot (.) to represent the current directory.'
                     }
                 ]
@@ -258,7 +289,11 @@ export const chaptersData: Chapter[] = [
                         type: 'finale_terminal',
                         question: 'Move the file "data.txt" into the "archive" directory.',
                         correctAnswer: 'mv data.txt archive/',
+<<<<<<< HEAD
 
+=======
+                        regexMatch: true
+>>>>>>> origin/feat/linux-simulator-expansion-935369745345634572
                     }
                 ]
             },
@@ -285,7 +320,11 @@ export const chaptersData: Chapter[] = [
                         type: 'finale_terminal',
                         question: 'Recursively and forcefully remove the directory "old_project" and all its contents.',
                         correctAnswer: 'rm -rf old_project',
+<<<<<<< HEAD
 
+=======
+                        regexMatch: true,
+>>>>>>> origin/feat/linux-simulator-expansion-935369745345634572
                         hint: 'Use recursive and force flags.'
                     }
                 ]
@@ -327,7 +366,11 @@ export const chaptersData: Chapter[] = [
                         type: 'finale_terminal',
                         question: 'Set the sticky bit on the /tmp directory.',
                         correctAnswer: 'chmod +t /tmp',
+<<<<<<< HEAD
 
+=======
+                        regexMatch: true
+>>>>>>> origin/feat/linux-simulator-expansion-935369745345634572
                     }
                 ]
             },
@@ -353,7 +396,11 @@ export const chaptersData: Chapter[] = [
                         type: 'finale_terminal',
                         question: 'Add execute permission for everyone to the file "run.sh".',
                         correctAnswer: 'chmod +x run.sh',
+<<<<<<< HEAD
 
+=======
+                        regexMatch: true
+>>>>>>> origin/feat/linux-simulator-expansion-935369745345634572
                     }
                 ]
             },
@@ -384,7 +431,11 @@ export const chaptersData: Chapter[] = [
                         type: 'finale_terminal',
                         question: 'Change the permissions of "secret.key" so only the owner can read or write it, and nobody else has access.',
                         correctAnswer: 'chmod 600 secret.key',
+<<<<<<< HEAD
 
+=======
+                        regexMatch: true
+>>>>>>> origin/feat/linux-simulator-expansion-935369745345634572
                     }
                 ]
             },
@@ -415,7 +466,11 @@ export const chaptersData: Chapter[] = [
                         type: 'finale_terminal',
                         question: 'Change the group ownership of the directory "project" recursively to "devs".',
                         correctAnswer: 'chown -R :devs project',
+<<<<<<< HEAD
 
+=======
+                        regexMatch: true,
+>>>>>>> origin/feat/linux-simulator-expansion-935369745345634572
                         hint: 'Use the recursive flag and omit the user to just change the group.'
                     }
                 ]
@@ -457,7 +512,11 @@ export const chaptersData: Chapter[] = [
                         type: 'finale_terminal',
                         question: 'Write "echo Hello" into a file named script.sh and make it executable.',
                         correctAnswer: 'echo "echo Hello" > script.sh && chmod +x script.sh',
+<<<<<<< HEAD
 
+=======
+                        regexMatch: true
+>>>>>>> origin/feat/linux-simulator-expansion-935369745345634572
                     }
                 ]
             },
@@ -488,7 +547,11 @@ export const chaptersData: Chapter[] = [
                         type: 'finale_terminal',
                         question: 'Search for the word "ERROR" in the file "syslog" and redirect only those lines to a new file named "errors.txt".',
                         correctAnswer: 'grep "ERROR" syslog > errors.txt',
+<<<<<<< HEAD
 
+=======
+                        regexMatch: true,
+>>>>>>> origin/feat/linux-simulator-expansion-935369745345634572
                         hint: 'Combine grep and redirection.'
                     }
                 ]
@@ -520,7 +583,11 @@ export const chaptersData: Chapter[] = [
                         type: 'finale_terminal',
                         question: 'Set an environment variable named "ENV_TYPE" to "production" and export it.',
                         correctAnswer: 'export ENV_TYPE="production"',
+<<<<<<< HEAD
 
+=======
+                        regexMatch: true,
+>>>>>>> origin/feat/linux-simulator-expansion-935369745345634572
                         hint: 'Use the export command.'
                     }
                 ]
@@ -553,7 +620,11 @@ export const chaptersData: Chapter[] = [
                         type: 'finale_terminal',
                         question: 'Write a basic for loop in a single line that prints the numbers 1, 2, and 3. Use the syntax: for i in 1 2 3; do ... done',
                         correctAnswer: 'for i in 1 2 3; do echo $i; done',
+<<<<<<< HEAD
 
+=======
+                        regexMatch: true
+>>>>>>> origin/feat/linux-simulator-expansion-935369745345634572
                     }
                 ]
             }
@@ -563,7 +634,11 @@ export const chaptersData: Chapter[] = [
         id: 'chap-5',
         title: 'Process Management & Monitoring',
         description: 'Understand how the Linux kernel manages processes, tracks resource usage, and sends signals.',
+<<<<<<< HEAD
         moduleId: 7,
+=======
+        moduleId: 3,
+>>>>>>> origin/feat/linux-simulator-expansion-935369745345634572
         requiredLevel: 10,
         xpReward: 450,
         pools: [
@@ -590,7 +665,11 @@ export const chaptersData: Chapter[] = [
                         type: 'finale_terminal',
                         question: 'Send a SIGKILL signal (force kill) to process ID 1234.',
                         correctAnswer: 'kill -9 1234',
+<<<<<<< HEAD
 
+=======
+                        regexMatch: true,
+>>>>>>> origin/feat/linux-simulator-expansion-935369745345634572
                         hint: 'SIGKILL is signal number 9.'
                     }
                 ]
@@ -623,7 +702,11 @@ export const chaptersData: Chapter[] = [
                         type: 'finale_terminal',
                         question: 'View a snapshot of all processes running on the system for all users, in a full format.',
                         correctAnswer: 'ps aux',
+<<<<<<< HEAD
 
+=======
+                        regexMatch: true,
+>>>>>>> origin/feat/linux-simulator-expansion-935369745345634572
                         hint: 'Use the ps command with a, u, and x flags.'
                     }
                 ]
@@ -634,10 +717,16 @@ export const chaptersData: Chapter[] = [
         id: 'chap-6',
         title: 'Networking & Connectivity',
         description: 'Learn the core commands for diagnosing network issues, configuring interfaces, and testing connectivity.',
+<<<<<<< HEAD
         moduleId: 9,
         requiredLevel: 12,
         xpReward: 500,
         nonRotating: true,
+=======
+        moduleId: 4,
+        requiredLevel: 12,
+        xpReward: 500,
+>>>>>>> origin/feat/linux-simulator-expansion-935369745345634572
         pools: [
             {
                 id: 'pool-6-a',
@@ -662,7 +751,11 @@ export const chaptersData: Chapter[] = [
                         type: 'finale_terminal',
                         question: 'Display the routing table of the system.',
                         correctAnswer: 'ip route',
+<<<<<<< HEAD
 
+=======
+                        regexMatch: true,
+>>>>>>> origin/feat/linux-simulator-expansion-935369745345634572
                         hint: 'Use the ip command.'
                     }
                 ]
@@ -673,10 +766,16 @@ export const chaptersData: Chapter[] = [
         id: 'chap-7',
         title: 'Package Management',
         description: 'Understand how software is installed, updated, and removed on Debian/Ubuntu-based systems.',
+<<<<<<< HEAD
         moduleId: 10,
         requiredLevel: 14,
         xpReward: 500,
         nonRotating: true,
+=======
+        moduleId: 4,
+        requiredLevel: 14,
+        xpReward: 500,
+>>>>>>> origin/feat/linux-simulator-expansion-935369745345634572
         pools: [
             {
                 id: 'pool-7-a',
@@ -706,7 +805,7 @@ export const chaptersData: Chapter[] = [
                         type: 'finale_terminal',
                         question: 'Remove the package "vim" including its configuration files.',
                         correctAnswer: 'apt purge vim',
-
+                        regexMatch: true,
                         hint: 'Purge removes configs, whereas remove does not.'
                     }
                 ]
@@ -745,7 +844,7 @@ export const chaptersData: Chapter[] = [
                         type: 'finale_terminal',
                         question: 'Use "sed" to replace the first occurrence of the word "foo" with "bar" in the file "test.txt", outputting to stdout.',
                         correctAnswer: 'sed "s/foo/bar/" test.txt',
-
+                        regexMatch: true,
                         hint: 'Use the substitute (s) command in sed.'
                     }
                 ]

@@ -49,6 +49,7 @@ const NAV_ITEMS = [
     { id: "docs", label: "Commands", Icon: Icons.Docs, path: "/commands" },
     { id: "chapters", label: "Chapters", Icon: Icons.Book, path: "/chapters", new: true },
     { id: "chat", label: "Chat", Icon: Icons.AITutor, path: "/chat" },
+    { id: "chapters", label: "Chapters", Icon: Icons.Docs, path: "/chapters" },
     // Profile and Settings removed from sidebar, accessible via UserPopover
     { id: "arena", label: "Arena", Icon: Icons.Arena, path: "/challenge-arena", new: true },
 ];
