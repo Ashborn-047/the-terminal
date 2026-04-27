@@ -6,6 +6,8 @@ import { OnboardingModal } from './components/ui/AshbornDesignSystem';
 import { useUIStore } from './stores/uiStore';
 import { useLabStore } from './stores/labStore';
 import { INITIAL_LABS } from './data/labs/initial';
+import { arenaLabs } from './data/labs/arena';
+import { brokenSystemLabs } from './data/labs/broken_systems';
 import { logger } from './utils/logger';
 import { ToastProvider } from './components/ToastNotification';
 import { LevelUpModal } from './components/gamification/LevelUpModal';
@@ -144,8 +146,11 @@ function AppContent() {
   // Load initial labs if not already loaded
   React.useEffect(() => {
     if (Object.keys(labs).length === 0) {
-      setLabs(INITIAL_LABS);
-      logger.info('Loaded initial labs:', Object.keys(INITIAL_LABS).length);
+      const allLabs = { ...INITIAL_LABS };
+      arenaLabs.forEach(lab => allLabs[lab.id] = lab);
+      brokenSystemLabs.forEach(lab => allLabs[lab.id] = lab);
+      setLabs(allLabs);
+      logger.info('Loaded initial labs:', Object.keys(allLabs).length);
     }
   }, [labs, setLabs]);
 

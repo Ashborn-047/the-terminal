@@ -317,13 +317,11 @@ export const ScenarioRegistry: Record<string, ScenarioInitializer> = {
         logger.info('Arena: master sysadmin chaos unleashed.');
     },
 
-    'arena_zero_day': async (vfs, logger) => {
         await vfs.writeFile('/usr/bin/curl', 'CURL EXECUTABLE', 'root');
         await vfs.chmod('/usr/bin/curl', 0o755);
         logger.info('Arena: curl exposed for zero day.');
     },
 
-    'arena_empty_systemd': async (vfs, logger) => {
         await vfs.mkdir('/etc', 'systemd', 'root');
         await vfs.mkdir('/etc/systemd', 'system', 'root');
         logger.info('Arena: empty systemd target ready.');

@@ -287,6 +287,7 @@ const HomePage: React.FC = () => {
                         <SkillTree />
                     </Card>
                 </div>
+                </div>
             </div>
 
 
