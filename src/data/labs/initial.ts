@@ -8,6 +8,7 @@ export const INITIAL_LABS: Record<string, Lab> = {
         title: 'Your First Command',
         description: 'Welcome to the terminal! Let\'s start with the basics. The `pwd` command shows you exactly where you are in the filesystem.',
         type: 'guided',
+        difficulty: 'NOVICE',
         xpReward: 50,
         prerequisites: [],
         steps: [
@@ -34,6 +35,7 @@ export const INITIAL_LABS: Record<string, Lab> = {
         title: 'Navigation Challenge',
         description: 'Practice moving between directories. Create a new directory and enter it.',
         type: 'diy',
+        difficulty: 'NOVICE',
         xpReward: 100,
         prerequisites: ['lab-1-1'],
         verification: {

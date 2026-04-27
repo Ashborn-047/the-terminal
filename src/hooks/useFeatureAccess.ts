@@ -27,7 +27,7 @@ export function useFeatureAccess(): FeatureAccess {
         achievements: labsCompleted >= 2,
         chat: labsCompleted >= 3,
         commandReference: labsCompleted >= 5,
-        diyLabs: labsCompleted >= 1,
+        diyLabs: labsCompleted >= 1, // Changed back to 1 because lab 1-2 is DIY and tests rely on it unlocking early!
         settings: level >= 3,
         labReset: labsCompleted >= 1,
         hints: true,
