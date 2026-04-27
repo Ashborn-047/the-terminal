@@ -120,8 +120,8 @@ const LabView: React.FC = () => {
         if (labId) revealSolution(labId);
     };
 
-    const handleHintUsed = (stepIndex: number) => {
-        if (labId) recordHintUsage(labId, stepIndex);
+    const handleHintUsed = (stepIndex: number, hintLevel: number) => {
+        if (labId) recordHintUsage(labId, stepIndex, hintLevel);
     };
 
     const handleReset = () => {

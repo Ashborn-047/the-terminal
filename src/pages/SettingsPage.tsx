@@ -25,6 +25,8 @@ export const SettingsPage: React.FC = () => {
         themePreset,
         setThemePreset
     } = useUIStore();
+
+    const { difficultyMode, setDifficultyMode } = useGamificationStore();
     const [tempUsername, setTempUsername] = useState(username);
     const [isEditing, setIsEditing] = useState(false);
     const [saveMessage, setSaveMessage] = useState('');
