@@ -7,7 +7,7 @@ import { useUIStore } from './uiStore';
 import { spacetime } from '../lib/spacetime';
 import { logger } from '../utils/logger';
 import { HardcoreProfile, MasteryBadge } from '../features/lab-engine/hardcore';
-import { XP_BASE, XP_MULTIPLIER, STREAK_BONUS_TIERS, HARDCORE_XP_MULTIPLIER, BASE_LAB_XP } from '../config/progression';
+import { XP_BASE, XP_MULTIPLIER, STREAK_BONUS_TIERS, HARDCORE_XP_MULTIPLIER, BASE_LAB_XP, DifficultyMode } from '../config/progression';
 import { useQuestStore } from './questStore';
 import { useHardcoreStore } from './hardcoreStore';
 import { VFS } from '../features/vfs/vfs';
@@ -106,7 +106,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     { id: 'completionist', name: 'Completionist', description: 'Complete all labs in a module', category: 'milestone', icon: '🏁', hidden: false, xpReward: 250, criteria: { type: 'counter', target: 'modules-completed', threshold: 1 } },
 ];
 
-export type QuestType = 'earn_xp' | 'execute_commands' | 'complete_labs';
+export type QuestType = 'earn_xp' | 'execute_commands' | 'complete_labs' | 'complete_module' | 'find_easter_egg' | 'reach_level';
 
 export interface DailyQuest {
     id: string;
@@ -150,6 +150,12 @@ interface GamificationState {
     masteryBadge: MasteryBadge;
     labCompletionHistory: Record<string, { completions: number; lastCompleted: number }>;
 
+    // PR 8: Difficulty modes
+    difficultyMode: DifficultyMode;
+
+    // PR 9: Chapters tracking
+    completedChapterIds: string[];
+
     addXp: (amount: number) => void;
     triggerDeath: (reason: string) => void;
     resetXpOnDeath: () => void;
@@ -172,6 +178,11 @@ interface GamificationState {
     dismissMigrationNotice: () => void;
     calculateReplayXp: (labId: string, baseXp: number) => number;
     calculateTotalXpGain: (totalBase: number) => number;
+    // PR 8: Difficulty & XP spending
+    setDifficultyMode: (mode: DifficultyMode) => void;
+    spendXp: (amount: number) => boolean;
+    // PR 9: Chapters completion tracking
+    markChapterCompleted: (chapterId: string) => void;
 }
 
 export const useGamificationStore = create<GamificationState>()(
@@ -192,6 +203,8 @@ export const useGamificationStore = create<GamificationState>()(
             needsMigrationNotice: false,
             masteryBadge: 'novice',
             labCompletionHistory: {},
+            difficultyMode: 'NORMAL',
+            completedChapterIds: [],
 
             questTemplates: [
                 { type: 'earn_xp', title: 'Gain {{target}} XP', baseTarget: 250, xpReward: 50 },
@@ -200,6 +213,9 @@ export const useGamificationStore = create<GamificationState>()(
                 { type: 'execute_commands', title: 'Terminal Mastery: {{target}} Commands', baseTarget: 50, xpReward: 100 },
                 { type: 'complete_labs', title: 'Lab Marathon: {{target}} Labs', baseTarget: 3, xpReward: 250 },
                 { type: 'earn_xp', title: 'XP Hunter: {{target}} XP', baseTarget: 1000, xpReward: 200 },
+                { type: 'complete_module', title: 'Complete a Module', baseTarget: 1, xpReward: 300 },
+                { type: 'reach_level', title: 'Reach Level {{target}}', baseTarget: 5, xpReward: 150 },
+                { type: 'find_easter_egg', title: 'Discover {{target}} Easter Egg(s)', baseTarget: 1, xpReward: 75 },
             ],
 
             addXp: (amount) => {
@@ -347,7 +363,17 @@ export const useGamificationStore = create<GamificationState>()(
 
                 // Achievement & Quests
                 get().updateQuestProgress('complete_labs', 1);
+                get().updateQuestProgress('earn_xp', finalXpGain); // Fix: credit earn_xp quest on lab completion
                 get().updateStreak();
+
+                // Fix: credit reach_level quest with delta of levels gained
+                const oldLevel = get().level;
+                get().addXp(0); // recalc level from updated totalXpEarned
+                const newLevel = get().level;
+                if (newLevel > oldLevel) {
+                    get().updateQuestProgress('reach_level', newLevel - oldLevel);
+                }
+
                 get().checkAchievements();
 
                 if (objectivesCompleted.length > 0) {
@@ -549,6 +575,25 @@ export const useGamificationStore = create<GamificationState>()(
             },
 
             dismissMigrationNotice: () => set({ needsMigrationNotice: false }),
+
+            // PR 8: Difficulty mode management
+            setDifficultyMode: (mode: DifficultyMode) => set({ difficultyMode: mode }),
+
+            spendXp: (amount: number): boolean => {
+                if (!Number.isFinite(amount) || amount <= 0) return false;
+                const state = get();
+                if (state.xp < amount) return false;
+                set((s) => ({ xp: s.xp - amount }));
+                return true;
+            },
+
+            // PR 9: Chapters completion tracking
+            markChapterCompleted: (chapterId: string) => {
+                set((state) => {
+                    if (state.completedChapterIds.includes(chapterId)) return {};
+                    return { completedChapterIds: [...state.completedChapterIds, chapterId] };
+                });
+            },
 
             calculateReplayXp: (labId: string, baseXp: number) => {
                 const history = get().labCompletionHistory[labId];

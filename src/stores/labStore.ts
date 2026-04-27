@@ -17,7 +17,7 @@ interface LabState {
     startLab: (labId: string) => void;
     updateProgress: (labId: string, updates: Partial<LabProgress>) => void;
     completeLab: (labId: string) => void;
-    recordHintUsage: (labId: string, stepIndex: number) => void;
+    recordHintUsage: (labId: string, stepIndex: number, hintLevel: number) => void;
     revealSolution: (labId: string) => void;
     resetLab: (labId: string) => void;
     exitLab: () => void;
@@ -47,7 +47,7 @@ export const useLabStore = create<LabState>()(
                             status: 'in-progress',
                             currentStepIndex: 0,
                             verified: false,
-                            hintsUsed: [],
+                            hintsUsed: {},
                             startTime: now,
                             totalTimeSpent: 0
                         },
@@ -98,16 +98,26 @@ export const useLabStore = create<LabState>()(
                 }));
             },
 
-            recordHintUsage: (labId, stepIndex) => {
+            recordHintUsage: (labId, stepIndex, hintLevel) => {
                 const p = get().progress[labId];
-                if (!p || p.hintsUsed?.includes(stepIndex)) return;
+                if (!p) return;
+
+                const currentHints = (p.hintsUsed && typeof p.hintsUsed === 'object' && !Array.isArray(p.hintsUsed))
+                    ? p.hintsUsed as Record<number, number[]>
+                    : {} as Record<number, number[]>;
+                
+                const stepHints = currentHints[stepIndex] || [];
+                if (stepHints.includes(hintLevel)) return; // Already recorded
 
                 set((state) => ({
                     progress: {
                         ...state.progress,
                         [labId]: {
                             ...p,
-                            hintsUsed: [...(p.hintsUsed || []), stepIndex]
+                            hintsUsed: {
+                                ...currentHints,
+                                [stepIndex]: [...stepHints, hintLevel]
+                            }
                         }
                     }
                 }));
@@ -137,7 +147,7 @@ export const useLabStore = create<LabState>()(
                             status: 'in-progress',
                             currentStepIndex: 0,
                             verified: false,
-                            hintsUsed: [],
+                            hintsUsed: {},
                             startTime: Date.now(),
                             totalTimeSpent: 0
                         },
@@ -176,6 +186,18 @@ export const useLabStore = create<LabState>()(
         }),
         {
             name: 'the-terminal-labs',
+            version: 2,
+            migrate: (persisted: any, version: number) => {
+                if (version < 2 && persisted?.progress) {
+                    // Migrate hintsUsed from number[] (v1) to Record<number, number[]> (v2)
+                    for (const [id, p] of Object.entries(persisted.progress as Record<string, any>)) {
+                        if (Array.isArray(p?.hintsUsed)) {
+                            p.hintsUsed = {}; // Reset — old array data is incompatible with tiered model
+                        }
+                    }
+                }
+                return persisted;
+            },
         }
     )
 );

@@ -67,7 +67,7 @@ export interface LabProgress {
     sequenceIndex?: number; // Tracks progress within a requiredSequence step
     completedAt?: number;
     verified: boolean;
-    hintsUsed?: number[]; // indices of steps where hints were used (Guided) or hint indices (DIY)
+    hintsUsed?: number[] | Record<number, number[]>; // Legacy: step indices (array) | Tiered: step → hint levels (Record)
     solutionRevealed?: boolean; // True if the user revealed the solution
     startTime?: number;   // UNIX timestamp when lab started/resumed
     totalTimeSpent?: number; // Cumulative seconds spent

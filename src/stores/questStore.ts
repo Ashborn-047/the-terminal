@@ -2,13 +2,13 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { brokenSystemLabs } from '../data/labs/broken_systems';
 
-export interface DailyQuest {
+export interface DailyLabRotation {
     labId: string;
     xpMultiplier: number;
 }
 
 interface QuestState {
-    dailyQuests: DailyQuest[];
+    dailyQuests: DailyLabRotation[];
     lastRotationDate: string;
     
     // Actions

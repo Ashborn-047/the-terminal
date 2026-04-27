@@ -12,3 +12,12 @@ export const STREAK_BONUS_TIERS = [
 export const HARDCORE_XP_MULTIPLIER = 1.5;
 
 export const BASE_LAB_XP = 250;
+
+// PR 8: Difficulty mode system
+export type DifficultyMode = 'BEGINNER' | 'NORMAL' | 'HARD';
+
+export const DIFFICULTY_MULTIPLIERS: Record<DifficultyMode, number> = {
+  BEGINNER: 0.75,
+  NORMAL: 1.0,
+  HARD: 1.5,
+};
