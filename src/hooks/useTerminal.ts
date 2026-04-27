@@ -373,12 +373,19 @@ export function useTerminal() {
                     if (hour >= 5 && hour < 8) incrementCounter('early-bird');
 
                     // Module Completion Logic — per gamification_framework.md §2.4
+                    // Gate: Only check module completion ONCE when lab status transitions to 'completed'
                     const currentLab = labs[currentLabId];
                     if (typeof currentLab.module === 'number') {
-                        const moduleLabs = Object.values(labs).filter(l => l.module === currentLab.module);
-                        const completedInModule = moduleLabs.filter(l => progress[l.id]?.status === 'completed');
-                        if (completedInModule.length === moduleLabs.length) {
-                            incrementCounter('modules-completed');
+                        const moduleKey = `__module_${currentLab.module}_completed`;
+                        const { counters: latestCounters } = useGamificationStore.getState();
+                        if (!latestCounters[moduleKey]) {
+                            const moduleLabs = Object.values(labs).filter(l => l.module === currentLab.module);
+                            const completedInModule = moduleLabs.filter(l => progress[l.id]?.status === 'completed');
+                            if (completedInModule.length === moduleLabs.length) {
+                                incrementCounter(moduleKey); // Mark this module as awarded (fires once)
+                                incrementCounter('modules-completed');
+                                updateQuestProgress('complete_module', 1);
+                            }
                         }
                     }
                 }
