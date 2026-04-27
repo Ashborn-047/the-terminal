@@ -136,6 +136,7 @@ export const ScenarioRegistry: Record<string, ScenarioInitializer> = {
     'arena_ghost_process': async (vfs, logger) => {
         // Simulated process that needs killing. The engine will handle process creation if applicable,
         // but for VFS tests, we could just create a mock pid file.
+        await vfs.mkdir('/var', 'run', 'root');
         await vfs.mkdir('/var/run', 'rogue', 'root');
         await vfs.writeFile('/var/run/rogue/rogue_daemon.pid', '9999', 'root');
         logger.info('Arena: ghost process PID written.');
@@ -177,6 +178,10 @@ export const ScenarioRegistry: Record<string, ScenarioInitializer> = {
     },
 
     'arena_empty': async (vfs, logger) => {
+        await vfs.mkdir('/', 'root', 'root');
+        await vfs.mkdir('/root', '.ssh', 'root');
+        await vfs.mkdir('/etc', 'network', 'root');
+        await vfs.writeFile('/etc/network/interfaces', '', 'root');
         logger.info('Arena: empty scenario ready.');
     },
 
@@ -197,16 +202,16 @@ export const ScenarioRegistry: Record<string, ScenarioInitializer> = {
     },
 
     'arena_sticky_missing': async (vfs, logger) => {
-        await vfs.mkdir('/', 'tmp', 'root');
-        await vfs.chmod('/tmp', 0o777);
+        await applyScenario(vfs, 'sticky_bit_missing', logger);
         logger.info('Arena: /tmp missing sticky bit.');
     },
 
     'arena_rogue_suid': async (vfs, logger) => {
-        await vfs.mkdir('/usr/share', 'nmap', 'root');
-        await vfs.writeFile('/usr/share/nmap', '#!/bin/sh\n/bin/sh -p', 'root');
-        await vfs.chmod('/usr/share/nmap', 0o4755);
-        logger.info('Arena: Rogue SUID binary planted at /usr/share/nmap.');
+        await vfs.mkdir('/usr', 'share', 'root');
+        await vfs.mkdir('/usr/share', 'nmap_rogue', 'root');
+        await vfs.writeFile('/usr/share/nmap_rogue/nmap', '#!/bin/sh\n/bin/sh -p', 'root');
+        await vfs.chmod('/usr/share/nmap_rogue/nmap', 0o4755);
+        logger.info('Arena: Rogue SUID binary planted at /usr/share/nmap_rogue/nmap.');
     },
 
     'arena_hidden_miners': async (vfs, logger) => {
@@ -217,8 +222,11 @@ export const ScenarioRegistry: Record<string, ScenarioInitializer> = {
 
     'arena_immutable_config': async (vfs, logger) => {
         await vfs.writeFile('/etc/resolv.conf', 'nameserver 8.8.8.8', 'root');
-        await vfs.chmod('/etc/resolv.conf', 0o644);
-        logger.info('Arena: resolv.conf created with 644.');
+        await vfs.chmod('/etc/resolv.conf', 0o444);
+        if (typeof (vfs as any).chattr === 'function') {
+            await (vfs as any).chattr('/etc/resolv.conf', '+i');
+        }
+        logger.info('Arena: resolv.conf created with 444.');
     },
 
     'arena_group_collab': async (vfs, logger) => {
@@ -256,8 +264,8 @@ export const ScenarioRegistry: Record<string, ScenarioInitializer> = {
     },
 
     'arena_path_hijack': async (vfs, logger) => {
-        await vfs.mkdir('/usr', 'local', 'root');
-        await vfs.mkdir('/usr/local', 'bin', 'root');
+        await applyScenario(vfs, 'path_hijack', logger);
+        // path_hijack creates /usr/local/bin/ls, we also add sudo
         await vfs.writeFile('/usr/local/bin/sudo', '#!/bin/sh\necho PWNED', 'root');
         await vfs.chmod('/usr/local/bin/sudo', 0o755);
         logger.info('Arena: path hijack sudo planted.');
@@ -281,7 +289,7 @@ export const ScenarioRegistry: Record<string, ScenarioInitializer> = {
 
     'arena_ssh_hardening': async (vfs, logger) => {
         await vfs.mkdir('/etc', 'ssh', 'root');
-        await vfs.writeFile('/etc/ssh/sshd_config', 'Port 22\n', 'user');
+        await vfs.writeFile('/etc/ssh/sshd_config', 'Port 22\n', 'root');
         await vfs.chmod('/etc/ssh/sshd_config', 0o777);
         logger.info('Arena: vulnerable sshd_config created.');
     },
@@ -310,11 +318,13 @@ export const ScenarioRegistry: Record<string, ScenarioInitializer> = {
     },
 
     'arena_zero_day': async (vfs, logger) => {
+        await vfs.writeFile('/usr/bin/curl', 'CURL EXECUTABLE', 'root');
         await vfs.chmod('/usr/bin/curl', 0o755);
         logger.info('Arena: curl exposed for zero day.');
     },
 
     'arena_empty_systemd': async (vfs, logger) => {
+        await vfs.mkdir('/etc', 'systemd', 'root');
         await vfs.mkdir('/etc/systemd', 'system', 'root');
         logger.info('Arena: empty systemd target ready.');
     },
@@ -339,7 +349,7 @@ export const ScenarioRegistry: Record<string, ScenarioInitializer> = {
     },
 
     'arena_empty_hosts': async (vfs, logger) => {
-        await vfs.writeFile('/etc/hosts', '127.0.0.1 localhost\n', 'root');
+        await vfs.writeFile('/etc/hosts', '', 'root');
         logger.info('Arena: hosts file ready for sinkhole.');
     },
 

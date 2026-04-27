@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Lab, VFS } from '../../features/lab-engine/types';
 import { VerificationEngine } from '../../features/lab-engine/verification';
 import { useTerminalStore } from '../../stores/terminalStore';
+import { useGamificationStore } from '../../stores/gamificationStore';
 import { Lock, CheckCircle, Play, HelpCircle, Award, ChevronRight, AlertTriangle } from 'lucide-react';
 import { 
     tokens, 
@@ -163,8 +164,16 @@ export const GuidedLabInstructions: React.FC<GuidedLabProps> = ({ lab, currentSt
                         {!showHint ? (
                             <button
                                 onClick={() => {
-                                    setShowHint(true);
-                                    onHintUsed?.(currentStepIndex);
+                                    const { xp, spendXp } = useGamificationStore.getState();
+                                    if (xp < 5) {
+                                        alert("Not enough XP for a hint! (Requires 5 XP)");
+                                        return;
+                                    }
+                                    if (window.confirm("Using a hint costs 5 XP. Continue?")) {
+                                        spendXp(5);
+                                        setShowHint(true);
+                                        onHintUsed?.(currentStepIndex);
+                                    }
                                 }}
                                 style={{
                                     display: 'flex',
@@ -362,8 +371,16 @@ export const DIYLabInstructions: React.FC<DIYLabProps> = ({ lab, vfs, userId, on
                         {hintIndex < 0 ? (
                             <button
                                 onClick={() => {
-                                    setHintIndex(0);
-                                    onHintUsed?.(0);
+                                    const { xp, spendXp } = useGamificationStore.getState();
+                                    if (xp < 10) {
+                                        alert("Not enough XP for a hint! (Requires 10 XP)");
+                                        return;
+                                    }
+                                    if (window.confirm("Using a hint costs 10 XP. Continue?")) {
+                                        spendXp(10);
+                                        setHintIndex(0);
+                                        onHintUsed?.(0);
+                                    }
                                 }}
                                 style={{
                                     display: 'flex',
@@ -401,8 +418,16 @@ export const DIYLabInstructions: React.FC<DIYLabProps> = ({ lab, vfs, userId, on
                                         variant="outline"
                                         size="xs"
                                         onClick={() => {
-                                            setHintIndex(hintIndex + 1);
-                                            onHintUsed?.(hintIndex + 1);
+                                            const { xp, spendXp } = useGamificationStore.getState();
+                                            if (xp < 10) {
+                                                alert("Not enough XP for a hint! (Requires 10 XP)");
+                                                return;
+                                            }
+                                            if (window.confirm("Using another hint costs 10 XP. Continue?")) {
+                                                spendXp(10);
+                                                setHintIndex(hintIndex + 1);
+                                                onHintUsed?.(hintIndex + 1);
+                                            }
                                         }}
                                         style={{ alignSelf: 'flex-start' }}
                                     >

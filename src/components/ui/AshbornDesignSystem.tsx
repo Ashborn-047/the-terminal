@@ -401,7 +401,7 @@ export const Badge = ({ variant = "default", children, ...props }: BadgeProps) =
 };
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-    variant?: "primary" | "secondary" | "danger" | "ghost" | "outline";
+    variant?: "primary" | "secondary" | "danger" | "ghost" | "outline" | "lime" | "outline_lime" | "amber";
     size?: "sm" | "md" | "lg";
 }
 
@@ -411,9 +411,10 @@ export const Button = ({ variant = "primary", size = "md", style, children, ...p
     const isGhost = variant === "ghost";
     const isOutline = variant === "outline" || variant === "outline_lime";
     const isLime = variant === "lime" || variant === "outline_lime";
+    const isAmber = variant === "amber";
 
-    const bg = isDanger ? tokens.color.semantic.error : isSecondary ? tokens.color.bg.overlay : isGhost || isOutline ? "transparent" : tokens.color.lime.base;
-    const tx = isDanger || (!isSecondary && !isGhost && !isOutline) ? tokens.color.text.inverse : isSecondary ? tokens.color.text.primary : tokens.color.lime.base;
+    const bg = isDanger ? tokens.color.semantic.error : isSecondary ? tokens.color.bg.overlay : isGhost || isOutline ? "transparent" : isAmber ? tokens.color.amber.base : tokens.color.lime.base;
+    const tx = isDanger || (!isSecondary && !isGhost && !isOutline) ? tokens.color.text.inverse : isSecondary ? tokens.color.text.primary : isAmber ? tokens.color.amber.base : tokens.color.lime.base;
     const bd = variant === "outline" ? `1px solid ${tokens.color.border.strong}` : variant === "outline_lime" ? `1px solid ${tokens.color.border.lime}` : isSecondary ? `1px solid ${tokens.color.border.default}` : "none";
 
     return (

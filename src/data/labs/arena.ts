@@ -90,9 +90,9 @@ export const arenaLabs: Lab[] = [
         verification: {
             conditions: [
                 {
-                    type: 'file_contains',
+                    type: 'file_matches_regex',
                     path: '/var/log/syslog',
-                    content: '',
+                    content: '^$',
                     message: 'The /var/log/syslog must be empty.'
                 }
             ]
@@ -627,9 +627,9 @@ export const arenaLabs: Lab[] = [
         verification: {
             conditions: [
                 {
-                    type: 'file_contains',
+                    type: 'file_matches_regex',
                     path: '/root/.bashrc',
-                    content: '',
+                    content: '^$',
                     message: '.bashrc must be cleared.'
                 }
             ]
@@ -827,9 +827,9 @@ export const arenaLabs: Lab[] = [
         verification: {
             conditions: [
                 {
-                    type: 'file_contains',
+                    type: 'file_matches_regex',
                     path: '/etc/apt/sources.list',
-                    content: '',
+                    content: '^$',
                     message: 'sources.list must be cleared.'
                 }
             ]

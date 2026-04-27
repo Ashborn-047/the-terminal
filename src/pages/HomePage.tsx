@@ -5,7 +5,7 @@ import { useLabStore } from '../stores/labStore';
 import { useNavigate } from 'react-router-dom';
 import { Terminal as TerminalIcon } from 'lucide-react';
 import { SkillTree } from '../components/gamification/SkillTree';
-import { QuestList } from '../components/gamification/QuestList';
+import { DailyQuests } from '../components/gamification/DailyQuests';
 import { 
     tokens, 
     Button, 
@@ -119,9 +119,11 @@ const HomePage: React.FC = () => {
                         <Button 
                             variant="ghost" 
                             size="sm"
-                            onClick={() => navigate('/labs')}
+                            onClick={() => navigate('/chapters')}
+                            style={{ position: 'relative' }}
                         >
                             View Curriculum
+                            <Badge variant="lime" style={{ position: 'absolute', top: -8, right: -8, fontSize: 8 }}>NEW</Badge>
                         </Button>
                     </div>
                 </div>
@@ -278,16 +280,15 @@ const HomePage: React.FC = () => {
                     </Card>
                 </div>
 
-                <Card variant="default" style={{ padding: 20 }}>
-                    <Display size="xs" color={tokens.color.text.tertiary} style={{ marginBottom: 12 }}>Terminal Missions</Display>
-                    <QuestList />
-                </Card>
+                <div className="flex flex-col gap-6">
+                    <DailyQuests />
+                    <Card variant="default" style={{ padding: 20 }}>
+                        <Display size="xs" color={tokens.color.text.tertiary} style={{ marginBottom: 12 }}>System Masteries</Display>
+                        <SkillTree />
+                    </Card>
+                </div>
             </div>
 
-            {/* Skill Tree */}
-            <div className="mb-8">
-                <SkillTree />
-            </div>
 
             {/* Achievements */}
             <div className="mb-8">

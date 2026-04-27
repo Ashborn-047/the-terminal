@@ -1,0 +1,654 @@
+﻿author:	google-labs-jules
+association:	contributor
+edited:	false
+status:	none
+--
+≡ƒæï Jules, reporting for duty! I'm here to lend a hand with this pull request.
+
+When you start a review, I'll add a ≡ƒæÇ emoji to each comment to let you know I've read it. I'll focus on feedback directed at me and will do my best to stay out of conversations between you and other bots or reviewers to keep the noise down.
+
+I'll push a commit with your requested changes shortly after. Please note there might be a delay between these steps, but rest assured I'm on the job!
+
+For more direct control, you can switch me to **Reactive Mode**. When this mode is on, I will only act on comments where you specifically mention me with `@jules`. You can find this option in the **Pull Request** section of your [global Jules UI settings](https://jules.google.com/settings). You can always switch back!
+
+New to Jules? Learn more at [jules.google/docs](https://jules.google/docs).
+
+---
+*_For security, I will only act on instructions from the user who triggered this task._*
+--
+author:	coderabbitai
+association:	none
+edited:	true
+status:	none
+--
+<!-- This is an auto-generated comment: summarize by coderabbit.ai -->
+<!-- walkthrough_start -->
+
+<details>
+<summary>≡ƒô¥ Walkthrough</summary>
+
+## Walkthrough
+
+Adds a new chapters/assessments feature: typed chapter metadata and assessment datasets, a question provider, a ChaptersPage UI with routing and layout integration, and supporting curriculum/docs. Changes introduce assessment data, session question generation, chapter progression logic, and navigation to the new page.
+
+## Changes
+
+|Cohort / File(s)|Summary|
+|---|---|
+|**Assessment Data Module** <br> `src/data/chaptersData.ts`|New exported types (`ChapterAssessmentType`, `ChapterAssessment`, `ChapterPool`, `Chapter`) and `chaptersData` constant with fully populated chapter metadata and pools of `mcq`, `syntax_drill`, and `finale_terminal` assessments.|
+|**Curriculum Metadata** <br> `src/data/chapters/curriculum_metadata.ts`|Adds `ChapterMetadata` type plus `sysadmin1Chapters`, `sysadmin2Chapters`, and `allCurriculumChapters` arrays describing track chapters and progression.|
+|**Question Provider** <br> `src/features/lab-engine/providers/QuestionProvider.ts`|New `AssessmentType`/`ChapterAssessment` types, `staticQuestionBank`, and `QuestionProvider.fetchSessionQuestions(...)` which seeds, pads, shuffles, and returns session questions.|
+|**UI Routing & Layout** <br> `src/App.tsx`, `src/components/layout/AshbornLayout.tsx`|Adds lazy-loaded `ChaptersPage` route at `"/chapters"` wrapped in `ProtectedRoute` and a `"Chapters"` entry to the sidebar/mobile nav.|
+|**Chapters Page UI & Logic** <br> `src/pages/ChaptersPage.tsx`|New `ChaptersPage` React component: chapter selection, gating by level, fetches session questions, step progression, answer validation (mcq/syntax_drill/finale_terminal), completion flow (XP award, toasts, dynamic spacetime import), and chapter grids for Track 1/2.|
+|**Documentation / Curriculum Mapping** <br> `docs/curriculum/ENTERPRISE_LINUX_CURRICULUM.md`, `docs/system/RHCSA_MAPPING.md`|Adds curriculum doc for Enterprise Linux tracks and an RHCSA mapping with migration plan and gaps identified.|
+
+## Sequence Diagram(s)
+
+```mermaid
+sequenceDiagram
+  participant User as User
+  participant UI as ChaptersPage
+  participant QP as QuestionProvider
+  participant Terminal as Terminal (Emulator)
+  participant Sp as SpacetimeModule
+
+  User->>UI: open /chapters
+  UI->>QP: fetchSessionQuestions(chapterId, 5)
+  QP-->>UI: return [assessments]
+  UI->>User: render question 1
+  User->>UI: submit answer
+  alt mcq or syntax_drill
+    UI->>UI: validate answer (exact/trim)
+  else finale_terminal
+    Terminal->>UI: push terminal history
+    UI->>UI: match last command (regex or string)
+  end
+  UI-->>User: advance step or show error toast
+  alt chapter complete
+    UI->>Sp: dynamic import(markComplete)
+    Sp-->>UI: acknowledged
+    UI->>User: show completion screen + award XP
+  end
+```
+
+## Estimated code review effort
+
+≡ƒÄ» 4 (Complex) | ΓÅ▒∩╕Å ~45 minutes
+
+## Poem
+
+> ≡ƒÉ░ I hopped through code to plant each clue,  
+> Pools of questions fresh as dew,  
+> Chapters lined in tidy rows,  
+> MCQs, drills, and terminal shows,  
+> A tiny rabbit cheering "Go ΓÇö review!" ≡ƒÑò
+
+</details>
+
+<!-- walkthrough_end -->
+
+
+<!-- pre_merge_checks_walkthrough_start -->
+
+<details>
+<summary>≡ƒÜÑ Pre-merge checks | Γ£à 3 | Γ¥î 2</summary>
+
+### Γ¥î Failed checks (1 warning, 1 inconclusive)
+
+|     Check name     | Status         | Explanation                                                                                                                                                                                                                                                                                                                                                                                                     | Resolution                                                                                                                                                                                                                                       |
+| :----------------: | :------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Docstring Coverage | ΓÜá∩╕Å Warning     | Docstring coverage is 0.00% which is insufficient. The required threshold is 80.00%.                                                                                                                                                                                                                                                                                                                            | Write docstrings for the functions missing them to satisfy the coverage threshold.                                                                                                                                                               |
+|     Title check    | Γ¥ô Inconclusive | The PR title 'feat: implement arena, chapters, and daily challenges' is overly broad and only partially related to the changeset. The PR predominantly adds Chapters infrastructure (new data structures, ChaptersPage, curriculum metadata, question provider) and documentation, but the title equally emphasizes Arena and Daily Challenges which are not substantially reflected in the provided summaries. | Consider a more specific title like 'feat: add chapters system with curriculum and assessment types' to accurately reflect the primary additions, or provide context confirming Arena and Daily Challenges are implemented elsewhere in this PR. |
+
+<details>
+<summary>Γ£à Passed checks (3 passed)</summary>
+
+|         Check name         | Status   | Explanation                                                              |
+| :------------------------: | :------- | :----------------------------------------------------------------------- |
+|      Description Check     | Γ£à Passed | Check skipped - CodeRabbitΓÇÖs high-level summary is enabled.              |
+|     Linked Issues check    | Γ£à Passed | Check skipped because no linked issues were found for this pull request. |
+| Out of Scope Changes check | Γ£à Passed | Check skipped because no linked issues were found for this pull request. |
+
+</details>
+
+<sub>Γ£Å∩╕Å Tip: You can configure your own custom pre-merge checks in the settings.</sub>
+
+</details>
+
+<!-- pre_merge_checks_walkthrough_end -->
+
+<!-- finishing_touch_checkbox_start -->
+
+<details>
+<summary>Γ£¿ Finishing Touches</summary>
+
+<details>
+<summary>≡ƒô¥ Generate docstrings</summary>
+
+- [ ] <!-- {"checkboxId": "7962f53c-55bc-4827-bfbf-6a18da830691"} --> Create stacked PR
+- [ ] <!-- {"checkboxId": "3e1879ae-f29b-4d0d-8e06-d12b7ba33d98"} --> Commit on current branch
+
+</details>
+<details>
+<summary>≡ƒº¬ Generate unit tests (beta)</summary>
+
+- [ ] <!-- {"checkboxId": "f47ac10b-58cc-4372-a567-0e02b2c3d479", "radioGroupId": "utg-output-choice-group-unknown_comment_id"} -->   Create PR with unit tests
+- [ ] <!-- {"checkboxId": "6ba7b810-9dad-11d1-80b4-00c04fd430c8", "radioGroupId": "utg-output-choice-group-unknown_comment_id"} -->   Commit unit tests in branch `feat/linux-simulator-expansion-935369745345634572`
+
+</details>
+
+</details>
+
+<!-- finishing_touch_checkbox_end -->
+
+<!-- tips_start -->
+
+---
+
+Thanks for using [CodeRabbit](https://coderabbit.ai?utm_source=oss&utm_medium=github&utm_campaign=Ashborn-047/the-terminal&utm_content=9)! It's free for OSS, and your support helps us grow. If you like it, consider giving us a shout-out.
+
+<details>
+<summary>Γ¥ñ∩╕Å Share</summary>
+
+- [X](https://twitter.com/intent/tweet?text=I%20just%20used%20%40coderabbitai%20for%20my%20code%20review%2C%20and%20it%27s%20fantastic%21%20It%27s%20free%20for%20OSS%20and%20offers%20a%20free%20trial%20for%20the%20proprietary%20code.%20Check%20it%20out%3A&url=https%3A//coderabbit.ai)
+- [Mastodon](https://mastodon.social/share?text=I%20just%20used%20%40coderabbitai%20for%20my%20code%20review%2C%20and%20it%27s%20fantastic%21%20It%27s%20free%20for%20OSS%20and%20offers%20a%20free%20trial%20for%20the%20proprietary%20code.%20Check%20it%20out%3A%20https%3A%2F%2Fcoderabbit.ai)
+- [Reddit](https://www.reddit.com/submit?title=Great%20tool%20for%20code%20review%20-%20CodeRabbit&text=I%20just%20used%20CodeRabbit%20for%20my%20code%20review%2C%20and%20it%27s%20fantastic%21%20It%27s%20free%20for%20OSS%20and%20offers%20a%20free%20trial%20for%20proprietary%20code.%20Check%20it%20out%3A%20https%3A//coderabbit.ai)
+- [LinkedIn](https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fcoderabbit.ai&mini=true&title=Great%20tool%20for%20code%20review%20-%20CodeRabbit&summary=I%20just%20used%20CodeRabbit%20for%20my%20code%20review%2C%20and%20it%27s%20fantastic%21%20It%27s%20free%20for%20OSS%20and%20offers%20a%20free%20trial%20for%20proprietary%20code)
+
+</details>
+
+<sub>Comment `@coderabbitai help` to get the list of available commands and usage tips.</sub>
+
+<!-- tips_end -->
+
+<!-- internal state start -->
+
+
+<!-- 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 -->
+
+<!-- internal state end -->
+--
+author:	coderabbitai
+association:	none
+edited:	false
+status:	changes requested
+--
+**Actionable comments posted: 4**
+
+<details>
+<summary>≡ƒñû Prompt for all review comments with AI agents</summary>
+
+```
+Verify each finding against the current code and only fix it if needed.
+
+Inline comments:
+In `@src/data/chaptersData.ts`:
+- Around line 639-668: The pools array for chapter 6 currently contains a single
+pool (id 'pool-6-a') so replay rotation will always return the same assessments;
+add at least one additional pool object (e.g., 'pool-6-b') with a different
+set/order of assessment entries (or duplicate with shuffled assessment ids)
+inside the same pools array, and do the same for chapters 7 and 8 (update the
+pools arrays referenced near ids like 'pool-6-a' / corresponding chapter pool
+ids shown at ranges ~677-711 and ~720-748), or alternatively add an explicit
+flag (e.g., nonRotating: true) to indicate intentional non-rotation; ensure new
+pool ids and assessment ids are unique.
+- Line 189: Update the explanation string for the `/etc` entry in
+src/data/chaptersData.ts: find the object with the property explanation
+currently set to '/etc stands for "editable text configuration" and holds system
+configs.' and replace it with a concise, accurate description such as '/etc
+contains system-wide and host-specific configuration files' (or similar wording)
+so it no longer uses the misleading backronym; ensure you update the explanation
+property in that same object.
+- Line 565: Update the moduleId values for the specific chapter objects so they
+map to the correct modules: set the chapter with title "Process Management &
+Monitoring" (chap-5) moduleId from 3 to 7, set "Networking & Connectivity"
+(chap-6) moduleId from 4 to 9, set "Package Management" (chap-7) moduleId from 4
+to 10, and set "Text Processing & Filtering" (chap-8) moduleId from 5 to 3;
+locate each chapter object in src/data/chaptersData.ts by its title (or
+identifier like chap-5/chap-6/chap-7/chap-8) and change the moduleId property
+accordingly so chapters render under the correct modules.
+- Line 9: Several chapter assessment entries set regexMatch: true while their
+correctAnswer strings are literal shell commands containing unescaped regex
+metacharacters; update those assessment objects by either removing the
+regexMatch property (or setting it to false) for exact literal matches or by
+converting the correctAnswer into properly escaped, anchored regex patterns.
+Locate the assessment objects that include the regexMatch property and their
+correctAnswer fields (e.g., entries referencing "history | tail -n 10", "mkdir
+testdir && cd testdir && touch hello.txt", "cp /etc/passwd .", "mv data.txt
+archive/", "chmod +t /tmp", "chmod +x run.sh", "chmod 600 secret.key", "echo
+\"echo Hello\" > script.sh && chmod +x script.sh", "grep \"ERROR\" syslog >
+errors.txt", "for i in 1 2 3; do echo $i; done", and "sed \"s/foo/bar/\"
+test.txt") and either remove regexMatch or escape metacharacters and add ^...$
+anchors so the regex matches the entire literal command.
+```
+
+</details>
+
+<details>
+<summary>≡ƒ¬ä Autofix (Beta)</summary>
+
+Fix all unresolved CodeRabbit comments on this PR:
+
+- [ ] <!-- {"checkboxId": "4b0d0e0a-96d7-4f10-b296-3a18ea78f0b9"} --> Push a commit to this branch (recommended)
+- [ ] <!-- {"checkboxId": "ff5b1114-7d8c-49e6-8ac1-43f82af23a33"} --> Create a new PR with the fixes
+
+</details>
+
+---
+
+<details>
+<summary>Γä╣∩╕Å Review info</summary>
+
+<details>
+<summary>ΓÜÖ∩╕Å Run configuration</summary>
+
+**Configuration used**: Organization UI
+
+**Review profile**: CHILL
+
+**Plan**: Pro
+
+**Run ID**: `156ea018-9ae1-41f9-979f-0639f956ffb8`
+
+</details>
+
+<details>
+<summary>≡ƒôÑ Commits</summary>
+
+Reviewing files that changed from the base of the PR and between 585314e76bf62e5323b87d10e9258652f8d9285f and e4d0e059f816ac2003874c28d81aa3cb473e3531.
+
+</details>
+
+<details>
+<summary>≡ƒôÆ Files selected for processing (1)</summary>
+
+* `src/data/chaptersData.ts`
+
+</details>
+
+</details>
+
+<!-- This is an auto-generated comment by CodeRabbit for review status -->
+--
+author:	coderabbitai
+association:	none
+edited:	false
+status:	changes requested
+--
+**Actionable comments posted: 7**
+
+<details>
+<summary>≡ƒº╣ Nitpick comments (4)</summary><blockquote>
+
+<details>
+<summary>src/App.tsx (1)</summary><blockquote>
+
+`28-28`: **Consider adding a default export to `ChaptersPage` for consistency.**
+
+Every other lazy-loaded page in this file (`HomePage`, `LabsPage`, `ProfilePage`, `LabView`, `TerminalPage`, `CommandReferencePage`, `ChatPage`, `SettingsPage`, `ChallengeArenaPage`) uses `default` exports, so `React.lazy(() => import('./pages/X'))` works uniformly. `ChaptersPage` is the only outlier requiring a `.then(m => ({ default: m.ChaptersPage }))` adapter. Aligning it would tighten consistency and remove a small foot-gun for future readers.
+
+<details>
+<summary>ΓÖ╗∩╕Å Proposed change</summary>
+
+In `src/pages/ChaptersPage.tsx`, add a default export alongside the named one:
+
+```diff
+ export const ChaptersPage: React.FC = () => {
+     // ...
+ };
++
++export default ChaptersPage;
+```
+
+Then simplify in `src/App.tsx`:
+
+```diff
+-const ChaptersPage = React.lazy(() => import('./pages/ChaptersPage.tsx').then(m => ({ default: m.ChaptersPage })));
++const ChaptersPage = React.lazy(() => import('./pages/ChaptersPage.tsx'));
+```
+</details>
+
+<details>
+<summary>≡ƒñû Prompt for AI Agents</summary>
+
+```
+Verify each finding against the current code and only fix it if needed.
+
+In `@src/App.tsx` at line 28, ChaptersPage is exported only as a named export
+which forces the awkward React.lazy import adapter in App.tsx; add a default
+export in src/pages/ChaptersPage.tsx (export default ChaptersPage) so the
+component has both named and default exports, then simplify the lazy import in
+App.tsx to React.lazy(() => import('./pages/ChaptersPage')); update any existing
+imports that expect the named export if needed, but keep the named export
+(export const ChaptersPage) to avoid breaking references.
+```
+
+</details>
+
+</blockquote></details>
+<details>
+<summary>src/pages/ChaptersPage.tsx (2)</summary><blockquote>
+
+`96-116`: **Missing `handleStepAdvance` in `useEffect` dependency array.**
+
+The effect reads `handleStepAdvance` but depends only on `[terminalState.history, sessionQuestions, currentStepIndex, isCompleted]`. React's exhaustive-deps rule will flag this, and more importantly it silently relies on `handleStepAdvance` seeing the right `selectedChapter`/`currentStepIndex` snapshot ΓÇö which it does via closure in the current structure, but this is fragile if the function is refactored.
+
+Either wrap `handleStepAdvance` in `useCallback` and add it to the deps, or inline the step-advance logic directly here.
+
+<details>
+<summary>≡ƒñû Prompt for AI Agents</summary>
+
+```
+Verify each finding against the current code and only fix it if needed.
+
+In `@src/pages/ChaptersPage.tsx` around lines 96 - 116, The effect in useEffect
+reads handleStepAdvance but doesn't list it in the dependency array; wrap
+handleStepAdvance in useCallback (so it has a stable identity and captures its
+required props/state) and then add handleStepAdvance to the useEffect deps, or
+alternatively inline the step-advance logic into this useEffect; ensure the
+symbols referenced (useEffect, handleStepAdvance, currentAssessment,
+sessionQuestions, terminalState, currentStepIndex) are updated so the effect
+reruns correctly and avoids stale closures.
+```
+
+</details>
+
+---
+
+`232-308`: **Extract the duplicated Track 1 / Track 2 grid into a sub-component.**
+
+Lines 232ΓÇô269 and 271ΓÇô308 are nearly identical ΓÇö only the heading text and the source array (`sysadmin1Chapters` vs `sysadmin2Chapters`) differ. Every styling tweak, a11y improvement, or state-binding change has to happen in two places.
+
+<details>
+<summary>ΓÖ╗∩╕Å Proposed extraction</summary>
+
+```tsx
+const TrackSection: React.FC<{
+    title: string;
+    chapters: ChapterMetadata[];
+    level: number;
+    completedChapterIds: Set<string>;
+    onStart: (chapter: ChapterMetadata) => void;
+}> = ({ title, chapters, level, completedChapterIds, onStart }) => (
+    <>
+        <h2 className="text-2xl text-lime-400 font-heading tracking-wider uppercase mb-6 mt-8 border-b border-gray-800 pb-2" style={{ fontFamily: 'Russo One' }}>
+            {title}
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
+            {chapters.map((chapter, idx) => {
+                const locked = level < chapter.requiredLevel;
+                const completed = completedChapterIds.has(chapter.id);
+                return (
+                    <motion.div
+                        key={chapter.id}
+                        whileHover={locked ? {} : { scale: 1.02, borderColor: 'var(--color-lime-base)' }}
+                        onClick={() => !locked && onStart(chapter)}
+                        className={`relative p-6 border-4 flex flex-col justify-between transition-colors duration-300 ${locked ? 'border-gray-800 bg-gray-900/50 opacity-75' : 'border-gray-700 bg-gray-900/80 cursor-pointer'}`}
+                    >
+                        {/* ΓÇªcard bodyΓÇª */}
+                    </motion.div>
+                );
+            })}
+        </div>
+    </>
+);
+```
+
+Then:
+
+```tsx
+<TrackSection title="Track 1: System Administration I" chapters={sysadmin1Chapters} ... />
+<TrackSection title="Track 2: System Administration II" chapters={sysadmin2Chapters} ... />
+```
+</details>
+
+<details>
+<summary>≡ƒñû Prompt for AI Agents</summary>
+
+```
+Verify each finding against the current code and only fix it if needed.
+
+In `@src/pages/ChaptersPage.tsx` around lines 232 - 308, The duplicated Track 1 /
+Track 2 JSX should be extracted into a reusable TrackSection component: create a
+TrackSection React component that accepts props (title, chapters, level,
+completedChapterIds, onStart) and moves the repeated heading + grid + chapter
+card rendering into it (reference: existing arrays sysadmin1Chapters and
+sysadmin2Chapters, the click handler handleStartChapter, and state refs level
+and completedChapterIds); update the two call sites to render <TrackSection
+title="Track 1: ΓÇª" chapters={sysadmin1Chapters} ... /> and <TrackSection
+title="Track 2: ΓÇª" chapters={sysadmin2Chapters} ... />, ensure the motion.div
+onClick uses onStart only when not locked (mirroring current behavior) and
+preserve all classNames, icons (CheckCircle, Lock, BookOpen) and
+accessibility/state logic.
+```
+
+</details>
+
+</blockquote></details>
+<details>
+<summary>src/features/lab-engine/providers/QuestionProvider.ts (1)</summary><blockquote>
+
+`18-110`: **Coverage gap: 22 of 27 chapters have zero authored questions.**
+
+`staticQuestionBank` only seeds `sys1-ch01`, `sys1-ch02`, `sys2-ch05`, `sys2-ch07`, and `sys2-ch12` (2 questions each). Every other chapter declared in `src/data/chapters/curriculum_metadata.ts` (including headline domains like SELinux isn't complete ΓÇö only CH05 is; LVM only CH07; Containers only CH12; Storage/Boot/Firewalld/etc. are empty) will silently fall back to synthetic placeholders at runtime.
+
+This isn't a bug per se ΓÇö the comment at lines 14ΓÇô16 acknowledges it ΓÇö but it's worth a follow-up tracking issue so the "Coming Soon" vs. "Playable" state of each chapter is explicit and gap is visible.
+
+Want me to draft a tracking issue enumerating each chapter's authoring status, or a stub entry per missing chapter so the gap is explicit in code?
+
+<details>
+<summary>≡ƒñû Prompt for AI Agents</summary>
+
+```
+Verify each finding against the current code and only fix it if needed.
+
+In `@src/features/lab-engine/providers/QuestionProvider.ts` around lines 18 - 110,
+staticQuestionBank only contains questions for a few chapterIds (e.g.,
+'sys1-ch01','sys1-ch02','sys2-ch05','sys2-ch07','sys2-ch12'), leaving most
+chapters empty and causing silent fallbacks; add explicit stubs for every
+chapter declared in curriculum_metadata.ts to surface gaps: iterate
+curriculum_metadata entries and for each missing chapterId append a minimal
+ChapterAssessment stub in staticQuestionBank (id like 'q-<chapterId>-stub',
+chapterId, type 'placeholder' or 'coming_soon', question 'Content coming soon',
+correctAnswer '', hint ''), or alternatively add a boolean flag (e.g.,
+comingSoon) to the curriculum metadata and update the consumer logic to treat
+flagged chapters as non-playable; update staticQuestionBank and any loader logic
+that references staticQuestionBank to ensure placeholders are recognized and
+rendered as "Coming Soon."
+```
+
+</details>
+
+</blockquote></details>
+
+</blockquote></details>
+
+<details>
+<summary>≡ƒñû Prompt for all review comments with AI agents</summary>
+
+```
+Verify each finding against the current code and only fix it if needed.
+
+Inline comments:
+In `@docs/system/RHCSA_MAPPING.md`:
+- Around line 3-67: The document is outdated and conflicts with the shipped
+structure: replace or clarify the migration plan so it matches the actual
+implementation (the 27-chapter RH124/RH134 split), by either rewriting the doc
+to describe the as-shipped tracks and mapping those 27 chapters
+(sysadmin1Chapters and sysadmin2Chapters in
+src/data/chapters/curriculum_metadata.ts) to the 9 EX200 domains, or add a
+prominent "Status: superseded ΓÇö see src/data/chapters/curriculum_metadata.ts"
+note at the top that explicitly references sysadmin1Chapters, sysadmin2Chapters,
+and EX200 mapping guidance. Ensure the chosen change updates section 3 and any
+directives about modifying src/data/chaptersData.ts so they no longer mislead
+readers.
+
+In `@src/components/layout/AshbornLayout.tsx`:
+- Around line 48-50: The Chapters nav item in AshbornLayout is reusing
+Icons.Docs (same as Commands) so replace it with a distinct icon: add a new
+glyph entry (e.g., Icons.Chapters / Icons.Book / Icons.Graduation) into the
+Icons object and then update the nav item with id "chapters" in the
+AshbornLayout nav array to use that new Icons.<NewName> symbol instead of
+Icons.Docs; ensure the new icon is exported/available where AshbornLayout
+imports Icons.
+
+In `@src/features/lab-engine/providers/QuestionProvider.ts`:
+- Around line 138-152: The synthetic generator generateSyntheticDrill is
+exposing answers and enabling XP farming because fetchSessionQuestions falls
+back to synthetic drills when staticQuestionBank lacks entries; remove the "Type
+'man ${tool}'" bypass from the question text, stop setting correctAnswer to the
+visible hint, and add a provenance flag (e.g., source: 'synthetic' or
+practiceOnly: true) to generated ChapterAssessment objects so
+fetchSessionQuestions can mark synthetic sessions as non-XP-awarding;
+additionally gate serving synthetic drills behind a debug/dev flag or make
+fetchSessionQuestions return an empty list (so the UI can show "Coming Soon")
+when staticQuestionBank has no authored questions; finally update
+ChaptersPage.handleChapterComplete to check the assessment
+provenance/practiceOnly before applying chapter.xpReward.
+
+In `@src/pages/ChaptersPage.tsx`:
+- Line 20: completedChapterIds is stored in local component state in
+ChaptersPage so it resets on remount and allows XP to be re-awarded; instead
+persist completion to the app-level progression store (e.g., gamificationStore)
+so the guard survives navigation. Change logic that reads/writes
+completedChapterIds and setCompletedChapterIds to consult and update
+gamificationStoreΓÇÖs completed chapter set (or an equivalent persistent
+source-of-truth) before calling awardXP(chapter.xpReward), and update the UI
+CTAs (Begin Chapter / Review Chapter) to derive their state from
+gamificationStore rather than the local useState. Ensure ChaptersPage
+initializes its local view from gamificationStore and writes completions there
+(remove relying on ephemeral completedChapterIds for XP-guarding).
+- Around line 243-245: The chapter card onClick currently calls
+handleStartChapter(chapter) even when locked; update the click handlers for the
+chapter card render (both grid occurrences that use the locked variable) to
+guard at the event levelΓÇöonly invoke handleStartChapter(chapter) if locked is
+false (e.g., wrap the call in an if (!locked) check or use a conditional no-op),
+so locked cards do not trigger the handler work and match the inert visual
+state.
+- Around line 24-37: handleStartChapter currently awaits
+QuestionProvider.fetchSessionQuestions without error handling so a rejection
+leaves selectedChapter set and sessionQuestions empty; wrap the fetch call in a
+try/catch inside handleStartChapter, and on error call setSelectedChapter(null)
+(or reset to initial state), leave sessionQuestions as [] (or clear via
+setSessionQuestions([])), reset isCompleted/input if needed, and surface a
+user-facing toast/error notification; reference handleStartChapter,
+QuestionProvider.fetchSessionQuestions, setSelectedChapter, setSessionQuestions,
+setIsCompleted, and setInputValue when making the changes.
+- Around line 105-110: The RegExp construction using
+currentAssessment.correctAnswer can throw on malformed patterns; update the
+check in ChaptersPage (the block using currentAssessment, lastCommand,
+regexMatch and correctAnswer) to wrap new RegExp(...) in a try/catch and treat
+failures as a non-match (set isMet = false) and optionally log or mark the
+assessment as invalid, so one bad pattern doesn't crash the render;
+alternatively validate and sanitize currentAssessment.correctAnswer on session
+load and handle invalid regexes consistently.
+
+---
+
+Nitpick comments:
+In `@src/App.tsx`:
+- Line 28: ChaptersPage is exported only as a named export which forces the
+awkward React.lazy import adapter in App.tsx; add a default export in
+src/pages/ChaptersPage.tsx (export default ChaptersPage) so the component has
+both named and default exports, then simplify the lazy import in App.tsx to
+React.lazy(() => import('./pages/ChaptersPage')); update any existing imports
+that expect the named export if needed, but keep the named export (export const
+ChaptersPage) to avoid breaking references.
+
+In `@src/features/lab-engine/providers/QuestionProvider.ts`:
+- Around line 18-110: staticQuestionBank only contains questions for a few
+chapterIds (e.g., 'sys1-ch01','sys1-ch02','sys2-ch05','sys2-ch07','sys2-ch12'),
+leaving most chapters empty and causing silent fallbacks; add explicit stubs for
+every chapter declared in curriculum_metadata.ts to surface gaps: iterate
+curriculum_metadata entries and for each missing chapterId append a minimal
+ChapterAssessment stub in staticQuestionBank (id like 'q-<chapterId>-stub',
+chapterId, type 'placeholder' or 'coming_soon', question 'Content coming soon',
+correctAnswer '', hint ''), or alternatively add a boolean flag (e.g.,
+comingSoon) to the curriculum metadata and update the consumer logic to treat
+flagged chapters as non-playable; update staticQuestionBank and any loader logic
+that references staticQuestionBank to ensure placeholders are recognized and
+rendered as "Coming Soon."
+
+In `@src/pages/ChaptersPage.tsx`:
+- Around line 96-116: The effect in useEffect reads handleStepAdvance but
+doesn't list it in the dependency array; wrap handleStepAdvance in useCallback
+(so it has a stable identity and captures its required props/state) and then add
+handleStepAdvance to the useEffect deps, or alternatively inline the
+step-advance logic into this useEffect; ensure the symbols referenced
+(useEffect, handleStepAdvance, currentAssessment, sessionQuestions,
+terminalState, currentStepIndex) are updated so the effect reruns correctly and
+avoids stale closures.
+- Around line 232-308: The duplicated Track 1 / Track 2 JSX should be extracted
+into a reusable TrackSection component: create a TrackSection React component
+that accepts props (title, chapters, level, completedChapterIds, onStart) and
+moves the repeated heading + grid + chapter card rendering into it (reference:
+existing arrays sysadmin1Chapters and sysadmin2Chapters, the click handler
+handleStartChapter, and state refs level and completedChapterIds); update the
+two call sites to render <TrackSection title="Track 1: ΓÇª"
+chapters={sysadmin1Chapters} ... /> and <TrackSection title="Track 2: ΓÇª"
+chapters={sysadmin2Chapters} ... />, ensure the motion.div onClick uses onStart
+only when not locked (mirroring current behavior) and preserve all classNames,
+icons (CheckCircle, Lock, BookOpen) and accessibility/state logic.
+```
+
+</details>
+
+<details>
+<summary>≡ƒ¬ä Autofix (Beta)</summary>
+
+Fix all unresolved CodeRabbit comments on this PR:
+
+- [ ] <!-- {"checkboxId": "4b0d0e0a-96d7-4f10-b296-3a18ea78f0b9"} --> Push a commit to this branch (recommended)
+- [ ] <!-- {"checkboxId": "ff5b1114-7d8c-49e6-8ac1-43f82af23a33"} --> Create a new PR with the fixes
+
+</details>
+
+---
+
+<details>
+<summary>Γä╣∩╕Å Review info</summary>
+
+<details>
+<summary>ΓÜÖ∩╕Å Run configuration</summary>
+
+**Configuration used**: Organization UI
+
+**Review profile**: CHILL
+
+**Plan**: Pro
+
+**Run ID**: `44f8e0dd-a9fa-40f9-9d6a-fba79771233b`
+
+</details>
+
+<details>
+<summary>≡ƒôÑ Commits</summary>
+
+Reviewing files that changed from the base of the PR and between e4d0e059f816ac2003874c28d81aa3cb473e3531 and 88b2c31eb2a9339344134efa7b6d2811834c622f.
+
+</details>
+
+<details>
+<summary>≡ƒôÆ Files selected for processing (7)</summary>
+
+* `docs/curriculum/ENTERPRISE_LINUX_CURRICULUM.md`
+* `docs/system/RHCSA_MAPPING.md`
+* `src/App.tsx`
+* `src/components/layout/AshbornLayout.tsx`
+* `src/data/chapters/curriculum_metadata.ts`
+* `src/features/lab-engine/providers/QuestionProvider.ts`
+* `src/pages/ChaptersPage.tsx`
+
+</details>
+
+<details>
+<summary>Γ£à Files skipped from review due to trivial changes (1)</summary>
+
+* docs/curriculum/ENTERPRISE_LINUX_CURRICULUM.md
+
+</details>
+
+</details>
+
+<!-- This is an auto-generated comment by CodeRabbit for review status -->
+--

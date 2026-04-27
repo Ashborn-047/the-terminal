@@ -9,6 +9,7 @@ export interface ChapterAssessment {
     correctAnswer: string;
     regexMatch?: boolean; // If true, correctAnswer is treated as a regex (useful for terminal verification)
     hint?: string;
+    practiceOnly?: boolean;
 }
 
 // Since there are 27 chapters with 15+ questions each, defining them all statically would create a massive file.
@@ -145,9 +146,10 @@ export class QuestionProvider {
             id: `synth-${chapterId}-${index}-${Date.now()}`,
             chapterId: chapterId,
             type: 'syntax_drill',
-            question: `[Placeholder] Write a common command utilizing the ${randomTool} utility. (Type 'man ${randomTool}' to bypass)`,
-            correctAnswer: `man ${randomTool}`,
-            hint: 'This is a procedurally generated placeholder until the content DB is fully seeded.'
+            question: `[Coming Soon] Practice: Write the command to check the version of the ${randomTool} utility.`,
+            correctAnswer: `${randomTool} --version`,
+            hint: 'This is a procedurally generated placeholder until the content DB is fully seeded. Practice only (No XP).',
+            practiceOnly: true
         };
     }
 }

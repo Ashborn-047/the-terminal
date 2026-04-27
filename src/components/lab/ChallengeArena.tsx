@@ -36,8 +36,10 @@ export const ChallengeArena: React.FC = () => {
         );
     }
 
-    // Extract actual arena labs
-    const arenaLabs = Object.values(labs).filter(lab => lab.id.startsWith('arena-'));
+    // Extract actual arena labs and broken system challenges
+    const arenaLabs = Object.values(labs).filter(lab => 
+        lab.id.startsWith('arena-') || lab.id.startsWith('bs-')
+    );
 
     // Group by difficulty
     const groups = [
@@ -91,7 +93,7 @@ export const ChallengeArena: React.FC = () => {
                                             status={status}
                                             onStart={(id) => {
                                                 startLab(id);
-                                                navigate(`/labs/${lab.module}/lab/${id}`);
+                                                navigate(`/lab/${id}`);
                                             }}
                                         />
                                     );

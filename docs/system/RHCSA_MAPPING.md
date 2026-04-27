@@ -1,5 +1,8 @@
 # RHCSA (EX200) Curriculum Mapping & Migration Plan
 
+> [!WARNING]
+> **SUPERSEDED:** This document is outdated. The system now ships with a 27-chapter structure defined in `src/data/chapters/curriculum_metadata.ts` which fully maps the RH124 and RH134 tracks to the EX200 domains. This document remains for historical context only.
+
 ## 1. Current State (`src/data/chaptersData.ts`)
 We currently have 8 generic Linux chapters implemented:
 1. The Kernel & Shell Fundamentals

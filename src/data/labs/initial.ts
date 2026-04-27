@@ -1,4 +1,7 @@
 import { Lab } from '../../features/lab-engine/types';
+import { arenaLabs } from './arena';
+import { brokenSystemLabs } from './broken_systems';
+
 
 export const INITIAL_LABS: Record<string, Lab> = {
     // ─── Module 1: Command Line Basics ───────────────────────────
@@ -59,6 +62,7 @@ export const INITIAL_LABS: Record<string, Lab> = {
         title: 'Creating Files',
         description: 'Learn to create files using `touch` and write content using output redirection.',
         type: 'guided',
+        difficulty: 'NOVICE',
         xpReward: 50,
         prerequisites: ['lab-1-2'],
         steps: [
@@ -98,6 +102,7 @@ export const INITIAL_LABS: Record<string, Lab> = {
         title: 'Copying & Moving',
         description: 'Master the art of copying and moving files around the filesystem.',
         type: 'guided',
+        difficulty: 'NOVICE',
         xpReward: 75,
         prerequisites: ['lab-2-1'],
         steps: [
@@ -128,6 +133,7 @@ export const INITIAL_LABS: Record<string, Lab> = {
         title: 'File Management Challenge',
         description: 'Put your file management skills to the test. Create a project structure from scratch.',
         type: 'diy',
+        difficulty: 'ADEPT',
         xpReward: 150,
         prerequisites: ['lab-2-2'],
         verification: {
@@ -163,6 +169,7 @@ export const INITIAL_LABS: Record<string, Lab> = {
         title: 'Finding Text with Grep',
         description: 'Learn to search for text patterns inside files using `grep`.',
         type: 'guided',
+        difficulty: 'NOVICE',
         xpReward: 75,
         prerequisites: ['lab-2-3'],
         steps: [
@@ -193,6 +200,7 @@ export const INITIAL_LABS: Record<string, Lab> = {
         title: 'The Power of Pipes',
         description: 'Combine commands using pipes to create powerful data processing chains.',
         type: 'guided',
+        difficulty: 'NOVICE',
         xpReward: 100,
         prerequisites: ['lab-3-1'],
         steps: [
@@ -219,6 +227,7 @@ export const INITIAL_LABS: Record<string, Lab> = {
         title: 'Understanding Permissions',
         description: 'Learn how Linux file permissions work and how to read the `ls -l` output.',
         type: 'guided',
+        difficulty: 'NOVICE',
         xpReward: 75,
         prerequisites: ['lab-3-2'],
         steps: [
@@ -251,6 +260,7 @@ export const INITIAL_LABS: Record<string, Lab> = {
         title: 'Environment Variables',
         description: 'Explore and set environment variables to configure your shell environment.',
         type: 'guided',
+        difficulty: 'NOVICE',
         xpReward: 75,
         prerequisites: ['lab-4-1'],
         steps: [
@@ -283,6 +293,7 @@ export const INITIAL_LABS: Record<string, Lab> = {
         title: 'User & Identity Basics',
         description: 'Learn about users, groups, and identity in Linux. Every file and process belongs to a user.',
         type: 'guided',
+        difficulty: 'NOVICE',
         xpReward: 75,
         prerequisites: ['lab-5-1'],
         steps: [
@@ -319,6 +330,7 @@ export const INITIAL_LABS: Record<string, Lab> = {
         title: 'User Management Challenge',
         description: 'Create a new user account and set up their home directory. You\'ll need sudo for this!',
         type: 'diy',
+        difficulty: 'ADEPT',
         initialVFS: 'advanced-scenarios',
         xpReward: 150,
         prerequisites: ['lab-6-1'],
@@ -350,6 +362,7 @@ export const INITIAL_LABS: Record<string, Lab> = {
         title: 'Monitoring Processes',
         description: 'Learn to view and understand running processes using `ps`, `top`, and related commands.',
         type: 'guided',
+        difficulty: 'NOVICE',
         xpReward: 75,
         prerequisites: ['lab-6-2'],
         steps: [
@@ -386,6 +399,7 @@ export const INITIAL_LABS: Record<string, Lab> = {
         title: 'Process Control Challenge',
         description: 'Practice managing processes: find a specific process and terminate it.',
         type: 'guided',
+        difficulty: 'NOVICE',
         xpReward: 100,
         prerequisites: ['lab-7-1'],
         steps: [
@@ -412,6 +426,7 @@ export const INITIAL_LABS: Record<string, Lab> = {
         title: 'Disk Usage Analysis',
         description: 'Learn to check disk space and analyze storage usage with `df` and `du`.',
         type: 'guided',
+        difficulty: 'NOVICE',
         xpReward: 75,
         prerequisites: ['lab-7-2'],
         steps: [
@@ -442,6 +457,7 @@ export const INITIAL_LABS: Record<string, Lab> = {
         title: 'Archive & Compress Challenge',
         description: 'Practice creating archives and compressing files — essential for backups and file transfers.',
         type: 'guided',
+        difficulty: 'NOVICE',
         xpReward: 100,
         prerequisites: ['lab-8-1'],
         steps: [
@@ -474,6 +490,7 @@ export const INITIAL_LABS: Record<string, Lab> = {
         title: 'Network Exploration',
         description: 'Explore basic networking commands to understand your system\'s network connectivity.',
         type: 'guided',
+        difficulty: 'NOVICE',
         xpReward: 75,
         prerequisites: ['lab-8-2'],
         steps: [
@@ -504,6 +521,7 @@ export const INITIAL_LABS: Record<string, Lab> = {
         title: 'Web Requests Challenge',
         description: 'Practice fetching content from the web using command-line tools.',
         type: 'guided',
+        difficulty: 'NOVICE',
         xpReward: 100,
         prerequisites: ['lab-9-1'],
         steps: [
@@ -530,6 +548,7 @@ export const INITIAL_LABS: Record<string, Lab> = {
         title: 'Text Processing Pipeline',
         description: 'Learn to build powerful text processing pipelines using sort, uniq, cut, and other tools.',
         type: 'guided',
+        difficulty: 'NOVICE',
         xpReward: 100,
         prerequisites: ['lab-9-2'],
         steps: [
@@ -566,6 +585,7 @@ export const INITIAL_LABS: Record<string, Lab> = {
         title: 'Stream Editing with Sed & Awk',
         description: 'Master sed and awk — the two most powerful text processing tools in Unix.',
         type: 'guided',
+        difficulty: 'NOVICE',
         xpReward: 125,
         prerequisites: ['lab-11-1'],
         steps: [
@@ -598,6 +618,7 @@ export const INITIAL_LABS: Record<string, Lab> = {
         title: 'Understanding Services',
         description: 'Learn about system services and daemons — the background processes that keep Linux running.',
         type: 'guided',
+        difficulty: 'NOVICE',
         xpReward: 75,
         prerequisites: ['lab-9-2'],
         steps: [
@@ -628,6 +649,7 @@ export const INITIAL_LABS: Record<string, Lab> = {
         title: 'Service Investigation Challenge',
         description: 'Investigate running services and system resource usage.',
         type: 'diy',
+        difficulty: 'ADEPT',
         initialVFS: 'advanced-scenarios',
         xpReward: 125,
         prerequisites: ['lab-10-1'],
@@ -660,6 +682,7 @@ export const INITIAL_LABS: Record<string, Lab> = {
         title: 'Advanced Piping & Redirection',
         description: 'Master advanced piping techniques — combine multiple tools into powerful one-liners.',
         type: 'guided',
+        difficulty: 'NOVICE',
         xpReward: 125,
         prerequisites: ['lab-11-2'],
         steps: [
@@ -690,6 +713,7 @@ export const INITIAL_LABS: Record<string, Lab> = {
         title: 'Data Processing Challenge',
         description: 'Build a data processing pipeline from scratch — extract, transform, and load data.',
         type: 'diy',
+        difficulty: 'ADEPT',
         initialVFS: 'advanced-scenarios',
         xpReward: 175,
         prerequisites: ['lab-12-1'],
@@ -716,6 +740,7 @@ export const INITIAL_LABS: Record<string, Lab> = {
         title: 'Understanding Packages',
         description: 'Learn about Linux package management — how software is installed, updated, and removed.',
         type: 'guided',
+        difficulty: 'NOVICE',
         xpReward: 75,
         prerequisites: ['lab-12-2'],
         steps: [
@@ -748,6 +773,7 @@ export const INITIAL_LABS: Record<string, Lab> = {
         title: 'Reading System Logs',
         description: 'Learn to read and analyze system log files — essential for troubleshooting.',
         type: 'guided',
+        difficulty: 'NOVICE',
         xpReward: 100,
         prerequisites: ['lab-13-1'],
         steps: [
@@ -778,6 +804,7 @@ export const INITIAL_LABS: Record<string, Lab> = {
         title: 'Log Analysis Challenge',
         description: 'Analyze log files to find and report issues.',
         type: 'diy',
+        difficulty: 'ADEPT',
         initialVFS: 'advanced-scenarios',
         xpReward: 150,
         prerequisites: ['lab-14-1'],
@@ -804,6 +831,7 @@ export const INITIAL_LABS: Record<string, Lab> = {
         title: 'Security Contexts',
         description: 'Learn about Security-Enhanced Linux (SELinux) — an advanced security framework.',
         type: 'guided',
+        difficulty: 'NOVICE',
         xpReward: 100,
         prerequisites: ['lab-14-2'],
         steps: [
@@ -836,6 +864,7 @@ export const INITIAL_LABS: Record<string, Lab> = {
         title: 'Container Concepts',
         description: 'Learn the filesystem concepts behind containers — namespaces, isolation, and directory structures.',
         type: 'guided',
+        difficulty: 'NOVICE',
         xpReward: 100,
         prerequisites: ['lab-15-1'],
         steps: [
@@ -868,6 +897,7 @@ export const INITIAL_LABS: Record<string, Lab> = {
         title: 'System Diagnostics',
         description: 'Learn systematic troubleshooting — check system health, resources, and connectivity.',
         type: 'guided',
+        difficulty: 'NOVICE',
         xpReward: 100,
         prerequisites: ['lab-16-1'],
         steps: [
@@ -904,6 +934,7 @@ export const INITIAL_LABS: Record<string, Lab> = {
         title: 'Troubleshooting Challenge',
         description: 'Put your diagnostic skills to the test — create a system health report.',
         type: 'diy',
+        difficulty: 'ADEPT',
         initialVFS: 'advanced-scenarios',
         xpReward: 175,
         prerequisites: ['lab-17-1'],
@@ -936,6 +967,7 @@ export const INITIAL_LABS: Record<string, Lab> = {
         title: 'RHCSA Practice Exam',
         description: 'Put all your skills to the test! Complete a series of tasks similar to the RHCSA certification exam.',
         type: 'diy',
+        difficulty: 'ADEPT',
         initialVFS: 'advanced-scenarios',
         xpReward: 300,
         prerequisites: ['lab-17-2'],
@@ -991,6 +1023,7 @@ export const INITIAL_LABS: Record<string, Lab> = {
         title: 'Filesystem Overlord',
         description: 'Prove your mastery of navigation, file manipulation, and storage.',
         type: 'boss',
+        difficulty: 'EXPERT',
         xpReward: 500,
         prerequisites: ['lab-8-2'],
         verification: {
@@ -1008,6 +1041,7 @@ export const INITIAL_LABS: Record<string, Lab> = {
         title: 'Security Chief',
         description: 'Prove you can lock down a system, manage users, and configure permissions securely.',
         type: 'boss',
+        difficulty: 'EXPERT',
         xpReward: 500,
         prerequisites: ['lab-15-2'],
         verification: {
@@ -1026,6 +1060,7 @@ export const INITIAL_LABS: Record<string, Lab> = {
         title: 'Network Architect',
         description: 'Troubleshoot network connectivity and manage crucial system daemons.',
         type: 'boss',
+        difficulty: 'EXPERT',
         xpReward: 500,
         prerequisites: ['lab-10-2'],
         verification: {
@@ -1044,6 +1079,7 @@ export const INITIAL_LABS: Record<string, Lab> = {
         title: 'Automation Guru',
         description: 'Combine scripting, text processing, and system logging into a final automated report.',
         type: 'boss',
+        difficulty: 'EXPERT',
         xpReward: 500,
         prerequisites: ['lab-14-2'],
         verification: {
@@ -1064,6 +1100,7 @@ export const INITIAL_LABS: Record<string, Lab> = {
         title: 'Hunt the Rogue Process',
         description: 'A rogue process named "cryptominer" is consuming excessive CPU. Identify its PID, terminate it forcefully, and delete the executable file located somewhere in your home directory.',
         type: 'diy',
+        difficulty: 'ADEPT',
         initialVFS: 'advanced-scenarios',
         xpReward: 200,
         prerequisites: ['lab-11-2'],
@@ -1094,6 +1131,7 @@ export const INITIAL_LABS: Record<string, Lab> = {
         title: 'Restore Corrupted Configuration',
         description: 'The web server configuration file at /etc/nginx/nginx.conf has been corrupted. A backup exists at /var/backups/nginx.conf.bak. Copy the backup over the corrupted file, and ensure it is owned by root and has 644 permissions.',
         type: 'diy',
+        difficulty: 'ADEPT',
         initialVFS: 'advanced-scenarios',
         xpReward: 250,
         prerequisites: ['lab-11-diy-1'],
@@ -1131,4 +1169,11 @@ export const INITIAL_LABS: Record<string, Lab> = {
         ],
         completionMessage: 'Configuration successfully restored!',
     },
+    // --- Broken Systems ---
+    ...brokenSystemLabs.reduce((acc, lab) => ({ ...acc, [lab.id]: lab }), {}),
+
+    // --- Arena Challenges ---
+    ...arenaLabs.reduce((acc, lab) => ({ ...acc, [lab.id]: lab }), {})
 };
+
+

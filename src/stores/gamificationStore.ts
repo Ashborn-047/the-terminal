@@ -132,6 +132,7 @@ interface GamificationState {
     counters: Record<string, number>;
     activityHistory: Record<string, number>;
     unlockedAchievements: string[];
+    completedChapterIds: string[];
     labsCompleted: number;
     hintsUsed: number;
     dailyQuests: DailyQuest[];
@@ -170,6 +171,7 @@ interface GamificationState {
     setActivityHistory: (history: Record<string, number>) => void;
     migrateUserLevels: () => void;
     dismissMigrationNotice: () => void;
+    markChapterCompleted: (chapterId: string) => void;
     calculateReplayXp: (labId: string, baseXp: number) => number;
     calculateTotalXpGain: (totalBase: number) => number;
 }
@@ -184,6 +186,7 @@ export const useGamificationStore = create<GamificationState>()(
             counters: {},
             activityHistory: {},
             unlockedAchievements: [],
+            completedChapterIds: [],
             labsCompleted: 0,
             hintsUsed: 0,
             dailyQuests: [],
@@ -436,6 +439,7 @@ export const useGamificationStore = create<GamificationState>()(
                         [target]: (state.counters[target] || 0) + amount,
                     },
                 }));
+                get().checkAchievements();
             },
 
             checkAchievements: () => {
@@ -560,6 +564,13 @@ export const useGamificationStore = create<GamificationState>()(
             },
 
             dismissMigrationNotice: () => set({ needsMigrationNotice: false }),
+
+            markChapterCompleted: (chapterId: string) => {
+                if (get().completedChapterIds.includes(chapterId)) return;
+                set(s => ({
+                    completedChapterIds: [...s.completedChapterIds, chapterId]
+                }));
+            },
 
             calculateReplayXp: (labId: string, baseXp: number) => {
                 const history = get().labCompletionHistory[labId];
