@@ -9,7 +9,7 @@
 
 ## 1. Project Overview
 
-The **The Terminal** is an interactive, gamified educational platform designed to teach Linux command-line skills from absolute beginner to professional system administrator level. The platform simulates a functional Linux environment within the browser, with a curriculum aligned to the official **Red Hat System Administration I (RH124)** course and the **RHCSA exam objectives**.
+The **The Terminal** is an interactive, gamified educational platform designed to teach Linux command-line skills from absolute beginner to professional system administrator level. The platform simulates a functional Linux environment within the browser, with a curriculum aligned to industry-standard **Enterprise Linux Administration I** topics and professional certification objectives.
 
 The application combines a virtual filesystem, a custom command engine, a structured curriculum, and gamification elements (XP, levels, streaks) to create an engaging, self‑paced learning experience. It is built with modern web technologies and requires no backend—all state is persisted in the browser’s `localStorage`.
 
@@ -19,11 +19,11 @@ The application combines a virtual filesystem, a custom command engine, a struct
 
 ### Primary Goals
 - **Provide a safe, sandboxed terminal** where users can practice Linux commands without risk.
-- **Deliver a structured, professional‑grade curriculum** based on RH124 and RHCSA objectives.
+- **Deliver a structured, professional‑grade curriculum** based on enterprise Linux administration objectives.
 - **Gamify the learning process** to increase motivation and retention (XP, levels, achievements).
 - **Offer both guided and DIY labs** to accommodate different learning styles.
 - **Include a comprehensive command reference** that serves as a searchable, interactive “man pages” equivalent.
-- **Prepare learners for real‑world Linux administration** and the RHCSA certification.
+- **Prepare learners for real‑world Linux administration** and professional certification.
 
 ### Secondary Goals
 - Maintain high code quality and modularity for easy extension.
@@ -37,7 +37,7 @@ The application combines a virtual filesystem, a custom command engine, a struct
 
 - **Absolute beginners** who have never used the command line.
 - **Developers, DevOps engineers, and students** who need to strengthen their Linux skills.
-- **IT professionals** preparing for the RHCSA certification.
+- **IT professionals** preparing for Linux certifications.
 - **HPC users** who need to navigate Linux clusters (IIT Delhi HPC Lab context).
 
 ---
@@ -56,7 +56,7 @@ The application combines a virtual filesystem, a custom command engine, a struct
 - **Command History:** Navigate with arrow keys.
 
 ### 4.2 Curriculum & Labs
-- **Phased Learning Modules:** 18 modules following RH124 (see Section 6).
+- **Phased Learning Modules:** 18 modules following an enterprise Linux curriculum (see Section 6).
 - **Lab Types:**
   - *Guided Labs:* Step‑by‑step instructions that verify exact command entry.
   - *DIY Labs:* Scenario‑based challenges that verify the final state of the VFS (e.g., files created, permissions set).
@@ -67,11 +67,11 @@ The application combines a virtual filesystem, a custom command engine, a struct
 - **XP & Levels:** Each lab awards 10–200 XP; leveling up requires cumulative XP (e.g., 100 XP per level).
 - **Streaks:** Consecutive days of lab completions grant bonus XP.
 - **Achievement Badges:** Unlocked for completing modules or mastering specific skills (e.g., “Permission Master”).
-- **Progress Dashboard:** Visual overview of completed modules, current level, and RHCSA readiness score.
+- **Progress Dashboard:** Visual overview of completed modules, current level, and certification readiness score.
 
 ### 4.4 Documentation & Reference
 - **Interactive Command Reference:** Searchable by name/category; each entry includes syntax, options, examples, and links to relevant labs.
-- **“RHCSA Prep Zone”:**
+- **“Certification Prep Zone”:**
   - Concept explainers (SELinux, LVM, systemd).
   - Complex practice scenarios.
   - Exam objectives checklist.
@@ -166,7 +166,7 @@ The application combines a virtual filesystem, a custom command engine, a struct
 ### Phase 2: Advanced Features
 - Implement Modules 11–18 (networking, software, storage, review).
 - Add SSH simulation, `systemctl`, `dnf` mock.
-- Create “RHCSA Prep Zone” with concept articles and practice scenarios.
+- Create “Certification Prep Zone” with concept articles and practice scenarios.
 - Add achievements and badges.
 - Polish UI/UX, animations.
 
@@ -194,7 +194,7 @@ The application combines a virtual filesystem, a custom command engine, a struct
 **As of 2025-04-08:**
 
 - Project concept finalized.
-- Curriculum mapped to RH124 (18 modules).
+- Curriculum mapped to enterprise Linux standards (18 modules).
 - Technology stack selected.
 - Documentation created.
 - Development environment ready (React + Vite + Tailwind).
@@ -252,7 +252,7 @@ The application combines a virtual filesystem, a custom command engine, a struct
 ## 10. Glossary
 
 - **VFS:** Virtual File System – the simulated filesystem state.
-- **RH124:** Red Hat System Administration I – foundational course.
-- **RHCSA:** Red Hat Certified System Administrator – entry‑level certification.
+- **Enterprise Linux:** Foundational system administration curriculum.
+- **Linux Certification:** Professional industry-standard certification.
 - **DIY Lab:** Do‑It‑Yourself lab where users achieve a goal without step‑by‑step instructions.
 - **XP:** Experience points, the currency of gamification.

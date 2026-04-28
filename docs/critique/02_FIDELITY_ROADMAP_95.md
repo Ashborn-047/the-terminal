@@ -182,6 +182,8 @@ removeProcess: (pid) => set((state) => {
 
 ```typescript
 // src/features/command-engine/types.ts
+export type Chunk = string | Uint8Array; // Conceptual definition
+
 export interface FileDescriptor {
     fd: number;
     inodeId: number; // Pointer to VFS

@@ -107,7 +107,7 @@
 - ✅ Module 15: SELinux Basics (1 lab — security contexts, permissions)
 - ✅ Module 16: Containers Intro (1 lab — isolated rootfs structure)
 - ✅ Module 17: Troubleshooting (2 labs — diagnostics, health report)
-- ✅ Module 18: RHCSA Mock Exam (1 lab — comprehensive DIY exam with 6 checks)
+- ✅ Module 18: Professional Mock Exam (1 lab — comprehensive DIY exam with 6 checks)
 
 ## §8 — Development Phases
 - ✅ Phase 1: Foundation & Core Terminal
@@ -591,7 +591,7 @@
 - ✅ lab-16-1 — container concepts (guided)
 - ✅ lab-17-1 — system diagnostics (guided)
 - ✅ lab-17-2 — troubleshooting challenge (diy)
-- ✅ lab-18-1 — RHCSA practice exam (diy, 6 conditions)
+- ✅ lab-18-1 — Professional practice exam (diy, 6 conditions)
 
 ## §9 — Integration
 - ✅ Lab verification hooks into command execution

@@ -72,7 +72,7 @@ export const ScenarioRegistry: Record<string, ScenarioInitializer> = {
     // We set it to 0755 (standard executable, no SUID)
     await vfs.chmod(binaryPath, 0o755);
     
-    // Step 3: Also corrupt /etc/shadow permissions (common RHCSA issue)
+    // Step 3: Also corrupt /etc/shadow permissions (common professional certification issue)
     await vfs.chmod('/etc/shadow', 0o600); // Actually this is correct, we want it WRONG for the lab.
     // Let's make it world-readable to simulate a security breach.
     await vfs.chmod('/etc/shadow', 0o644);

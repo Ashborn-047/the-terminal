@@ -1,19 +1,14 @@
 import { test, expect } from '@playwright/test';
-import { waitForEngineReady } from './e2e/test-utils';
+import { waitForEngineReady, injectStandardFixtures } from './e2e/test-utils';
 
 test('homepage has correct title and renders terminal', async ({ page }) => {
     // 1. Inject state BEFORE navigation to ensure hydration picks it up
-    await page.addInitScript(() => {
-        localStorage.clear();
-        localStorage.setItem('the-terminal-ui', JSON.stringify({
-            state: {
-                onboardingComplete: true,
-                username: 'guest',
-                onboardingStep: 4,
-            },
-            version: 0
-        }));
-        (window as any).PLAYWRIGHT_TESTING = true;
+    await injectStandardFixtures(page, {
+        ui: {
+            onboardingComplete: true,
+            username: 'guest',
+            onboardingStep: 4,
+        }
     });
     
     // 2. Navigate to root and use networkidle for full hydration

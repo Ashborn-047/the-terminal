@@ -20,9 +20,14 @@ const WALKTHROUGH_STEPS = [
         prompt: "ls -la" 
     },
     { 
-        title: "Navigation Basics", 
-        body: "You can move around the filesystem using cd. Think of it like opening folders on your desktop.", 
-        prompt: "cd /home" 
+        title: "Systematic Chapters", 
+        body: "New: Explore our structured curriculum in the Chapters section. Each chapter includes theory, practice, and assessments.", 
+        prompt: null 
+    },
+    { 
+        title: "The Challenge Arena", 
+        body: "Once you reach Level 10, the Arena unlocks. It contains high-stakes scenarios and broken systems for true Linux masters.", 
+        prompt: null 
     },
     { 
         title: "You're Ready", 
@@ -126,7 +131,7 @@ export const OnboardingWalkthrough: React.FC = () => {
 
                 {/* BODY */}
                 <div style={{ padding: "32px 24px 24px" }}>
-                    <Display as="h2" size="sm" style={{ marginBottom: 12 }}>{cur.title}</Display>
+                    <Display as="h2" size="sm" style={{ marginBottom: 12 }} data-testid="walkthrough-title">{cur.title}</Display>
                     <p style={{ 
                         fontFamily: tokens.font.sans, fontSize: "13px", 
                         color: tokens.color.text.secondary, lineHeight: 1.7, 

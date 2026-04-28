@@ -99,6 +99,7 @@ const LabView: React.FC = () => {
         if (vfsForVerification) {
             processLabCompletion(lab.id, lab, vfsForVerification);
         }
+        const returnPath = (lab.id.startsWith('arena-') || lab.id.startsWith('bs-')) ? '/challenge-arena' : '/chapters';
         const newLabsCompleted = prevLabsCompleted + 1;
         if (newLabsCompleted === 1) {
             setXpAwarded(lab.xpReward);
@@ -110,7 +111,7 @@ const LabView: React.FC = () => {
         } else {
             setIsSuccessActive(true);
             setTimeout(() => {
-                navigate('/labs');
+                navigate(returnPath);
             }, 3000);
         }
     };
@@ -119,8 +120,8 @@ const LabView: React.FC = () => {
         if (labId) revealSolution(labId);
     };
 
-    const handleHintUsed = (stepIndex: number) => {
-        if (labId) recordHintUsage(labId, stepIndex);
+    const handleHintUsed = (stepIndex: number, hintLevel: number) => {
+        if (labId) recordHintUsage(labId, stepIndex, hintLevel);
     };
 
     const handleReset = () => {
@@ -130,9 +131,11 @@ const LabView: React.FC = () => {
     };
 
     const handleExit = () => {
+        const returnPath = (lab.id.startsWith('arena-') || lab.id.startsWith('bs-')) ? '/challenge-arena' : '/chapters';
         exitLab();
-        navigate('/labs');
+        navigate(returnPath);
     };
+
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%', backgroundColor: tokens.color.bg.base }}>

@@ -5,11 +5,12 @@ import { useLabStore } from '../stores/labStore';
 import { useNavigate } from 'react-router-dom';
 import { Terminal as TerminalIcon } from 'lucide-react';
 import { SkillTree } from '../components/gamification/SkillTree';
-import { QuestList } from '../components/gamification/QuestList';
+import { DailyQuests } from '../components/gamification/DailyQuests';
 import { 
     tokens, 
     Button, 
     Card,
+    Badge,
     ActivitySpark,
     XPRing,
     AchievementGrid,
@@ -119,9 +120,11 @@ const HomePage: React.FC = () => {
                         <Button 
                             variant="ghost" 
                             size="sm"
-                            onClick={() => navigate('/labs')}
+                            onClick={() => navigate('/chapters')}
+                            style={{ position: 'relative' }}
                         >
                             View Curriculum
+                            <Badge variant="lime" style={{ position: 'absolute', top: -8, right: -8, fontSize: 8 }}>NEW</Badge>
                         </Button>
                     </div>
                 </div>
@@ -182,8 +185,15 @@ const HomePage: React.FC = () => {
             </div>
 
             {/* Activity + Mission Board */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div 
+                style={{ 
+                    display: 'grid', 
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', 
+                    gap: tokens.space[6], 
+                    marginBottom: tokens.space[8] 
+                }}
+            >
+                <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.space[6] }}>
                     {/* Continue Learning */}
                     <Card id="continue-learning-card" variant="default" style={{ padding: 20 }}>
                         <Display size="sm" style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
@@ -278,16 +288,14 @@ const HomePage: React.FC = () => {
                     </Card>
                 </div>
 
-                <Card variant="default" style={{ padding: 20 }}>
-                    <Display size="xs" color={tokens.color.text.tertiary} style={{ marginBottom: 12 }}>Terminal Missions</Display>
-                    <QuestList />
-                </Card>
+                <DailyQuests />
             </div>
 
-            {/* Skill Tree */}
-            <div className="mb-8">
+            {/* System Masteries - Full Width Horizontal Section */}
+            <div style={{ marginBottom: tokens.space[8] }}>
                 <SkillTree />
             </div>
+
 
             {/* Achievements */}
             <div className="mb-8">

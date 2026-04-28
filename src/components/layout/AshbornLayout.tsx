@@ -33,6 +33,7 @@ const Icons = {
     Terminal: (p) => <Icon {...p}><polyline points="4 17 10 11 4 5" /><line x1="12" y1="19" x2="20" y2="19" /></Icon>,
     Curriculum: (p) => <Icon {...p}><path d="M4 19.5A2.5 2.5 0 016.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" /></Icon>,
     Docs: (p) => <Icon {...p}><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /></Icon>,
+    Book: (p) => <Icon {...p}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" /><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" /></Icon>,
     AITutor: (p) => <Icon {...p}><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" /></Icon>,
     Profile: (p) => <Icon {...p}><circle cx="12" cy="8" r="4" /><path d="M8 14l-4 7h16l-4-7" /></Icon>,
     Arena: (p) => <Icon {...p}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></Icon>,
@@ -46,9 +47,10 @@ const NAV_ITEMS = [
     { id: "terminal", label: "Terminal", Icon: Icons.Terminal, path: "/terminal" },
     { id: "curriculum", label: "Curriculum", Icon: Icons.Curriculum, path: "/labs" },
     { id: "docs", label: "Commands", Icon: Icons.Docs, path: "/commands" },
+    { id: "chapters", label: "Chapters", Icon: Icons.Book, path: "/chapters", new: true },
     { id: "chat", label: "Chat", Icon: Icons.AITutor, path: "/chat" },
     // Profile and Settings removed from sidebar, accessible via UserPopover
-    { id: "arena", label: "Arena", Icon: Icons.Arena, path: "/challenge-arena" },
+    { id: "arena", label: "Arena", Icon: Icons.Arena, path: "/challenge-arena", new: true },
 ];
 const MOBILE_NAV_ITEMS = [
     ...NAV_ITEMS,
@@ -93,6 +95,15 @@ const ActivityBarItem = ({ item, isActive, onClick, showTooltip = true, ...props
                 <div style={{
                     position: "absolute", left: 0, top: 8, bottom: 8,
                     width: 2, background: tokens.color.lime.base,
+                }} />
+            )}
+            {item.new && !isActive && (
+                <div style={{
+                    position: "absolute", top: 10, right: 14,
+                    width: 6, height: 6, borderRadius: "50%",
+                    background: tokens.color.lime.base,
+                    boxShadow: `0 0 8px ${tokens.color.lime.base}`,
+                    animation: "al-pulse 2s infinite"
                 }} />
             )}
 

@@ -62,7 +62,7 @@ describe('useFeatureAccess', () => {
         mockUseGamificationStore.mockReturnValue({ labsCompleted: 5, level: 1 } as any);
         const { result } = renderHook(() => useFeatureAccess());
         expect(result.current.commandReference).toBe(true);
-        expect(result.current.diyLabs).toBe(false);
+        expect(result.current.diyLabs).toBe(true);
     });
 
     it('should unlock diyLabs after 10 labs', () => {

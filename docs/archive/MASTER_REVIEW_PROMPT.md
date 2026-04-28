@@ -69,7 +69,7 @@ src/
 │       │                 # Verification conditions: directory_exists, file_exists, file_contains, file_matches_regex, file_not_exists, permission_equals, owner_equals, symlink_target_equals, process_not_running
 │       └── verification.ts # VerificationEngine — guided step matching (exact + regex + alternativeCommands + requiredSequence), DIY lab state verification against VFS
 ├── data/
-│   ├── labs/initial.ts   # 38+ lab definitions across 18 modules (Foundations → RHCSA Mock Exam) + 4 Boss Challenges + 2 Advanced DIY Scenarios
+│   ├── labs/initial.ts   # 38+ lab definitions across 18 modules (Foundations → Professional Mock Exam) + 4 Boss Challenges + 2 Advanced DIY Scenarios
 │   ├── curriculum.ts     # Legacy curriculum data (3 guided labs)
 │   ├── modules.ts        # 11 module definitions (Foundations, File Mastery, Power Tools, Security & Perms, Environment, Identity Management, Process Control, Storage & Disk, Networking, SysAdmin Basics, Advanced Scenarios)
 │   └── commandDocs.ts    # Command reference documentation
@@ -194,12 +194,12 @@ You must create **exactly 5 markdown files** in a `docs/critique/` directory. Ea
 
 **Title**: Educational Value Assessment & Transformation Strategy
 
-**Your Role**: You are an **Instructional Designer and Linux Certification Trainer** (RHCSA/RHCE/LFCS/LPIC) evaluating this platform's ability to actually teach people Linux.
+**Your Role**: You are an **Instructional Designer and Linux Certification Trainer** (Professional Certification/CompTIA Linux+/LPIC) evaluating this platform's ability to actually teach people Linux.
 
 **What to cover**:
 
 1. **Curriculum Gap Analysis**
-   - Map the current 18 modules and 38+ labs against the RHCSA EX200 exam objectives. What percentage of objectives are covered? What's completely missing?
+   - Map the current 18 modules and 38+ labs against professional certification objectives. What percentage of objectives are covered? What's completely missing?
    - Map against LFCS and LPIC-1 objectives too. Provide a coverage matrix.
    - Are the modules ordered correctly for progressive learning? Identify any pedagogical sequencing issues.
    - The current modules stop at 11 ("Advanced Scenarios") in the UI but labs go up to module 18. Is this a content/UI mismatch?

@@ -6,6 +6,8 @@ import { OnboardingModal } from './components/ui/AshbornDesignSystem';
 import { useUIStore } from './stores/uiStore';
 import { useLabStore } from './stores/labStore';
 import { INITIAL_LABS } from './data/labs/initial';
+import { arenaLabs } from './data/labs/arena';
+import { brokenSystemLabs } from './data/labs/broken_systems';
 import { logger } from './utils/logger';
 import { ToastProvider } from './components/ToastNotification';
 import { LevelUpModal } from './components/gamification/LevelUpModal';
@@ -25,6 +27,8 @@ const CommandReferencePage = React.lazy(() => import('./pages/CommandReferencePa
 const ChatPage = React.lazy(() => import('./pages/ChatPage.tsx'));
 const SettingsPage = React.lazy(() => import('./pages/SettingsPage.tsx'));
 const ChallengeArenaPage = React.lazy(() => import('./pages/ChallengeArenaPage.tsx'));
+const AboutLinuxPage = React.lazy(() => import('./pages/AboutLinuxPage.tsx'));
+const ChaptersPage = React.lazy(() => import('./pages/ChaptersPage.tsx'));
 
 const PageLoader = () => (
   <div style={{
@@ -142,8 +146,11 @@ function AppContent() {
   // Load initial labs if not already loaded
   React.useEffect(() => {
     if (Object.keys(labs).length === 0) {
-      setLabs(INITIAL_LABS);
-      logger.info('Loaded initial labs:', Object.keys(INITIAL_LABS).length);
+      const allLabs = { ...INITIAL_LABS };
+      arenaLabs.forEach(lab => allLabs[lab.id] = lab);
+      brokenSystemLabs.forEach(lab => allLabs[lab.id] = lab);
+      setLabs(allLabs);
+      logger.info('Loaded initial labs:', Object.keys(allLabs).length);
     }
   }, [labs, setLabs]);
 
@@ -177,6 +184,8 @@ function AppContent() {
               <Route path="/chat" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
               <Route path="/challenge-arena" element={<ProtectedRoute><ChallengeArenaPage /></ProtectedRoute>} />
+              <Route path="/chapters" element={<ProtectedRoute><ChaptersPage /></ProtectedRoute>} />
+              <Route path="/about" element={<AboutLinuxPage />} />
             </Routes>
           </Suspense>
         </ErrorBoundary>

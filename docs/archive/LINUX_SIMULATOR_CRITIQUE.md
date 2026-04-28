@@ -2,9 +2,9 @@
 
 ## Overview & Role Context
 
-As a Senior Principal Engineer and Lead Linux Systems Architect with 20+ years of kernel and distributed systems experience, I have conducted a deep, high-fidelity critique of "The Terminal" simulator. The purpose of this audit is to identify architectural debt, simulation shortcuts, and pedagogical limitations preventing this project from functioning as an industry-standard educational platform (akin to Red Hat Academy).
+"The Terminal" simulator is a highly accessible and impressive educational tool, featuring a robust VFS and pipeline engine. To help elevate this project into an industry-standard educational platform (akin to a professional Linux academy), I have conducted a deep, high-fidelity critique. The purpose of this audit is to identify areas for architectural enhancement, detailing where simulation shortcuts currently exist and providing a roadmap for increased fidelity and pedagogical impact.
 
-This is not a UI review; this is a **System Architecture and Simulation Fidelity Review**.
+This review focuses on **System Architecture and Simulation Fidelity**, aiming to build upon the project's strong foundation.
 
 ---
 
@@ -26,7 +26,7 @@ True Unix pipelines (`|`) connect `stdout` of process A directly to `stdin` of p
 **Finding: Cosmetic Job Control**
 The process table (`context.processes` and `useTerminalStore`) acts largely as a React state UI array rather than a process scheduler.
 *   **The Debt:** When `kill` is invoked (`src/features/command-engine/commands/process.ts`), it triggers `terminalStore.sendSignal(pid, Signal.SIGTERM)`. However, most commands do not implement a listener for `SIGTERM` or `SIGKILL`. For example, `sleep.ts` only listens for `SIGINT` (Ctrl+C). A `kill -9` will visually remove the process from `ps`, but the underlying JS timeout (or async task) continues running in the background until memory leaks occur.
-*   **The Impact:** Attempting to teach RHCSA-level process management is impossible if `kill` merely hides UI elements without aborting the actual thread execution.
+*   **The Impact:** Attempting to teach professional-level process management is impossible if `kill` merely hides UI elements without aborting the actual thread execution.
 
 ---
 

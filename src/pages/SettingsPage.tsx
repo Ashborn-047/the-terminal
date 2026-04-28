@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useUIStore } from '../stores/uiStore';
+import { useGamificationStore } from '../stores/gamificationStore';
 import { 
     tokens, 
     Button, 
@@ -24,6 +25,8 @@ export const SettingsPage: React.FC = () => {
         themePreset,
         setThemePreset
     } = useUIStore();
+
+    const { difficultyMode, setDifficultyMode } = useGamificationStore();
     const [tempUsername, setTempUsername] = useState(username);
     const [isEditing, setIsEditing] = useState(false);
     const [saveMessage, setSaveMessage] = useState('');
@@ -160,6 +163,37 @@ export const SettingsPage: React.FC = () => {
                         value={uiAnimations} 
                         onChange={setUiAnimations} 
                     />
+                </SettingsSection>
+
+                {/* Simulation Engine Section (PR 8) */}
+                <SettingsSection title="Simulation Engine" icon="⚙" subtitle="Configure system difficulty and XP multipliers">
+                    <div style={{ marginBottom: 14 }}>
+                        <Label style={{ marginBottom: 8 }}>Difficulty Mode</Label>
+                        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                            {[
+                                { id: 'NORMAL', label: "NORMAL (1x XP)", desc: "Standard terminal environment" },
+                                { id: 'HARD', label: "HARD (1.5x XP)", desc: "Strict verification, fewer hints" },
+                                { id: 'EXPERT', label: "EXPERT (2x XP)", desc: "No hints, sudden death enabled" },
+                            ].map((diff) => (
+                                <button
+                                    key={diff.id}
+                                    onClick={() => useGamificationStore.getState().setDifficultyMode(diff.id as any)}
+                                    style={{ 
+                                        display: "flex", flexDirection: "column", gap: 4, 
+                                        padding: "8px 12px", 
+                                        background: useGamificationStore().difficultyMode === diff.id ? tokens.color.lime.alpha[6] : tokens.color.bg.base, 
+                                        border: `1px solid ${useGamificationStore().difficultyMode === diff.id ? tokens.color.border.lime : tokens.color.border.default}`, 
+                                        cursor: "pointer",
+                                        color: 'inherit',
+                                        flex: "1 1 150px"
+                                    }}
+                                >
+                                    <span style={{ fontFamily: tokens.font.mono, fontSize: "11px", fontWeight: "bold", color: useGamificationStore().difficultyMode === diff.id ? tokens.color.lime.base : tokens.color.text.secondary }}>{diff.label}</span>
+                                    <span style={{ fontFamily: tokens.font.sans, fontSize: "9px", color: tokens.color.text.tertiary, textAlign: "left" }}>{diff.desc}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
                 </SettingsSection>
 
                 {/* Terminal Preferences Section */}

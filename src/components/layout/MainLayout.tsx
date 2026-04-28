@@ -71,7 +71,7 @@ export const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }
     const navItems = [
         { path: '/', label: 'Dashboard', icon: <Zap size={20} />, locked: false },
         { path: '/terminal', label: 'Terminal', icon: <Terminal size={20} />, locked: false },
-        { path: '/labs', label: 'Curriculum', icon: <BookOpen size={20} />, locked: false },
+        { path: '/chapters', label: 'Curriculum', icon: <BookOpen size={20} />, locked: false },
         {
             path: '/commands',
             label: 'Commands',

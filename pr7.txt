@@ -1,0 +1,424 @@
+﻿author:	google-labs-jules
+association:	contributor
+edited:	false
+status:	none
+--
+≡ƒæï Jules, reporting for duty! I'm here to lend a hand with this pull request.
+
+When you start a review, I'll add a ≡ƒæÇ emoji to each comment to let you know I've read it. I'll focus on feedback directed at me and will do my best to stay out of conversations between you and other bots or reviewers to keep the noise down.
+
+I'll push a commit with your requested changes shortly after. Please note there might be a delay between these steps, but rest assured I'm on the job!
+
+For more direct control, you can switch me to **Reactive Mode**. When this mode is on, I will only act on comments where you specifically mention me with `@jules`. You can find this option in the **Pull Request** section of your [global Jules UI settings](https://jules.google.com/settings). You can always switch back!
+
+New to Jules? Learn more at [jules.google/docs](https://jules.google/docs).
+
+---
+*_For security, I will only act on instructions from the user who triggered this task._*
+--
+author:	coderabbitai
+association:	none
+edited:	true
+status:	none
+--
+<!-- This is an auto-generated comment: summarize by coderabbit.ai -->
+<!-- This is an auto-generated comment: rate limited by coderabbit.ai -->
+
+> [!WARNING]
+> ## Rate limit exceeded
+> 
+> `@Ashborn-047` has exceeded the limit for the number of commits that can be reviewed per hour. Please wait **11 minutes and 48 seconds** before requesting another review.
+> 
+> Your organization is not enrolled in usage-based pricing. Contact your admin to enable usage-based pricing to continue reviews beyond the rate limit, or try again in **11 minutes and 48 seconds**.
+> 
+> <details>
+> <summary>Γî¢ How to resolve this issue?</summary>
+> 
+> After the wait time has elapsed, a review can be triggered using the `@coderabbitai review` command as a PR comment. Alternatively, push new commits to this PR.
+> 
+> We recommend that you space out your commits to avoid hitting the rate limit.
+> 
+> </details>
+> 
+> 
+> <details>
+> <summary>≡ƒÜª How do rate limits work?</summary>
+> 
+> CodeRabbit enforces hourly rate limits for each developer per organization.
+> 
+> Our paid plans have higher rate limits than the trial, open-source and free plans. In all cases, we re-allow further reviews after a brief timeout.
+> 
+> Please see our [FAQ](https://docs.coderabbit.ai/faq) for further information.
+> 
+> </details>
+> 
+> <details>
+> <summary>Γä╣∩╕Å Review info</summary>
+> 
+> <details>
+> <summary>ΓÜÖ∩╕Å Run configuration</summary>
+> 
+> **Configuration used**: Organization UI
+> 
+> **Review profile**: CHILL
+> 
+> **Plan**: Pro
+> 
+> **Run ID**: `ee9f514b-62b6-4b6d-a7aa-478ab396c962`
+> 
+> </details>
+> 
+> <details>
+> <summary>≡ƒôÑ Commits</summary>
+> 
+> Reviewing files that changed from the base of the PR and between 705937bf72c8604010937d24e463a14359b8b774 and 75e239941e619e51c5b67e4f09de96bd6ba758b0.
+> 
+> </details>
+> 
+> <details>
+> <summary>≡ƒôÆ Files selected for processing (5)</summary>
+> 
+> * `docs/RFC_KERNEL_ARCHITECTURE.md`
+> * `src/features/kernel/Kernel.ts`
+> * `src/features/kernel/poc_command.ts`
+> * `src/features/kernel/poc_executor.ts`
+> * `src/features/kernel/types.ts`
+> 
+> </details>
+> 
+> </details>
+
+<!-- end of auto-generated comment: rate limited by coderabbit.ai -->
+
+<!-- walkthrough_start -->
+
+<details>
+<summary>≡ƒô¥ Walkthrough</summary>
+
+## Walkthrough
+
+A new documentation file is added containing a comprehensive critical review of a Terminal Simulator project, detailing limitations across filesystem operations, process management, command execution, kernel boundaries, and feedback mechanisms, with prioritized recommendations for improvements.
+
+## Changes
+
+|Cohort / File(s)|Summary|
+|---|---|
+|**Documentation: Critical Review** <br> `LINUX_SIMULATOR_CRITIQUE.md`|Comprehensive critique document identifying gaps in filesystem/permissions, process/user management, command-shell behavior, and kernel boundaries; includes actionable recommendations grouped by priority for improving simulator fidelity and functionality.|
+
+## Estimated code review effort
+
+≡ƒÄ» 2 (Simple) | ΓÅ▒∩╕Å ~12 minutes
+
+## Possibly related PRs
+
+- **Ashborn-047/the-terminal#4**: Adds the same `LINUX_SIMULATOR_CRITIQUE.md` documentation alongside implementation fixes addressing the identified simulator limitations.
+
+## Poem
+
+> ≡ƒÉ░ A critique so keen, a document bright,
+> Pointing out gaps from the depths of night,
+> Terminal dreams need a reality checkΓÇö
+> Here's the roadmap to fix what's a wreck! Γ£¿
+
+</details>
+
+<!-- walkthrough_end -->
+
+<!-- pre_merge_checks_walkthrough_start -->
+
+<details>
+<summary>≡ƒÜÑ Pre-merge checks | Γ£à 5</summary>
+
+<details>
+<summary>Γ£à Passed checks (5 passed)</summary>
+
+|         Check name         | Status   | Explanation                                                                                                                                                                                                        |
+| :------------------------: | :------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|      Description Check     | Γ£à Passed | Check skipped - CodeRabbitΓÇÖs high-level summary is enabled.                                                                                                                                                        |
+|         Title check        | Γ£à Passed | The title 'Add Linux Simulator Architecture Critique' directly and clearly summarizes the main change: adding a new documentation file containing a critical review of the Linux Simulator project's architecture. |
+|     Docstring Coverage     | Γ£à Passed | No functions found in the changed files to evaluate docstring coverage. Skipping docstring coverage check.                                                                                                         |
+|     Linked Issues check    | Γ£à Passed | Check skipped because no linked issues were found for this pull request.                                                                                                                                           |
+| Out of Scope Changes check | Γ£à Passed | Check skipped because no linked issues were found for this pull request.                                                                                                                                           |
+
+</details>
+
+<sub>Γ£Å∩╕Å Tip: You can configure your own custom pre-merge checks in the settings.</sub>
+
+</details>
+
+<!-- pre_merge_checks_walkthrough_end -->
+
+<!-- finishing_touch_checkbox_start -->
+
+<details>
+<summary>Γ£¿ Finishing Touches</summary>
+
+<details>
+<summary>≡ƒº¬ Generate unit tests (beta)</summary>
+
+- [ ] <!-- {"checkboxId": "f47ac10b-58cc-4372-a567-0e02b2c3d479", "radioGroupId": "utg-output-choice-group-unknown_comment_id"} -->   Create PR with unit tests
+- [ ] <!-- {"checkboxId": "6ba7b810-9dad-11d1-80b4-00c04fd430c8", "radioGroupId": "utg-output-choice-group-unknown_comment_id"} -->   Commit unit tests in branch `add-linux-simulator-critique-12335776271341459908`
+
+</details>
+
+</details>
+
+<!-- finishing_touch_checkbox_end -->
+
+<!-- tips_start -->
+
+---
+
+Thanks for using [CodeRabbit](https://coderabbit.ai?utm_source=oss&utm_medium=github&utm_campaign=Ashborn-047/the-terminal&utm_content=7)! It's free for OSS, and your support helps us grow. If you like it, consider giving us a shout-out.
+
+<details>
+<summary>Γ¥ñ∩╕Å Share</summary>
+
+- [X](https://twitter.com/intent/tweet?text=I%20just%20used%20%40coderabbitai%20for%20my%20code%20review%2C%20and%20it%27s%20fantastic%21%20It%27s%20free%20for%20OSS%20and%20offers%20a%20free%20trial%20for%20the%20proprietary%20code.%20Check%20it%20out%3A&url=https%3A//coderabbit.ai)
+- [Mastodon](https://mastodon.social/share?text=I%20just%20used%20%40coderabbitai%20for%20my%20code%20review%2C%20and%20it%27s%20fantastic%21%20It%27s%20free%20for%20OSS%20and%20offers%20a%20free%20trial%20for%20the%20proprietary%20code.%20Check%20it%20out%3A%20https%3A%2F%2Fcoderabbit.ai)
+- [Reddit](https://www.reddit.com/submit?title=Great%20tool%20for%20code%20review%20-%20CodeRabbit&text=I%20just%20used%20CodeRabbit%20for%20my%20code%20review%2C%20and%20it%27s%20fantastic%21%20It%27s%20free%20for%20OSS%20and%20offers%20a%20free%20trial%20for%20proprietary%20code.%20Check%20it%20out%3A%20https%3A//coderabbit.ai)
+- [LinkedIn](https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fcoderabbit.ai&mini=true&title=Great%20tool%20for%20code%20review%20-%20CodeRabbit&summary=I%20just%20used%20CodeRabbit%20for%20my%20code%20review%2C%20and%20it%27s%20fantastic%21%20It%27s%20free%20for%20OSS%20and%20offers%20a%20free%20trial%20for%20proprietary%20code)
+
+</details>
+
+<sub>Comment `@coderabbitai help` to get the list of available commands and usage tips.</sub>
+
+<!-- tips_end -->
+
+<!-- internal state start -->
+
+
+<!-- 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 -->
+
+<!-- internal state end -->
+--
+author:	coderabbitai
+association:	none
+edited:	false
+status:	commented
+--
+
+
+<details>
+<summary>≡ƒº╣ Nitpick comments (4)</summary><blockquote>
+
+<details>
+<summary>LINUX_SIMULATOR_CRITIQUE.md (4)</summary><blockquote>
+
+`87-100`: **Well-structured recommendation with clear code example.**
+
+The recommendation for true file descriptors is excellent, with a clear What/Why/How structure. The TypeScript code example provides a conceptual starting point, though it intentionally uses `Chunk` as an undefined type to illustrate the concept rather than provide production-ready code. This is appropriate for a conceptual recommendation.
+
+Consider adding a note that `Chunk` would need to be defined (e.g., `type Chunk = string | Uint8Array`) to clarify this is a conceptual example.
+
+<details>
+<summary>≡ƒñû Prompt for AI Agents</summary>
+
+```
+Verify each finding against the current code and only fix it if needed.
+
+In `@LINUX_SIMULATOR_CRITIQUE.md` around lines 87 - 100, The example introduces an
+undefined type Chunk which may confuse readers; update the conceptual snippet
+near CommandExecutor/FileDescriptor/ProcessEnv to declare Chunk (e.g., "type
+Chunk = string | Uint8Array" or similar) and mention acceptable alternatives
+(string, Uint8Array, or a union) so the FileDescriptor.read()/write() signatures
+are unambiguous and ready for prototyping; reference the FileDescriptor,
+ProcessEnv and CommandExecutor symbols when adding this note.
+```
+
+</details>
+
+---
+
+`40-48`: **Accurate critique of missing kernel abstractions.**
+
+The analysis correctly identifies the lack of kernel-level abstractions. Line 47's observation about signal handling is confirmed by the code - the `sendSignal` implementation simply removes processes from an array rather than managing signal delivery, process groups, or signal handlers.
+
+Minor style note: "completely ignores" on line 47 could potentially use a stronger verb like "bypasses" or "omits", though the current phrasing is clear.
+
+<details>
+<summary>≡ƒñû Prompt for AI Agents</summary>
+
+```
+Verify each finding against the current code and only fix it if needed.
+
+In `@LINUX_SIMULATOR_CRITIQUE.md` around lines 40 - 48, The critique points out
+that kernel abstractions are missing and specifically that signal handling
+bypasses real semantics; update the implementation in process.ts (functions
+sendSignal and any kill command handler) to stop mutating the Zustand process
+list directly and instead implement a kernel-like delivery path: introduce a
+central signal dispatcher that respects process groups and signal masks, enqueue
+signals on Process objects (e.g., a signals queue/flags on the Process
+class/record), and invoke the existing onSignal handler from that dispatcher so
+handlers run in-process context; ensure sendSignal looks up target PIDs/PGRPs,
+applies masking/group rules, and records/delivers signals asynchronously to
+simulate kernel behavior rather than removing entries from the process list.
+```
+
+</details>
+
+---
+
+`3-8`: **Consider a more balanced tone for repository documentation.**
+
+The executive summary provides valuable technical insights, but the highly critical language ("little more than an elaborate interactive bash tutorial", "completely lacks") may be unnecessarily harsh for documentation that will live in the project repository. While the technical critiques are valid and important, consider:
+
+- Acknowledging the project's stated goals and scope upfront
+- Framing limitations as "areas for enhancement" rather than failures
+- Balancing criticism with recognition of what the project does accomplish
+
+The content and recommendations are excellent; a more diplomatic tone would make them more actionable and constructive for the development team.
+
+<details>
+<summary>≡ƒñû Prompt for AI Agents</summary>
+
+```
+Verify each finding against the current code and only fix it if needed.
+
+In `@LINUX_SIMULATOR_CRITIQUE.md` around lines 3 - 8, Revise the "Executive
+Summary" in LINUX_SIMULATOR_CRITIQUE.md to adopt a more balanced, constructive
+tone: keep the technical points but reword absolute/pejorative phrases (e.g.,
+replace "little more than an elaborate interactive bash tutorial" and
+"completely lacks" with neutral descriptions like "primarily focuses on
+interactive command learning" and "does not implement kernel-level features such
+as true process management, networking, or hardware abstraction"); begin by
+acknowledging the project's stated goals and strengths (accessibility, VFS,
+pipeline-capable command engine), then list limitations as "areas for
+enhancement" with suggested next steps rather than as failures so the critique
+remains actionable and diplomatic.
+```
+
+</details>
+
+---
+
+`21-30`: **Accurate technical critique with strong code evidence.**
+
+The critique accurately reflects the implementation, particularly:
+- The sudo implementation comment (line 28) matches the actual code exactly
+- The top command's fabricated CPU metrics (line 27) are confirmed by the codebase
+- The Zustand-based process management concerns are valid architectural observations
+
+Minor style note: Line 29's "exact same" could be simplified to just "same" for more concise writing, though this is purely stylistic.
+
+<details>
+<summary>≡ƒñû Prompt for AI Agents</summary>
+
+```
+Verify each finding against the current code and only fix it if needed.
+
+In `@LINUX_SIMULATOR_CRITIQUE.md` around lines 21 - 30, The simulator's
+process/user model is inaccurate: replace the flat Zustand-only "processes"
+array in terminalStore with a minimal process manager that tracks per-process
+structs (PID, PPID, state enum {Running,Sleeping,Stopped,Zombie}, CPU/mem
+counters, env, uid/gid, tty) and drives state transitions via a scheduler tick
+so top/ps read simulated real states rather than cosmetic strings; update top/ps
+code to compute CPU% from the process' cpu_time delta and lifetime instead of
+hardcoded names; harden sudo by replacing the bypass in
+src/features/command-engine/commands/sudo.ts with a permission check against a
+simulated /etc/sudoers model and a short-lived ticket cache to emulate
+elevation, and introduce per-process environment and TTY context so VFS and
+commands operate under isolated envs rather than a single global context.
+```
+
+</details>
+
+</blockquote></details>
+
+</blockquote></details>
+
+<details>
+<summary>≡ƒñû Prompt for all review comments with AI agents</summary>
+
+```
+Verify each finding against the current code and only fix it if needed.
+
+Nitpick comments:
+In `@LINUX_SIMULATOR_CRITIQUE.md`:
+- Around line 87-100: The example introduces an undefined type Chunk which may
+confuse readers; update the conceptual snippet near
+CommandExecutor/FileDescriptor/ProcessEnv to declare Chunk (e.g., "type Chunk =
+string | Uint8Array" or similar) and mention acceptable alternatives (string,
+Uint8Array, or a union) so the FileDescriptor.read()/write() signatures are
+unambiguous and ready for prototyping; reference the FileDescriptor, ProcessEnv
+and CommandExecutor symbols when adding this note.
+- Around line 40-48: The critique points out that kernel abstractions are
+missing and specifically that signal handling bypasses real semantics; update
+the implementation in process.ts (functions sendSignal and any kill command
+handler) to stop mutating the Zustand process list directly and instead
+implement a kernel-like delivery path: introduce a central signal dispatcher
+that respects process groups and signal masks, enqueue signals on Process
+objects (e.g., a signals queue/flags on the Process class/record), and invoke
+the existing onSignal handler from that dispatcher so handlers run in-process
+context; ensure sendSignal looks up target PIDs/PGRPs, applies masking/group
+rules, and records/delivers signals asynchronously to simulate kernel behavior
+rather than removing entries from the process list.
+- Around line 3-8: Revise the "Executive Summary" in LINUX_SIMULATOR_CRITIQUE.md
+to adopt a more balanced, constructive tone: keep the technical points but
+reword absolute/pejorative phrases (e.g., replace "little more than an elaborate
+interactive bash tutorial" and "completely lacks" with neutral descriptions like
+"primarily focuses on interactive command learning" and "does not implement
+kernel-level features such as true process management, networking, or hardware
+abstraction"); begin by acknowledging the project's stated goals and strengths
+(accessibility, VFS, pipeline-capable command engine), then list limitations as
+"areas for enhancement" with suggested next steps rather than as failures so the
+critique remains actionable and diplomatic.
+- Around line 21-30: The simulator's process/user model is inaccurate: replace
+the flat Zustand-only "processes" array in terminalStore with a minimal process
+manager that tracks per-process structs (PID, PPID, state enum
+{Running,Sleeping,Stopped,Zombie}, CPU/mem counters, env, uid/gid, tty) and
+drives state transitions via a scheduler tick so top/ps read simulated real
+states rather than cosmetic strings; update top/ps code to compute CPU% from the
+process' cpu_time delta and lifetime instead of hardcoded names; harden sudo by
+replacing the bypass in src/features/command-engine/commands/sudo.ts with a
+permission check against a simulated /etc/sudoers model and a short-lived ticket
+cache to emulate elevation, and introduce per-process environment and TTY
+context so VFS and commands operate under isolated envs rather than a single
+global context.
+```
+
+</details>
+
+---
+
+<details>
+<summary>Γä╣∩╕Å Review info</summary>
+
+<details>
+<summary>ΓÜÖ∩╕Å Run configuration</summary>
+
+**Configuration used**: Organization UI
+
+**Review profile**: CHILL
+
+**Plan**: Pro
+
+**Run ID**: `1711014f-e937-4d7e-9ac8-0a893af40ffe`
+
+</details>
+
+<details>
+<summary>≡ƒôÑ Commits</summary>
+
+Reviewing files that changed from the base of the PR and between 585314e76bf62e5323b87d10e9258652f8d9285f and 705937bf72c8604010937d24e463a14359b8b774.
+
+</details>
+
+<details>
+<summary>≡ƒôÆ Files selected for processing (1)</summary>
+
+* `LINUX_SIMULATOR_CRITIQUE.md`
+
+</details>
+
+</details>
+
+<!-- This is an auto-generated comment by CodeRabbit for review status -->
+--
+author:	coderabbitai
+association:	none
+edited:	false
+status:	approved
+--
+
+--

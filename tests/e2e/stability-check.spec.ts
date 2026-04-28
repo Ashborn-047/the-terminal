@@ -1,16 +1,11 @@
 import { test, expect } from '@playwright/test';
-import { typeCommand, verifyOutput } from './test-utils';
+import { typeCommand, verifyOutput, injectStandardFixtures } from './test-utils';
 
 test.describe('Engine Stability and Determinism Check', () => {
     test.beforeEach(async ({ page }) => {
         // Direct navigation to terminal with onboarding bypass
-        await page.addInitScript(() => {
-            localStorage.clear();
-            localStorage.setItem('the-terminal-ui', JSON.stringify({
-                state: { onboardingComplete: true, username: 'guest', onboardingStep: 4 },
-                version: 0
-            }));
-            (window as any).PLAYWRIGHT_TESTING = true;
+        await injectStandardFixtures(page, {
+            ui: { onboardingComplete: true, username: 'guest', onboardingStep: 4 }
         });
         await page.goto('terminal');
         await page.waitForLoadState('networkidle');

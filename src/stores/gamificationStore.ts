@@ -7,7 +7,8 @@ import { useUIStore } from './uiStore';
 import { spacetime } from '../lib/spacetime';
 import { logger } from '../utils/logger';
 import { HardcoreProfile, MasteryBadge } from '../features/lab-engine/hardcore';
-import { XP_BASE, XP_MULTIPLIER, STREAK_BONUS_TIERS, HARDCORE_XP_MULTIPLIER, BASE_LAB_XP } from '../config/progression';
+import { XP_BASE, XP_MULTIPLIER, STREAK_BONUS_TIERS, HARDCORE_XP_MULTIPLIER, BASE_LAB_XP, DIFFICULTY_MULTIPLIERS } from '../config/progression';
+import { DifficultyMode } from '../features/lab-engine/types';
 import { useQuestStore } from './questStore';
 import { useHardcoreStore } from './hardcoreStore';
 import { VFS } from '../features/vfs/vfs';
@@ -31,10 +32,10 @@ export const LEVEL_TITLES: Record<number, string> = {
 
 const FIRST_LAB_BONUS = 500;
 
-/** Returns level title; levels 11-20 → RHCSA Candidate, 21-30 → Linux Professional, 31+ → Terminal Master */
+/** Returns level title; levels 11-20 → Linux Associate, 21-30 → Linux Professional, 31+ → Terminal Master */
 export function getLevelTitle(level: number): string {
     if (LEVEL_TITLES[level]) return LEVEL_TITLES[level];
-    if (level <= 20) return 'RHCSA Candidate';
+    if (level <= 20) return 'Linux Associate';
     if (level <= 30) return 'Linux Professional';
     return 'Terminal Master';
 }
@@ -106,7 +107,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     { id: 'completionist', name: 'Completionist', description: 'Complete all labs in a module', category: 'milestone', icon: '🏁', hidden: false, xpReward: 250, criteria: { type: 'counter', target: 'modules-completed', threshold: 1 } },
 ];
 
-export type QuestType = 'earn_xp' | 'execute_commands' | 'complete_labs';
+export type QuestType = 'earn_xp' | 'execute_commands' | 'complete_labs' | 'complete_module' | 'find_easter_egg' | 'reach_level';
 
 export interface DailyQuest {
     id: string;
@@ -123,6 +124,7 @@ interface GamificationState {
     xp: number;
     level: number;
     totalXpEarned: number;
+    difficultyMode: DifficultyMode;
     streak: {
         current: number;
         longest: number;
@@ -132,6 +134,7 @@ interface GamificationState {
     counters: Record<string, number>;
     activityHistory: Record<string, number>;
     unlockedAchievements: string[];
+    completedChapterIds: string[];
     labsCompleted: number;
     hintsUsed: number;
     dailyQuests: DailyQuest[];
@@ -170,8 +173,11 @@ interface GamificationState {
     setActivityHistory: (history: Record<string, number>) => void;
     migrateUserLevels: () => void;
     dismissMigrationNotice: () => void;
+    markChapterCompleted: (chapterId: string) => void;
     calculateReplayXp: (labId: string, baseXp: number) => number;
     calculateTotalXpGain: (totalBase: number) => number;
+    setDifficultyMode: (mode: DifficultyMode) => void;
+    spendXp: (amount: number) => boolean;
 }
 
 export const useGamificationStore = create<GamificationState>()(
@@ -180,10 +186,12 @@ export const useGamificationStore = create<GamificationState>()(
             xp: 0,
             level: 1,
             totalXpEarned: 0,
+            difficultyMode: 'NORMAL',
             streak: { current: 0, longest: 0, lastActivityDate: null, freezesRemaining: 1 },
             counters: {},
             activityHistory: {},
             unlockedAchievements: [],
+            completedChapterIds: [],
             labsCompleted: 0,
             hintsUsed: 0,
             dailyQuests: [],
@@ -200,15 +208,37 @@ export const useGamificationStore = create<GamificationState>()(
                 { type: 'execute_commands', title: 'Terminal Mastery: {{target}} Commands', baseTarget: 50, xpReward: 100 },
                 { type: 'complete_labs', title: 'Lab Marathon: {{target}} Labs', baseTarget: 3, xpReward: 250 },
                 { type: 'earn_xp', title: 'XP Hunter: {{target}} XP', baseTarget: 1000, xpReward: 200 },
+                { type: 'complete_module', title: 'Complete a Module ({{target}})', baseTarget: 1, xpReward: 300 },
+                { type: 'find_easter_egg', title: 'Discover {{target}} hidden Easter Eggs', baseTarget: 1, xpReward: 150 },
+                { type: 'reach_level', title: 'Level Up {{target}} time(s)', baseTarget: 1, xpReward: 200 },
             ],
 
+            setDifficultyMode: (mode) => set({ difficultyMode: mode }),
+
+            spendXp: (amount) => {
+                const state = get();
+                if (state.xp >= amount) {
+                    set({ xp: state.xp - amount });
+                    return true;
+                }
+                return false;
+            },
+
             addXp: (amount) => {
+                get().updateQuestProgress('earn_xp', amount);
+
                 set((state) => {
                     const newXp = state.xp + amount;
                     let newLevel = state.level;
+                    let leveledUp = false;
                     
                     while (newXp >= xpForLevel(newLevel + 1)) {
                         newLevel++;
+                        leveledUp = true;
+                    }
+
+                    if (leveledUp) {
+                        get().updateQuestProgress('reach_level', 1);
                     }
 
                     // Calculate badge
@@ -425,6 +455,7 @@ export const useGamificationStore = create<GamificationState>()(
                         [target]: (state.counters[target] || 0) + amount,
                     },
                 }));
+                get().checkAchievements();
             },
 
             checkAchievements: () => {
@@ -550,6 +581,13 @@ export const useGamificationStore = create<GamificationState>()(
 
             dismissMigrationNotice: () => set({ needsMigrationNotice: false }),
 
+            markChapterCompleted: (chapterId: string) => {
+                if (get().completedChapterIds.includes(chapterId)) return;
+                set(s => ({
+                    completedChapterIds: [...s.completedChapterIds, chapterId]
+                }));
+            },
+
             calculateReplayXp: (labId: string, baseXp: number) => {
                 const history = get().labCompletionHistory[labId];
                 if (!history) return baseXp;
@@ -566,6 +604,12 @@ export const useGamificationStore = create<GamificationState>()(
             calculateTotalXpGain: (totalBase: number) => {
                 let multiplier = 1.0;
                 
+                // Difficulty Multiplier
+                const diffMode = get().difficultyMode;
+                if (diffMode && DIFFICULTY_MULTIPLIERS[diffMode]) {
+                    multiplier *= DIFFICULTY_MULTIPLIERS[diffMode];
+                }
+
                 // Hardcore boost
                 const hcProfile = useHardcoreStore.getState().profile;
                 if (hcProfile?.isActive) multiplier *= HARDCORE_XP_MULTIPLIER;

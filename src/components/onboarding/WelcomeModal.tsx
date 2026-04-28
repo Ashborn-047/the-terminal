@@ -81,7 +81,7 @@ export const WelcomeModal: React.FC<WelcomeModalProps> = ({ onComplete }) => {
    |_| |_| |_|\\___|   |_|\\___|_|  |_| |_| |_|_|_| |_|\\__,_|_|`}
                 </pre>
 
-                <Display size="lg" style={{ marginBottom: 16 }}>
+                <Display size="lg" style={{ marginBottom: 16 }} data-testid="welcome-title">
                     Welcome, Learner
                 </Display>
                 

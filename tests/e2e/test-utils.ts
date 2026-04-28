@@ -68,3 +68,101 @@ export async function verifyOutput(page: Page, expectedText: string | RegExp) {
     const terminal = page.getByTestId('terminal-container');
     await expect(terminal).toContainText(expectedText, { timeout: 15000 });
 }
+
+// ─── Centralized Fixture Factories ─────────────────────────────────────────
+// These ensure ALL test files use the same state shape.
+// When a PR adds a new field to any store, update ONLY these factories.
+
+/**
+ * Builds a complete gamification store fixture for localStorage injection.
+ * Matches the full GamificationState shape including PR 8/9/10 additions.
+ */
+export function buildGamificationFixture(overrides: Record<string, any> = {}) {
+    return JSON.stringify({
+        state: {
+            xp: 0,
+            level: 1,
+            totalXpEarned: 0,
+            streak: { current: 0, longest: 0, lastActivityDate: null, freezesRemaining: 1 },
+            counters: {},
+            activityHistory: {},
+            unlockedAchievements: [],
+            labsCompleted: 0,
+            hintsUsed: 0,
+            dailyQuests: [],
+            lastQuestGenerationDate: null,
+            version: '3.1',
+            needsMigrationNotice: false,
+            masteryBadge: 'novice',
+            labCompletionHistory: {},
+            difficultyMode: 'NORMAL',       // PR 8
+            completedChapterIds: [],         // PR 9
+            questTemplates: [
+                { type: 'earn_xp', title: 'Gain {{target}} XP', baseTarget: 250, xpReward: 50 },
+                { type: 'complete_labs', title: 'Complete {{target}} Labs', baseTarget: 1, xpReward: 100 },
+                { type: 'execute_commands', title: 'Execute {{target}} Commands', baseTarget: 20, xpReward: 40 },
+                { type: 'execute_commands', title: 'Terminal Mastery: {{target}} Commands', baseTarget: 50, xpReward: 100 },
+                { type: 'complete_labs', title: 'Lab Marathon: {{target}} Labs', baseTarget: 3, xpReward: 250 },
+                { type: 'earn_xp', title: 'XP Hunter: {{target}} XP', baseTarget: 1000, xpReward: 200 },
+                { type: 'complete_module', title: 'Complete a Module', baseTarget: 1, xpReward: 300 },
+                { type: 'reach_level', title: 'Reach Level {{target}}', baseTarget: 5, xpReward: 150 },
+                { type: 'find_easter_egg', title: 'Discover {{target}} Easter Egg(s)', baseTarget: 1, xpReward: 75 },
+            ],
+            ...overrides
+        },
+        version: 0
+    });
+}
+
+/**
+ * Builds a complete UI store fixture for localStorage injection.
+ */
+export function buildUIFixture(overrides: Record<string, any> = {}) {
+    return JSON.stringify({
+        state: {
+            onboardingComplete: true,
+            username: 'guest',
+            onboardingStep: 4,
+            ...overrides
+        },
+        version: 0
+    });
+}
+
+/**
+ * Builds a complete labs store fixture for localStorage injection.
+ * Uses version 2 (post-migration) with Record-based hintsUsed.
+ */
+export function buildLabsFixture(overrides: Record<string, any> = {}) {
+    return JSON.stringify({
+        state: {
+            labs: {},
+            progress: {},
+            currentLabId: null,
+            ...overrides
+        },
+        version: 2
+    });
+}
+
+/**
+ * Injects all standard fixtures into a page's localStorage before navigation.
+ * This is the recommended way to set up test state.
+ */
+export async function injectStandardFixtures(page: Page, overrides: {
+    gamification?: Record<string, any>;
+    ui?: Record<string, any>;
+    labs?: Record<string, any>;
+} = {}) {
+    await page.addInitScript((fixtures) => {
+        localStorage.clear();
+        localStorage.setItem('the-terminal-gamification', fixtures.gamification);
+        localStorage.setItem('the-terminal-ui', fixtures.ui);
+        localStorage.setItem('the-terminal-labs', fixtures.labs);
+        (window as any).PLAYWRIGHT_TESTING = true;
+    }, {
+        gamification: buildGamificationFixture(overrides.gamification),
+        ui: buildUIFixture(overrides.ui),
+        labs: buildLabsFixture(overrides.labs),
+    });
+}

@@ -1,6 +1,15 @@
 import React, { useEffect } from 'react';
 import { useGamificationStore } from '../../stores/gamificationStore';
 import { Target, CheckCircle2, Gift } from 'lucide-react';
+import { 
+    tokens, 
+    Card, 
+    Display, 
+    Label, 
+    Mono, 
+    Button,
+    ProgressBar
+} from '../ui/AshbornDesignSystem';
 
 export const DailyQuests: React.FC = () => {
     const { dailyQuests, generateDailyQuests, claimQuestReward } = useGamificationStore();
@@ -10,80 +19,132 @@ export const DailyQuests: React.FC = () => {
     }, [generateDailyQuests]);
 
     return (
-        <div className="bg-brutal-black border-3 border-brutal-white p-6 shadow-brutal flex flex-col h-full">
-            <div className="flex items-center justify-between gap-3 mb-6 border-b-2 border-brutal-white pb-4">
-                <div className="flex items-center gap-3">
-                    <Target className="text-brutal-pink" />
-                    <h2 className="font-heading text-xl uppercase text-brutal-white">Daily Quests</h2>
+        <Card variant="default" style={{ 
+            padding: tokens.space[6], 
+            display: 'flex', 
+            flexDirection: 'column', 
+            height: '100%',
+            background: tokens.color.bg.surface,
+            position: 'relative',
+            overflow: 'hidden'
+        }}>
+            {/* Subtle glow effect behind the target icon */}
+            <div style={{
+                position: 'absolute',
+                top: -20,
+                left: -20,
+                width: 100,
+                height: 100,
+                background: tokens.color.amber.alpha[10],
+                filter: 'blur(40px)',
+                borderRadius: '50%',
+                pointerEvents: 'none'
+            }} />
+            <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'space-between', 
+                gap: 12, 
+                marginBottom: tokens.space[6],
+                borderBottom: `1px solid ${tokens.color.border.subtle}`,
+                paddingBottom: tokens.space[4]
+            }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <Target size={18} style={{ color: tokens.color.amber.base }} />
+                    <Display size="xs" color={tokens.color.text.primary}>Daily Quests</Display>
                 </div>
-                <div className="text-[10px] font-mono text-brutal-white/50 bg-brutal-dark px-2 py-1 border border-brutal-gray/30 shadow-[2px_2px_0px_0px_rgba(255,255,255,0.2)]">
+                <div style={{ 
+                    fontSize: 9, 
+                    fontFamily: tokens.font.mono, 
+                    color: tokens.color.text.tertiary,
+                    backgroundColor: tokens.color.bg.overlay,
+                    padding: '2px 6px',
+                    border: `1px solid ${tokens.color.border.subtle}`,
+                    letterSpacing: tokens.letterSpacing.wider
+                }}>
                     RESETS AT MIDNIGHT
                 </div>
             </div>
 
-            <div className="flex-1 space-y-4 overflow-y-auto pr-2">
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 12, overflowY: 'auto' }}>
                 {dailyQuests.map((quest) => {
-                    const percent = Math.min(100, Math.round((quest.progress / quest.target) * 100));
+                    const percent = Math.min(100, (quest.progress / quest.target) * 100);
 
                     return (
                         <div
                             key={quest.id}
-                            className={`p-4 border-2 transition-all relative overflow-hidden group ${quest.claimed
-                                    ? 'bg-brutal-dark/50 border-brutal-gray/30 opacity-60 grayscale'
-                                    : quest.completed
-                                        ? 'bg-brutal-green/10 border-brutal-green'
-                                        : 'bg-brutal-dark border-brutal-white hover:border-brutal-pink'
-                                }`}
+                            style={{
+                                padding: tokens.space[4],
+                                border: `1px solid ${
+                                    quest.claimed 
+                                        ? tokens.color.border.subtle 
+                                        : quest.completed 
+                                            ? tokens.color.lime.base 
+                                            : tokens.color.border.subtle
+                                }`,
+                                background: quest.claimed 
+                                    ? tokens.color.bg.base 
+                                    : quest.completed 
+                                        ? tokens.color.lime.alpha[6] 
+                                        : tokens.color.bg.overlay,
+                                opacity: quest.claimed ? 0.6 : 1,
+                                transition: `all ${tokens.motion.duration.fast}`,
+                                position: 'relative'
+                            }}
                         >
-                            {!quest.claimed && quest.completed && (
-                                <div className="absolute inset-0 bg-brutal-green/10 pointer-events-none stripes-bg mix-blend-overlay opacity-20" />
-                            )}
-
-                            <div className="relative z-10 flex justify-between items-start mb-2">
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
                                 <div>
-                                    <h3 className={`font-heading text-sm uppercase ${quest.claimed ? 'text-brutal-gray' : 'text-brutal-white'}`}>
+                                    <Label 
+                                        size="xs" 
+                                        weight="bold" 
+                                        uppercase 
+                                        color={quest.claimed ? tokens.color.text.tertiary : tokens.color.text.primary}
+                                    >
                                         {quest.title}
-                                    </h3>
-                                    <div className="text-[10px] font-mono text-brutal-gray mt-1">
-                                        Reward: <span className="text-brutal-yellow">+{quest.xpReward} XP</span>
+                                    </Label>
+                                    <div style={{ marginTop: 4 }}>
+                                        <Mono size="2xs" color={tokens.color.text.tertiary}>
+                                            Reward: <span style={{ color: tokens.color.amber.base }}>+{quest.xpReward} XP</span>
+                                        </Mono>
                                     </div>
                                 </div>
 
                                 {quest.claimed ? (
-                                    <CheckCircle2 size={24} className="text-brutal-gray" />
+                                    <CheckCircle2 size={20} style={{ color: tokens.color.text.tertiary }} />
                                 ) : quest.completed ? (
-                                    <button
+                                    <Button
+                                        variant="lime"
+                                        size="sm"
                                         onClick={() => claimQuestReward(quest.id)}
-                                        className="bg-brutal-green text-brutal-black border-2 border-brutal-black px-3 py-1 font-heading text-xs uppercase hover:bg-brutal-white hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-1 transition-all flex items-center gap-2 active:translate-y-0 active:shadow-none"
+                                        style={{ height: 24, fontSize: 9, padding: '0 8px' }}
                                     >
-                                        <Gift size={14} />
-                                        Claim
-                                    </button>
+                                        <Gift size={12} /> Claim
+                                    </Button>
                                 ) : (
-                                    <div className="text-xs font-mono text-brutal-white">
+                                    <Mono size="2xs" color={tokens.color.text.secondary}>
                                         {quest.progress} / {quest.target}
-                                    </div>
+                                    </Mono>
                                 )}
                             </div>
 
                             {!quest.claimed && (
-                                <div className="h-2 w-full bg-brutal-black border border-brutal-gray relative mt-3">
-                                    <div
-                                        className={`h-full transition-all duration-500 ${quest.completed ? 'bg-brutal-green' : 'bg-brutal-pink'}`}
-                                        style={{ width: `${percent}%` }}
-                                    />
-                                </div>
+                                <ProgressBar 
+                                    value={percent} 
+                                    height={3} 
+                                    animate 
+                                    variant={quest.completed ? "default" : "health"} 
+                                />
                             )}
                         </div>
                     );
                 })}
 
                 {dailyQuests.length === 0 && (
-                    <div className="text-center text-brutal-gray/50 py-8 font-mono text-sm">
-                        Loading daily assignments...
+                    <div style={{ textAlign: 'center', padding: '32px 0' }}>
+                        <Mono size="xs" color={tokens.color.text.tertiary}>Loading daily assignments...</Mono>
                     </div>
                 )}
             </div>
-        </div>
+        </Card>
     );
 };
