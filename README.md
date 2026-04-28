@@ -23,6 +23,7 @@ The Terminal is more than just a simulator—it's a path to **Terminal Professio
 - **🏟️ Challenge Arena** — Dedicated **Arena** with "Survival Mode" challenges and "Ultimate Mastery" tests to push your skills to the limit.
 - **🎮 Authoritative Multiplayer** — Live Leaderboards, Daily Quests, and **Co-op Labs** (Pair Programming) powered by an authoritative **SpacetimeDB** backend.
 - **💬 AI-Powered Mentorship** — Interactive Chat interface for real-time guidance during complex labs, featuring **Lab-Gated Channels**.
+- **📖 Linux Mastery Track** — A structured, high-fidelity curriculum featuring **15+ deep-dive chapters** with reading modes, interactive drills, and XP-gated assessments.
 - **🎨 Terminal-First UI** — A premium Neo-Brutalist visual experience designed for high-performance **Xterm.js** canvas rendering.
 - **🛡️ Production Ready** — Integrated with `@sentry/react` for robust telemetry and error monitoring.
 
@@ -111,6 +112,7 @@ To ensure the app is usable even without a live backend connection, a **Mock Mod
 ## 📈 Current Status
 
 - **Wave 3: Gamification & Economy Completion** — Exponential XP curve (1.5x), Replay Diminishing Returns, and Hardcore Mode implemented ✅
+- **📖 Linux Mastery Track** — Initial 15 chapters of the foundational system administration curriculum deployed with "Reading Mode" enforcement ✅
 - **High-Fidelity Prompt Engine** — Integrated Streak (🔥) and Mastery (e.g. `[KERNEL]`) badges into the shell prompt ✅
 - **Architectural Hardening** — VFS access control strictly follows UID 0 bypass; composite scenario support for Mastery Challenges implemented ✅
 - **Backend Status** — 🟢 System Online (Connected to `terminal-backend` on SpacetimeDB Cloud)
@@ -124,8 +126,9 @@ To ensure the app is usable even without a live backend connection, a **Mock Mod
 - **Shell Engine**: Advanced redirections, pipes, and xterm.js integration.
 - **Gamification**: Hardcore mode, Multi-day streaks, and Exponential progression.
 
-### ⚓ Phase 4: Mastery Content (Next)
-- **RHCSA/LFCS Labs**: Deployment of 20+ specialized administrative scenarios.
+### ⚓ Phase 4: Mastery Content (Current)
+- **Professional Certification Labs**: Deployment of 20+ specialized administrative scenarios mapped to industry-standard mastery levels.
+- **Linux Mastery Track**: Expansion of the curriculum to include Advanced Networking, SELinux, and Container orchestration.
 - **Boss Arena**: Time-gated "Kernel Panic" repair challenges.
 - **Interactive Mentorship**: SpacetimeDB-backed multiplayer shadowing for lab review.
 
