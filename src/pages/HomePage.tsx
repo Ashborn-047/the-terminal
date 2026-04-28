@@ -10,6 +10,7 @@ import {
     tokens, 
     Button, 
     Card,
+    Badge,
     ActivitySpark,
     XPRing,
     AchievementGrid,
@@ -286,7 +287,6 @@ const HomePage: React.FC = () => {
                         <Display size="xs" color={tokens.color.text.tertiary} style={{ marginBottom: 12 }}>System Masteries</Display>
                         <SkillTree />
                     </Card>
-                </div>
                 </div>
             </div>
 

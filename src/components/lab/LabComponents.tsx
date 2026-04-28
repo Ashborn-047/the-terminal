@@ -3,6 +3,8 @@ import { Lab, VFS } from '../../features/lab-engine/types';
 import { VerificationEngine } from '../../features/lab-engine/verification';
 import { useTerminalStore } from '../../stores/terminalStore';
 import { useGamificationStore } from '../../stores/gamificationStore';
+import { useLabStore } from '../../stores/labStore';
+import { HINT_PENALTIES, SOLUTION_COST_HARD_MODE } from '../../config/progression';
 import { Lock, CheckCircle, Play, HelpCircle, Award, ChevronRight, AlertTriangle } from 'lucide-react';
 import { 
     tokens, 
@@ -114,9 +116,6 @@ export const LabCard: React.FC<LabCardProps> = ({ lab, status, onStart }) => {
 // ======================================================================
 //  GuidedLabInstructions
 // ======================================================================
-import { useGamificationStore } from '../../stores/gamificationStore';
-import { useLabStore } from '../../stores/labStore';
-import { HINT_PENALTIES, SOLUTION_COST_HARD_MODE } from '../../config/progression';
 
 interface GuidedLabProps {
     lab: Lab;

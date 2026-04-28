@@ -8,7 +8,6 @@ import { toastEmitter } from '../components/ToastNotification';
 import { motion } from 'motion/react';
 import { BookOpen, CheckCircle, Lock } from 'lucide-react';
 
-<<<<<<< HEAD
 const TrackSection = ({ title, chapters, level, completedChapterIds, onStartChapter }: any) => (
     <>
         <h2 className="text-2xl text-lime-400 font-heading tracking-wider uppercase mb-6 mt-8 border-b border-gray-800 pb-2" style={{ fontFamily: 'Russo One' }}>
@@ -54,22 +53,12 @@ const TrackSection = ({ title, chapters, level, completedChapterIds, onStartChap
 
 export const ChaptersPage: React.FC = () => {
     const { level, awardXP, completedChapterIds, markChapterCompleted } = useGamificationStore();
-=======
-export const ChaptersPage: React.FC = () => {
-    const { level, awardXP } = useGamificationStore();
->>>>>>> origin/feat/linux-simulator-expansion-935369745345634572
     const [selectedChapter, setSelectedChapter] = useState<ChapterMetadata | null>(null);
     const [sessionQuestions, setSessionQuestions] = useState<ChapterAssessment[]>([]);
     const [currentStepIndex, setCurrentStepIndex] = useState(0);
     const [inputValue, setInputValue] = useState('');
     const [isCompleted, setIsCompleted] = useState(false);
 
-<<<<<<< HEAD
-=======
-    // Simplistic tracking for demo, could be stored in gamificationStore
-    const [completedChapterIds, setCompletedChapterIds] = useState<Set<string>>(new Set());
-
->>>>>>> origin/feat/linux-simulator-expansion-935369745345634572
     const terminalState = useTerminal();
 
     const handleStartChapter = async (chapter: ChapterMetadata) => {
@@ -77,7 +66,6 @@ export const ChaptersPage: React.FC = () => {
 
         setSelectedChapter(chapter);
 
-<<<<<<< HEAD
         try {
             // Dynamically fetch random questions for this chapter
             // We pull 5 questions to make it a quick drill session
@@ -92,16 +80,6 @@ export const ChaptersPage: React.FC = () => {
             toastEmitter.emit({ type: 'error', title: 'Error', message: 'Failed to load chapter content.', duration: 3000 });
             setSelectedChapter(null);
         }
-=======
-        // Dynamically fetch random questions for this chapter
-        // We pull 5 questions to make it a quick drill session
-        const questions = await QuestionProvider.fetchSessionQuestions(chapter.id, 5);
-        setSessionQuestions(questions);
-
-        setCurrentStepIndex(0);
-        setIsCompleted(false);
-        setInputValue('');
->>>>>>> origin/feat/linux-simulator-expansion-935369745345634572
     };
 
     const handleAnswerSubmit = () => {
@@ -123,11 +101,7 @@ export const ChaptersPage: React.FC = () => {
         }
     };
 
-<<<<<<< HEAD
     const handleStepAdvance = useCallback(() => {
-=======
-    const handleStepAdvance = () => {
->>>>>>> origin/feat/linux-simulator-expansion-935369745345634572
         if (!selectedChapter || sessionQuestions.length === 0) return;
         if (currentStepIndex < sessionQuestions.length - 1) {
             setCurrentStepIndex(prev => prev + 1);
@@ -135,7 +109,6 @@ export const ChaptersPage: React.FC = () => {
         } else {
             handleChapterComplete(selectedChapter);
         }
-<<<<<<< HEAD
     }, [selectedChapter, sessionQuestions, currentStepIndex]);
 
     const handleChapterComplete = (chapter: ChapterMetadata) => {
@@ -146,6 +119,11 @@ export const ChaptersPage: React.FC = () => {
             if (!hasPracticeOnly) {
                 awardXP(chapter.xpReward);
                 markChapterCompleted(chapter.id);
+
+                // Log chapter completion via spacetime (stubbed)
+                import('../lib/spacetime/index').then(({ spacetime }) => {
+                    (spacetime as any).completeChapter?.(chapter.id);
+                }).catch(e => console.error(e));
 
                 toastEmitter.emit({
                     type: 'achievement',
@@ -161,30 +139,6 @@ export const ChaptersPage: React.FC = () => {
                     icon: '🛠️'
                 });
             }
-=======
-    };
-
-    const handleChapterComplete = (chapter: ChapterMetadata) => {
-        setIsCompleted(true);
-        if (!completedChapterIds.has(chapter.id)) {
-            awardXP(chapter.xpReward);
-            setCompletedChapterIds(prev => new Set(prev).add(chapter.id));
->>>>>>> origin/feat/linux-simulator-expansion-935369745345634572
-
-            // Log chapter completion via spacetime (stubbed)
-            import('../lib/spacetime/index').then(({ spacetime }) => {
-                (spacetime as any).completeChapter?.(chapter.id);
-            }).catch(e => console.error(e));
-
-<<<<<<< HEAD
-=======
-            toastEmitter.emit({
-                type: 'achievement',
-                title: 'Chapter Completed!',
-                message: `Earned ${chapter.xpReward} XP`,
-                icon: '📚'
-            });
->>>>>>> origin/feat/linux-simulator-expansion-935369745345634572
         } else {
             toastEmitter.emit({
                 type: 'info',
@@ -194,6 +148,7 @@ export const ChaptersPage: React.FC = () => {
             });
         }
     };
+
 
     // Terminal completion check logic for finale
     useEffect(() => {
@@ -207,15 +162,11 @@ export const ChaptersPage: React.FC = () => {
 
             let isMet = false;
             if (currentAssessment.regexMatch) {
-<<<<<<< HEAD
                 try {
                     isMet = new RegExp(currentAssessment.correctAnswer).test(lastCommand.command);
                 } catch (e) {
                     console.error('Invalid regex:', currentAssessment.correctAnswer);
                 }
-=======
-                isMet = new RegExp(currentAssessment.correctAnswer).test(lastCommand.command);
->>>>>>> origin/feat/linux-simulator-expansion-935369745345634572
             } else {
                 isMet = lastCommand.command.trim() === currentAssessment.correctAnswer.trim();
             }
@@ -224,11 +175,7 @@ export const ChaptersPage: React.FC = () => {
                 handleStepAdvance();
             }
         }
-<<<<<<< HEAD
     }, [terminalState.history, sessionQuestions, currentStepIndex, isCompleted, handleStepAdvance, selectedChapter]);
-=======
-    }, [terminalState.history, sessionQuestions, currentStepIndex, isCompleted]);
->>>>>>> origin/feat/linux-simulator-expansion-935369745345634572
 
     if (selectedChapter && sessionQuestions.length > 0) {
         const assessment = sessionQuestions[currentStepIndex];

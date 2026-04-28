@@ -185,10 +185,7 @@ function AppContent() {
               <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
               <Route path="/challenge-arena" element={<ProtectedRoute><ChallengeArenaPage /></ProtectedRoute>} />
               <Route path="/chapters" element={<ProtectedRoute><ChaptersPage /></ProtectedRoute>} />
-<<<<<<< HEAD
               <Route path="/about" element={<AboutLinuxPage />} />
-=======
->>>>>>> origin/feat/linux-simulator-expansion-935369745345634572
             </Routes>
           </Suspense>
         </ErrorBoundary>
