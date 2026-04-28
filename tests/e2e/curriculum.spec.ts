@@ -1,38 +1,16 @@
 import { test, expect } from '@playwright/test';
-import { typeCommand, waitForEngineReady } from './test-utils';
+import { typeCommand, waitForEngineReady, injectStandardFixtures } from './test-utils';
 
 test.describe('Curriculum and Lab Flow', () => {
     test.beforeEach(async ({ page }) => {
         // Inject state upstream of navigation to ensure stores hydrate with the completed onboarding flag
-        await page.addInitScript(() => {
-            localStorage.clear();
-            localStorage.setItem('the-terminal-ui', JSON.stringify({
-                state: {
-                    onboardingComplete: true,
-                    username: 'guest',
-                    onboardingStep: 4,
-                    labsCompleted: 0,
-                },
-                version: 0
-            }));
-            localStorage.setItem('the-terminal-gamification', JSON.stringify({
-                state: {
-                    xp: 0,
-                    level: 1,
-                    labsCompleted: 0,
-                    totalXpEarned: 0,
-                    streak: { current: 0, longest: 0, lastActivityDate: null, freezesRemaining: 1 },
-                    counters: {},
-                    activityHistory: {},
-                    unlockedAchievements: [],
-                    hintsUsed: 0,
-                    dailyQuests: [],
-                    lastQuestGenerationDate: null,
-                    version: '3.1'
-                },
-                version: 0
-            }));
-            (window as any).PLAYWRIGHT_TESTING = true;
+        await injectStandardFixtures(page, {
+            ui: {
+                onboardingComplete: true,
+                username: 'guest',
+                onboardingStep: 4,
+                labsCompleted: 0,
+            }
         });
 
         await page.goto('');
@@ -74,7 +52,7 @@ test.describe('Curriculum and Lab Flow', () => {
         await typeCommand(page, 'ls');
 
         // Step 6: Verify Celebration Modal (triggers on first lab completion)
-        await expect(page.getByRole('heading', { name: 'First Lab Complete!' })).toBeVisible({ timeout: 20000 });
+        await expect(page.getByRole('heading', { name: /First Lab Complete!/i })).toBeVisible({ timeout: 20000 });
 
         // Step 7: Continue Learning (Continue button in modal goes back to labs)
         await page.getByRole('button', { name: /Continue Learning/i }).click();

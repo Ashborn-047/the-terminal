@@ -1,37 +1,21 @@
 import { test, expect } from '@playwright/test';
-import { typeCommand, waitForEngineReady } from './test-utils';
+import { typeCommand, waitForEngineReady, injectStandardFixtures } from './test-utils';
 
 test.describe('Gamification and Social Flow', () => {
     test.beforeEach(async ({ page }) => {
         // Inject state BEFORE navigation to ensure stores hydrate with the mock data
-        await page.addInitScript(() => {
-            localStorage.clear();
-            localStorage.setItem('the-terminal-ui', JSON.stringify({
-                state: {
-                    onboardingComplete: true,
-                    username: 'guest',
-                    onboardingStep: 4
-                },
-                version: 0
-            }));
-            // Mock gamification state if needed to trigger level up faster
-            localStorage.setItem('the-terminal-gamification', JSON.stringify({
-                state: {
-                    xp: 140,
-                    level: 1,
-                    totalXpEarned: 140,
-                    streak: { current: 1, longest: 1, lastActivityDate: null, freezesRemaining: 1 },
-                    counters: {},
-                    activityHistory: {},
-                    unlockedAchievements: [],
-                    labsCompleted: 0,
-                    hintsUsed: 0,
-                    dailyQuests: [],
-                    version: '3.1'
-                },
-                version: 0
-            }));
-            (window as any).PLAYWRIGHT_TESTING = true;
+        await injectStandardFixtures(page, {
+            ui: {
+                onboardingComplete: true,
+                username: 'guest',
+                onboardingStep: 4
+            },
+            gamification: {
+                xp: 140,
+                level: 1,
+                totalXpEarned: 140,
+                streak: { current: 1, longest: 1, lastActivityDate: null, freezesRemaining: 1 }
+            }
         });
 
         await page.goto('terminal');

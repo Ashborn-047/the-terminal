@@ -185,8 +185,15 @@ const HomePage: React.FC = () => {
             </div>
 
             {/* Activity + Mission Board */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div 
+                style={{ 
+                    display: 'grid', 
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', 
+                    gap: tokens.space[6], 
+                    marginBottom: tokens.space[8] 
+                }}
+            >
+                <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.space[6] }}>
                     {/* Continue Learning */}
                     <Card id="continue-learning-card" variant="default" style={{ padding: 20 }}>
                         <Display size="sm" style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
@@ -281,13 +288,12 @@ const HomePage: React.FC = () => {
                     </Card>
                 </div>
 
-                <div className="flex flex-col gap-6">
-                    <DailyQuests />
-                    <Card variant="default" style={{ padding: 20 }}>
-                        <Display size="xs" color={tokens.color.text.tertiary} style={{ marginBottom: 12 }}>System Masteries</Display>
-                        <SkillTree />
-                    </Card>
-                </div>
+                <DailyQuests />
+            </div>
+
+            {/* System Masteries - Full Width Horizontal Section */}
+            <div style={{ marginBottom: tokens.space[8] }}>
+                <SkillTree />
             </div>
 
 

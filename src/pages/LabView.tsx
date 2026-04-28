@@ -278,7 +278,7 @@ const LabView: React.FC = () => {
                     message={`You've successfully completed "${lab.title}". This is just the beginning of your Linux journey!`}
                     xpEarned={xpAwarded}
                     levelUp={leveledUp}
-                    onContinue={() => navigate('/chapters')}
+                    onContinue={() => navigate('/labs')}
                     onDashboard={() => navigate('/')}
                 />
             )}

@@ -1,59 +1,113 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useGamificationStore } from '../stores/gamificationStore';
 import { ChapterMetadata, sysadmin1Chapters, sysadmin2Chapters } from '../data/chapters/curriculum_metadata';
+import { chapterContents, ChapterContent } from '../data/chapters/chapter_content_data';
 import { ChapterAssessment, QuestionProvider } from '../features/lab-engine/providers/QuestionProvider';
 import { TerminalComponent } from '../components/terminal/Terminal';
 import { useTerminal } from '../hooks/useTerminal';
 import { toastEmitter } from '../components/ToastNotification';
-import { motion } from 'motion/react';
-import { BookOpen, CheckCircle, Lock } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { BookOpen, CheckCircle, Lock, ChevronRight, ChevronLeft, ArrowRight } from 'lucide-react';
+import { 
+    tokens, 
+    Card, 
+    Button, 
+    Display, 
+    Label, 
+    Mono, 
+    Badge 
+} from '../components/ui/AshbornDesignSystem';
+
+type ViewMode = 'list' | 'reading' | 'assessment';
 
 const TrackSection = ({ title, chapters, level, completedChapterIds, onStartChapter }: any) => (
-    <>
-        <h2 className="text-2xl text-lime-400 font-heading tracking-wider uppercase mb-6 mt-8 border-b border-gray-800 pb-2" style={{ fontFamily: 'Russo One' }}>
-            {title}
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
+    <div style={{ marginBottom: tokens.space[12] }}>
+        <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: 16, 
+            marginBottom: tokens.space[6],
+            borderBottom: `1px solid ${tokens.color.border.default}`,
+            paddingBottom: tokens.space[3]
+        }}>
+            <Display size="sm" color={tokens.color.lime.base}>{title}</Display>
+        </div>
+        
+        <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', 
+            gap: tokens.space[6] 
+        }}>
             {chapters.map((chapter: any, idx: number) => {
-                const locked = level < chapter.requiredLevel;
                 const completed = completedChapterIds.includes(chapter.id);
 
                 return (
-                    <motion.div
+                    <Card
                         key={chapter.id}
-                        whileHover={locked ? {} : { scale: 1.02, borderColor: 'var(--color-lime-base)' }}
-                        onClick={() => { if (!locked) onStartChapter(chapter); }}
-                        className={`relative p-6 border-4 flex flex-col justify-between transition-colors duration-300 ${locked ? 'border-gray-800 bg-gray-900/50 opacity-75' : 'border-gray-700 bg-gray-900/80 cursor-pointer'}`}
+                        variant="interactive"
+                        onClick={() => onStartChapter(chapter)}
+                        style={{ 
+                            padding: tokens.space[6], 
+                            display: 'flex', 
+                            flexDirection: 'column', 
+                            justifyContent: 'space-between',
+                            cursor: 'pointer',
+                            border: `1px solid ${completed ? tokens.color.lime.base : tokens.color.border.default}`,
+                            background: tokens.color.bg.surface,
+                            minHeight: 200
+                        }}
                     >
                         <div>
-                            <div className="text-lime-500 font-mono text-sm mb-2 uppercase tracking-widest">Chapter {idx + 1} | {chapter.objectiveCode}</div>
-                            <div className="flex justify-between items-start mb-4">
-                                <h3 className="font-heading text-2xl uppercase tracking-wider text-white" style={{ fontFamily: 'Russo One, sans-serif' }}>{chapter.title}</h3>
-                                {completed && !locked && <CheckCircle className="text-lime-500 w-6 h-6" />}
-                                {locked && <Lock className="text-gray-500 w-6 h-6" />}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                                <Mono size="2xs" color={tokens.color.lime.base}>
+                                    CHAPTER {idx + 1} | {chapter.objectiveCode}
+                                </Mono>
+                                {completed && <CheckCircle size={16} style={{ color: tokens.color.lime.base }} />}
                             </div>
-                            <p className="text-gray-400 text-sm mb-6 line-clamp-3">{chapter.description}</p>
+
+                            <Display size="xs" style={{ marginBottom: 12 }}>{chapter.title}</Display>
+                            
+                            <p style={{ 
+                                fontFamily: tokens.font.sans, 
+                                fontSize: tokens.fontSize.xs, 
+                                color: tokens.color.text.secondary,
+                                lineHeight: 1.5,
+                                marginBottom: 20,
+                                display: '-webkit-box',
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: 'vertical',
+                                overflow: 'hidden'
+                            }}>
+                                {chapter.description}
+                            </p>
                         </div>
 
-                        {locked ? (
-                            <div className="w-full py-3 bg-gray-800/80 border border-gray-700 flex items-center justify-center gap-2 text-gray-400 font-bold uppercase tracking-widest text-sm">
-                                <Lock size={16} /> Requires Level {chapter.requiredLevel}
-                            </div>
-                        ) : (
-                            <div className="w-full py-3 bg-gray-800 border border-gray-700 flex items-center justify-center gap-2 text-white font-bold uppercase tracking-widest hover:bg-gray-700 transition-colors">
-                                <BookOpen size={16} /> {completed ? 'Review Chapter' : 'Begin Chapter'}
-                            </div>
-                        )}
-                    </motion.div>
+                        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                            <Button 
+                                variant={completed ? "ghost" : "lime"} 
+                                size="sm" 
+                                style={{ flex: 1 }}
+                            >
+                                <BookOpen size={14} /> {completed ? 'Review Chapter' : 'Begin Chapter'}
+                            </Button>
+                            {chapter.requiredLevel > level && (
+                                <Badge variant="warning" style={{ fontSize: 9 }}>
+                                    LVL {chapter.requiredLevel}+ REC.
+                                </Badge>
+                            )}
+                        </div>
+                    </Card>
                 );
             })}
         </div>
-    </>
+    </div>
 );
 
 export const ChaptersPage: React.FC = () => {
     const { level, awardXP, completedChapterIds, markChapterCompleted } = useGamificationStore();
     const [selectedChapter, setSelectedChapter] = useState<ChapterMetadata | null>(null);
+    const [viewMode, setViewMode] = useState<ViewMode>('list');
+    const [readingSectionIndex, setReadingSectionIndex] = useState(0);
     const [sessionQuestions, setSessionQuestions] = useState<ChapterAssessment[]>([]);
     const [currentStepIndex, setCurrentStepIndex] = useState(0);
     const [inputValue, setInputValue] = useState('');
@@ -61,39 +115,36 @@ export const ChaptersPage: React.FC = () => {
 
     const terminalState = useTerminal();
 
-    const handleStartChapter = async (chapter: ChapterMetadata) => {
-        if (level < chapter.requiredLevel) return;
-
+    const handleStartChapter = (chapter: ChapterMetadata) => {
         setSelectedChapter(chapter);
+        setReadingSectionIndex(0);
+        setViewMode('reading');
+        setIsCompleted(false);
+    };
 
+    const handleStartAssessment = async () => {
+        if (!selectedChapter) return;
         try {
-            // Dynamically fetch random questions for this chapter
-            // We pull 5 questions to make it a quick drill session
-            const questions = await QuestionProvider.fetchSessionQuestions(chapter.id, 5);
+            const questions = await QuestionProvider.fetchSessionQuestions(selectedChapter.id, 5);
             setSessionQuestions(questions);
-
             setCurrentStepIndex(0);
-            setIsCompleted(false);
             setInputValue('');
+            setViewMode('assessment');
         } catch (error) {
-            console.error('Failed to start chapter:', error);
+            console.error('Failed to start assessment:', error);
             toastEmitter.emit({ type: 'error', title: 'Error', message: 'Failed to load chapter content.', duration: 3000 });
-            setSelectedChapter(null);
         }
     };
 
     const handleAnswerSubmit = () => {
         if (!selectedChapter || sessionQuestions.length === 0) return;
-
         const currentAssessment = sessionQuestions[currentStepIndex];
         let isCorrect = false;
-
         if (currentAssessment.type === 'mcq') {
             isCorrect = inputValue === currentAssessment.correctAnswer;
         } else if (currentAssessment.type === 'syntax_drill') {
             isCorrect = inputValue.trim() === currentAssessment.correctAnswer;
         }
-
         if (isCorrect) {
             handleStepAdvance();
         } else {
@@ -114,17 +165,13 @@ export const ChaptersPage: React.FC = () => {
     const handleChapterComplete = (chapter: ChapterMetadata) => {
         setIsCompleted(true);
         const hasPracticeOnly = sessionQuestions.some(q => q.practiceOnly);
-
         if (!completedChapterIds.includes(chapter.id)) {
             if (!hasPracticeOnly) {
                 awardXP(chapter.xpReward);
                 markChapterCompleted(chapter.id);
-
-                // Log chapter completion via spacetime (stubbed)
                 import('../lib/spacetime/index').then(({ spacetime }) => {
                     (spacetime as any).completeChapter?.(chapter.id);
                 }).catch(e => console.error(e));
-
                 toastEmitter.emit({
                     type: 'achievement',
                     title: 'Chapter Completed!',
@@ -132,166 +179,293 @@ export const ChaptersPage: React.FC = () => {
                     icon: '📚'
                 });
             } else {
-                toastEmitter.emit({
-                    type: 'info',
-                    title: 'Practice Completed',
-                    message: 'Authoring in progress. No XP awarded.',
-                    icon: '🛠️'
-                });
+                toastEmitter.emit({ type: 'info', title: 'Practice Completed', message: 'Authoring in progress. No XP awarded.', icon: '🛠️' });
             }
         } else {
-            toastEmitter.emit({
-                type: 'info',
-                title: 'Chapter Replayed',
-                message: 'Practice makes perfect.',
-                icon: '🔄'
-            });
+            toastEmitter.emit({ type: 'info', title: 'Chapter Replayed', message: 'Practice makes perfect.', icon: '🔄' });
         }
     };
 
-
-    // Terminal completion check logic for finale
     useEffect(() => {
-        if (!selectedChapter || sessionQuestions.length === 0 || isCompleted) return;
+        if (!selectedChapter || sessionQuestions.length === 0 || isCompleted || viewMode !== 'assessment') return;
         const currentAssessment = sessionQuestions[currentStepIndex];
-
         if (currentAssessment.type === 'finale_terminal') {
-            // Check command history
             const lastCommand = terminalState.history[terminalState.history.length - 1];
             if (!lastCommand) return;
-
             let isMet = false;
             if (currentAssessment.regexMatch) {
                 try {
                     isMet = new RegExp(currentAssessment.correctAnswer).test(lastCommand.command);
-                } catch (e) {
-                    console.error('Invalid regex:', currentAssessment.correctAnswer);
-                }
+                } catch (e) { console.error('Invalid regex:', currentAssessment.correctAnswer); }
             } else {
                 isMet = lastCommand.command.trim() === currentAssessment.correctAnswer.trim();
             }
-
-            if (isMet) {
-                handleStepAdvance();
-            }
+            if (isMet) handleStepAdvance();
         }
-    }, [terminalState.history, sessionQuestions, currentStepIndex, isCompleted, handleStepAdvance, selectedChapter]);
+    }, [terminalState.history, sessionQuestions, currentStepIndex, isCompleted, handleStepAdvance, selectedChapter, viewMode]);
 
-    if (selectedChapter && sessionQuestions.length > 0) {
-        const assessment = sessionQuestions[currentStepIndex];
-
-        if (isCompleted) {
-             return (
-                 <div className="h-full flex flex-col items-center justify-center bg-black p-8 text-center">
-                     <CheckCircle className="w-24 h-24 text-lime-500 mb-6" />
-                     <h2 className="text-4xl text-white uppercase font-heading mb-4" style={{ fontFamily: 'Russo One' }}>Chapter Complete</h2>
-                     <p className="text-gray-400 mb-8 max-w-lg">{selectedChapter.description}</p>
-                     <button
-                        onClick={() => setSelectedChapter(null)}
-                        className="px-8 py-3 bg-lime-500 hover:bg-lime-400 text-black font-bold uppercase tracking-wider transition-colors"
-                     >
-                         Return to Curriculum
-                     </button>
-                 </div>
-             );
-        }
+    // Render logic for Reading Mode
+    if (selectedChapter && viewMode === 'reading') {
+        const content = chapterContents[selectedChapter.id];
+        const sections = content?.sections || [
+            { title: 'Placeholder', content: 'Detailed educational content for this chapter is being synchronized with the central repository. Please check back shortly for the full text.' }
+        ];
+        const currentSection = sections[readingSectionIndex];
 
         return (
-            <div className="h-full flex flex-col bg-gray-950">
-                <div className="flex-none p-6 border-b border-gray-800 bg-gray-900 flex justify-between items-center">
+            <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: tokens.color.bg.base }}>
+                <div style={{ 
+                    padding: tokens.space[6], 
+                    borderBottom: `1px solid ${tokens.color.border.default}`, 
+                    background: tokens.color.bg.surface, 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center' 
+                }}>
                     <div>
-                        <h2 className="text-2xl text-lime-400 font-heading tracking-wider uppercase mb-1" style={{ fontFamily: 'Russo One' }}>
+                        <Display size="sm" color={tokens.color.lime.base} style={{ marginBottom: 4 }}>
                             {selectedChapter.title}
-                        </h2>
-                        <div className="text-gray-500 text-sm font-mono tracking-widest uppercase">
-                            Objective: {selectedChapter.objectiveCode} | Step {currentStepIndex + 1} of {sessionQuestions.length}
-                        </div>
+                        </Display>
+                        <Mono size="2xs" color={tokens.color.text.tertiary}>MODULE: {selectedChapter.objectiveCode} | READING PHASE</Mono>
                     </div>
-                    <button
-                        onClick={() => setSelectedChapter(null)}
-                        className="px-4 py-2 border border-gray-700 text-gray-400 hover:text-white hover:border-gray-500 transition-colors uppercase text-xs font-bold"
-                    >
-                        Abort
-                    </button>
+                    <Button variant="ghost" size="sm" onClick={() => setViewMode('list')}>
+                        Exit
+                    </Button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-8 flex justify-center items-center">
-                    <div className="max-w-2xl w-full bg-gray-900 border-2 border-gray-800 p-8 shadow-2xl relative">
-                        <h3 className="text-xl text-white mb-6 font-mono leading-relaxed">
-                            {assessment.question}
-                        </h3>
+                <div style={{ flex: 1, overflowY: 'auto', padding: tokens.space[8], display: 'flex', justifyContent: 'center' }}>
+                    <div style={{ maxWidth: 800, width: '100%' }}>
+                        <div style={{ marginBottom: 40, display: 'flex', gap: 8 }}>
+                            {sections.map((_, i) => (
+                                <div key={i} style={{ 
+                                    flex: 1, 
+                                    height: 4, 
+                                    background: i <= readingSectionIndex ? tokens.color.lime.base : tokens.color.bg.surface,
+                                    borderRadius: 2,
+                                    transition: 'all 0.3s'
+                                }} />
+                            ))}
+                        </div>
 
-                        {assessment.type === 'mcq' && (
-                            <div className="flex flex-col gap-3">
-                                {assessment.options?.map((opt, i) => (
-                                    <button
-                                        key={i}
-                                        onClick={() => setInputValue(opt)}
-                                        className={`p-4 text-left border-2 transition-colors font-sans ${inputValue === opt ? 'border-lime-500 bg-lime-500/10 text-lime-400' : 'border-gray-700 hover:border-gray-500 text-gray-300'}`}
-                                    >
-                                        {opt}
-                                    </button>
-                                ))}
-                                <button
-                                    onClick={handleAnswerSubmit}
-                                    disabled={!inputValue}
-                                    className="mt-6 p-3 bg-white text-black font-bold uppercase disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-200 transition-colors"
+                        <motion.div
+                            key={readingSectionIndex}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.4 }}
+                        >
+                            <Display size="lg" style={{ marginBottom: 24, lineHeight: 1.2 }}>{currentSection.title}</Display>
+                            
+                            <div style={{ 
+                                fontFamily: tokens.font.sans, 
+                                fontSize: tokens.fontSize.md, 
+                                color: tokens.color.text.primary, 
+                                lineHeight: 1.8,
+                                whiteSpace: 'pre-wrap'
+                            }}>
+                                {currentSection.content}
+                            </div>
+                        </motion.div>
+
+                        <div style={{ 
+                            marginTop: 64, 
+                            paddingTop: 32, 
+                            borderTop: `1px solid ${tokens.color.border.subtle}`,
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center'
+                        }}>
+                            <Button 
+                                variant="ghost" 
+                                onClick={() => setReadingSectionIndex(prev => Math.max(0, prev - 1))}
+                                disabled={readingSectionIndex === 0}
+                            >
+                                <ChevronLeft size={18} /> Previous
+                            </Button>
+
+                            {readingSectionIndex < sections.length - 1 ? (
+                                <Button 
+                                    variant="lime" 
+                                    onClick={() => setReadingSectionIndex(prev => prev + 1)}
                                 >
-                                    Submit
-                                </button>
-                            </div>
-                        )}
-
-                        {assessment.type === 'syntax_drill' && (
-                            <div className="flex flex-col gap-4">
-                                <input
-                                    type="text"
-                                    value={inputValue}
-                                    onChange={(e) => setInputValue(e.target.value)}
-                                    onKeyDown={(e) => e.key === 'Enter' && handleAnswerSubmit()}
-                                    className="w-full bg-black border border-gray-700 p-4 text-lime-500 font-mono text-lg focus:outline-none focus:border-lime-500"
-                                    placeholder="Type command..."
-                                    autoFocus
-                                />
-                                <button
-                                    onClick={handleAnswerSubmit}
-                                    className="p-3 bg-white text-black font-bold uppercase hover:bg-gray-200 transition-colors"
+                                    Next Section <ChevronRight size={18} />
+                                </Button>
+                            ) : (
+                                <Button 
+                                    variant="lime" 
+                                    size="lg"
+                                    onClick={handleStartAssessment}
+                                    style={{ padding: '16px 32px' }}
                                 >
-                                    Execute Drill
-                                </button>
-                            </div>
-                        )}
-
-                        {assessment.type === 'finale_terminal' && (
-                            <div className="mt-4 border border-gray-700 h-96">
-                                <TerminalComponent />
-                            </div>
-                        )}
-
-                        {assessment.hint && (
-                            <div className="mt-6 text-sm text-gray-500 italic">
-                                Hint: {assessment.hint}
-                            </div>
-                        )}
+                                    Start Assessment <ArrowRight size={18} />
+                                </Button>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
         );
     }
 
+    // Render logic for Assessment Mode
+    if (selectedChapter && viewMode === 'assessment') {
+        const assessment = sessionQuestions[currentStepIndex];
+        
+        if (isCompleted) {
+             return (
+                 <div style={{ 
+                     height: '100%', 
+                     display: 'flex', 
+                     flexDirection: 'column', 
+                     alignItems: 'center', 
+                     justifyContent: 'center', 
+                     background: tokens.color.bg.base, 
+                     padding: tokens.space[8], 
+                     textAlign: 'center' 
+                 }}>
+                     <CheckCircle size={80} style={{ color: tokens.color.lime.base, marginBottom: 24 }} />
+                     <Display size="lg" style={{ marginBottom: 16 }}>Chapter Complete</Display>
+                     <p style={{ color: tokens.color.text.secondary, marginBottom: 32, maxWidth: 480, fontFamily: tokens.font.sans }}>
+                        You have successfully mastered the fundamentals of {selectedChapter.title}.
+                     </p>
+                     <Button variant="lime" size="lg" onClick={() => setViewMode('list')}>
+                         Return to Curriculum
+                     </Button>
+                 </div>
+             );
+        }
+
+        if (!assessment) return <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Display size="sm">Loading Assessment...</Display></div>;
+
+        return (
+            <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: tokens.color.bg.base }}>
+                <div style={{ 
+                    padding: tokens.space[6], 
+                    borderBottom: `1px solid ${tokens.color.border.default}`, 
+                    background: tokens.color.bg.surface, 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center' 
+                }}>
+                    <div>
+                        <Display size="sm" color={tokens.color.lime.base} style={{ marginBottom: 4 }}>
+                            {selectedChapter.title}
+                        </Display>
+                        <div style={{ display: 'flex', gap: 12 }}>
+                            <Mono size="2xs" color={tokens.color.text.tertiary}>OBJECTIVE: {selectedChapter.objectiveCode}</Mono>
+                            <Mono size="2xs" color={tokens.color.text.tertiary}>STEP {currentStepIndex + 1} OF {sessionQuestions.length}</Mono>
+                        </div>
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={() => setViewMode('list')}>
+                        Abort
+                    </Button>
+                </div>
+
+                <div style={{ flex: 1, overflowY: 'auto', padding: tokens.space[8], display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                    <Card style={{ maxWidth: 700, width: '100%', padding: tokens.space[8], border: `1px solid ${tokens.color.border.strong}` }}>
+                        <Display size="xs" style={{ marginBottom: 32, lineHeight: 1.4, fontFamily: tokens.font.mono }}>
+                            {assessment.question}
+                        </Display>
+
+                        {assessment.type === 'mcq' && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                {assessment.options?.map((opt, i) => (
+                                    <button
+                                        key={i}
+                                        onClick={() => setInputValue(opt)}
+                                        style={{
+                                            padding: tokens.space[4],
+                                            textAlign: 'left',
+                                            border: `1px solid ${inputValue === opt ? tokens.color.lime.base : tokens.color.border.default}`,
+                                            background: inputValue === opt ? tokens.color.lime.alpha[8] : tokens.color.bg.overlay,
+                                            color: inputValue === opt ? tokens.color.lime.base : tokens.color.text.primary,
+                                            fontFamily: tokens.font.sans,
+                                            fontSize: tokens.fontSize.sm,
+                                            cursor: 'pointer',
+                                            transition: 'all 0.15s'
+                                        }}
+                                    >
+                                        {opt}
+                                    </button>
+                                ))}
+                                <Button
+                                    variant="lime"
+                                    onClick={handleAnswerSubmit}
+                                    disabled={!inputValue}
+                                    style={{ marginTop: 24 }}
+                                >
+                                    Submit
+                                </Button>
+                            </div>
+                        )}
+
+                        {assessment.type === 'syntax_drill' && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                                <input
+                                    type="text"
+                                    value={inputValue}
+                                    onChange={(e) => setInputValue(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && handleAnswerSubmit()}
+                                    style={{
+                                        width: '100%',
+                                        background: tokens.color.bg.base,
+                                        border: `1px solid ${tokens.color.border.strong}`,
+                                        padding: tokens.space[4],
+                                        color: tokens.color.lime.base,
+                                        fontFamily: tokens.font.mono,
+                                        fontSize: tokens.fontSize.md,
+                                        outline: 'none'
+                                    }}
+                                    placeholder="Type command..."
+                                    autoFocus
+                                />
+                                <Button variant="lime" onClick={handleAnswerSubmit}>
+                                    Execute Drill
+                                </Button>
+                            </div>
+                        )}
+
+                        {assessment.type === 'finale_terminal' && (
+                            <div style={{ marginTop: 16, border: `1px solid ${tokens.color.border.strong}`, height: 400 }}>
+                                <TerminalComponent />
+                            </div>
+                        )}
+
+                        {assessment.hint && (
+                            <div style={{ marginTop: 24 }}>
+                                <Label size="2xs" color={tokens.color.text.tertiary} italic>
+                                    Hint: {assessment.hint}
+                                </Label>
+                            </div>
+                        )}
+                    </Card>
+                </div>
+            </div>
+        );
+    }
+
     return (
-        <div className="h-full w-full overflow-y-auto bg-black p-8">
-            <div className="max-w-6xl mx-auto">
-                <header className="mb-12 border-b-2 border-gray-800 pb-6">
-                    <h1 className="text-5xl font-heading text-white uppercase tracking-tighter" style={{ fontFamily: 'Russo One, sans-serif' }}>
-                        Enterprise Linux Curriculum
-                    </h1>
-                    <p className="text-gray-400 mt-2 font-mono text-sm tracking-widest uppercase">
-                        Mastery through rigorous, repeatable execution.
-                    </p>
+        <div style={{ height: '100%', width: '100%', overflowY: 'auto', background: tokens.color.bg.base, padding: "clamp(12px, 4vw, 32px)" }}>
+            <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+                <header style={{ 
+                    marginBottom: tokens.space[10], 
+                    borderBottom: `2px solid ${tokens.color.border.default}`, 
+                    paddingBottom: tokens.space[6],
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 8
+                }}>
+                    <Display size="2xl" color={tokens.color.lime.base}>Linux Mastery Track</Display>
+                    <Label size="sm" color={tokens.color.text.secondary} uppercase letterSpacing={tokens.letterSpacing.widest} weight="bold">
+                        The definitive path from foundation to professional system administration.
+                    </Label>
+                    <div style={{ 
+                        height: 2, 
+                        width: 60, 
+                        background: tokens.color.lime.base,
+                        marginTop: 8
+                    }} />
                 </header>
 
-<<<<<<< HEAD
                 <TrackSection 
                     title="Track 1: System Administration I"
                     chapters={sysadmin1Chapters}
@@ -307,84 +481,6 @@ export const ChaptersPage: React.FC = () => {
                     completedChapterIds={completedChapterIds}
                     onStartChapter={handleStartChapter}
                 />
-=======
-                <h2 className="text-2xl text-lime-400 font-heading tracking-wider uppercase mb-6 mt-8 border-b border-gray-800 pb-2" style={{ fontFamily: 'Russo One' }}>
-                    Track 1: System Administration I
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
-                    {sysadmin1Chapters.map((chapter, idx) => {
-                        const locked = level < chapter.requiredLevel;
-                        const completed = completedChapterIds.has(chapter.id);
-
-                        return (
-                            <motion.div
-                                key={chapter.id}
-                                whileHover={locked ? {} : { scale: 1.02, borderColor: 'var(--color-lime-base)' }}
-                                onClick={() => handleStartChapter(chapter)}
-                                className={`relative p-6 border-4 flex flex-col justify-between transition-colors duration-300 ${locked ? 'border-gray-800 bg-gray-900/50 opacity-75' : 'border-gray-700 bg-gray-900/80 cursor-pointer'}`}
-                            >
-                                <div>
-                                    <div className="text-lime-500 font-mono text-sm mb-2 uppercase tracking-widest">Chapter {idx + 1} | {chapter.objectiveCode}</div>
-                                    <div className="flex justify-between items-start mb-4">
-                                        <h3 className="font-heading text-2xl uppercase tracking-wider text-white" style={{ fontFamily: 'Russo One, sans-serif' }}>{chapter.title}</h3>
-                                        {completed && !locked && <CheckCircle className="text-lime-500 w-6 h-6" />}
-                                        {locked && <Lock className="text-gray-500 w-6 h-6" />}
-                                    </div>
-                                    <p className="text-gray-400 text-sm mb-6 line-clamp-3">{chapter.description}</p>
-                                </div>
-
-                                {locked ? (
-                                    <div className="w-full py-3 bg-gray-800/80 border border-gray-700 flex items-center justify-center gap-2 text-gray-400 font-bold uppercase tracking-widest text-sm">
-                                        <Lock size={16} /> Requires Level {chapter.requiredLevel}
-                                    </div>
-                                ) : (
-                                    <div className="w-full py-3 bg-gray-800 border border-gray-700 flex items-center justify-center gap-2 text-white font-bold uppercase tracking-widest hover:bg-gray-700 transition-colors">
-                                        <BookOpen size={16} /> {completed ? 'Review Chapter' : 'Begin Chapter'}
-                                    </div>
-                                )}
-                            </motion.div>
-                        );
-                    })}
-                </div>
-
-                <h2 className="text-2xl text-lime-400 font-heading tracking-wider uppercase mb-6 mt-8 border-b border-gray-800 pb-2" style={{ fontFamily: 'Russo One' }}>
-                    Track 2: System Administration II
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
-                    {sysadmin2Chapters.map((chapter, idx) => {
-                        const locked = level < chapter.requiredLevel;
-                        const completed = completedChapterIds.has(chapter.id);
-
-                        return (
-                            <motion.div
-                                key={chapter.id}
-                                whileHover={locked ? {} : { scale: 1.02, borderColor: 'var(--color-lime-base)' }}
-                                onClick={() => handleStartChapter(chapter)}
-                                className={`relative p-6 border-4 flex flex-col justify-between transition-colors duration-300 ${locked ? 'border-gray-800 bg-gray-900/50 opacity-75' : 'border-gray-700 bg-gray-900/80 cursor-pointer'}`}
-                            >
-                                <div>
-                                    <div className="text-lime-500 font-mono text-sm mb-2 uppercase tracking-widest">Chapter {idx + 1} | {chapter.objectiveCode}</div>
-                                    <div className="flex justify-between items-start mb-4">
-                                        <h3 className="font-heading text-2xl uppercase tracking-wider text-white" style={{ fontFamily: 'Russo One, sans-serif' }}>{chapter.title}</h3>
-                                        {completed && !locked && <CheckCircle className="text-lime-500 w-6 h-6" />}
-                                        {locked && <Lock className="text-gray-500 w-6 h-6" />}
-                                    </div>
-                                    <p className="text-gray-400 text-sm mb-6 line-clamp-3">{chapter.description}</p>
-                                </div>
-
-                                {locked ? (
-                                    <div className="w-full py-3 bg-gray-800/80 border border-gray-700 flex items-center justify-center gap-2 text-gray-400 font-bold uppercase tracking-widest text-sm">
-                                        <Lock size={16} /> Requires Level {chapter.requiredLevel}
-                                    </div>
-                                ) : (
-                                    <div className="w-full py-3 bg-gray-800 border border-gray-700 flex items-center justify-center gap-2 text-white font-bold uppercase tracking-widest hover:bg-gray-700 transition-colors">
-                                        <BookOpen size={16} /> {completed ? 'Review Chapter' : 'Begin Chapter'}
-                                    </div>
-                                )}
-                            </motion.div>
-                        );
-                    })}
-                </div>
             </div>
         </div>
     );

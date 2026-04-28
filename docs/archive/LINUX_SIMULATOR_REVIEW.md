@@ -1,6 +1,6 @@
 # ⌨️ The Terminal: Codebase Review & Path to 0.9:1 Simulation
 
-This document provides a comprehensive technical and pedagogical review of "The Terminal" (a gamified browser-based Linux simulator). It assesses the application's readiness for public deployment, its efficacy as a Linux learning substitute, and its alignment with industry-standard sysadmin use cases (e.g., RHCSA, CompTIA Linux+). It also serves as a roadmap to achieve a "0.9:1" accurate Linux simulation.
+This document provides a comprehensive technical and pedagogical review of "The Terminal" (a gamified browser-based Linux simulator). It assesses the application's readiness for public deployment, its efficacy as a Linux learning substitute, and its alignment with industry-standard sysadmin use cases (e.g., Professional Certification, CompTIA Linux+). It also serves as a roadmap to achieve a "0.9:1" accurate Linux simulation.
 
 ---
 
@@ -46,7 +46,7 @@ The current curriculum (`src/data/curriculum.ts`) is a good starting point for a
 *   **Gamified Structure:** Modules and discrete labs provide a clear progression path.
 *   **Immediate Feedback:** The `verify` function allows the engine to check if a user achieved the goal in the VFS.
 
-### Gaps vs. Industry Standards (RHCSA / CompTIA Linux+)
+### Gaps vs. Industry Standards (Professional Certification / CompTIA Linux+)
 To prepare users for real-world day-to-day terminal use, the curriculum needs to move beyond "flashcards" to **Scenario-Based Troubleshooting (DIY Labs)**.
 
 *   **Missing Crucial Topics:**

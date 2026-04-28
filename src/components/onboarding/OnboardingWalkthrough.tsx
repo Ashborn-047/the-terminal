@@ -131,7 +131,7 @@ export const OnboardingWalkthrough: React.FC = () => {
 
                 {/* BODY */}
                 <div style={{ padding: "32px 24px 24px" }}>
-                    <Display as="h2" size="sm" style={{ marginBottom: 12 }}>{cur.title}</Display>
+                    <Display as="h2" size="sm" style={{ marginBottom: 12 }} data-testid="walkthrough-title">{cur.title}</Display>
                     <p style={{ 
                         fontFamily: tokens.font.sans, fontSize: "13px", 
                         color: tokens.color.text.secondary, lineHeight: 1.7, 

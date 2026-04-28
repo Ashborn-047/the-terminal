@@ -21,7 +21,7 @@ The **The Terminal** uses gamification not as a superficial layer of badges and 
 | **Boss Challenges** | Test integration of multiple skills in realistic scenarios |
 | **Leaderboards** | Foster friendly competition (optional, can be disabled) |
 
-The system is designed to make learners **want to come back daily** and **feel proud of their progress** while systematically building RHCSA-level competence.
+The system is designed to make learners **want to come back daily** and **feel proud of their progress** while systematically building professional-level competence.
 
 ---
 
@@ -72,7 +72,7 @@ Total XP = Σ(Base XP) + Σ(Streak Bonuses) + Σ(Milestone Bonuses)
 | 8 | 700 | 2800 | Service Controller |
 | 9 | 800 | 3600 | Software Installer |
 | 10 | 900 | 4500 | Storage Handler |
-| 11–20 | 1000 per level | - | RHCSA Candidate |
+| 11–20 | 1000 per level | - | Linux Associate |
 | 21–30 | 1500 per level | - | Linux Professional |
 | 31–50 | 2000 per level | - | Terminal Master |
 
@@ -125,7 +125,7 @@ XP for Level N = 1000 + (N-10) × 500 (for N > 10)
 
 | **Category** | **Description** | **Example Achievements** |
 |:---|:---|:---|
-| **Milestone** | Reaching important progression points | "Level 10", "First Module Complete", "RHCSA Ready" |
+| **Milestone** | Reaching important progression points | "Level 10", "First Module Complete", "Professional Ready" |
 | **Skill Mastery** | Demonstrating proficiency in specific areas | "Permission Master", "Grep Guru", "Process Terminator" |
 | **Exploration** | Discovering hidden features or trying different approaches | "Man Page Reader", "Command Historian", "Tab Completion Wizard" |
 | **Social** | Engaging with community features | "First Share", "Helped a Friend" (if social features added) |
@@ -167,7 +167,7 @@ XP for Level N = 1000 + (N-10) × 500 (for N > 10)
 #### Skill Tree Structure
 
 ```
-RHCSA Skill Tree
+Enterprise Linux Skill Tree
 ├── Core Foundations [COMPLETED]
 │   ├── Command Line Basics [COMPLETED]
 │   ├── File Management [COMPLETED]
@@ -287,7 +287,7 @@ RHCSA Skill Tree
 | Archiver | Create 5 different archives | Module 15 |
 | Package Manager | Install/remove 10 packages | Module 16 |
 | Storage Handler | Mount/unmount 5 filesystems | Module 17 |
-| RHCSA Ready | Complete all modules | Module 18 |
+| Professional Ready | Complete all modules | Module 18 |
 
 ---
 

@@ -54,6 +54,255 @@ export const staticQuestionBank: ChapterAssessment[] = [
         correctAnswer: '/etc',
         hint: 'Etcetera.'
     },
+    {
+        id: 'q-sys1-02-finale',
+        chapterId: 'sys1-ch02',
+        type: 'finale_terminal',
+        question: 'Final Challenge: Create a file named "mastery.txt" in your home directory, then move it to /tmp.',
+        correctAnswer: 'mv ~/mastery.txt /tmp',
+        regexMatch: true,
+        hint: 'First "touch ~/mastery.txt", then "mv ~/mastery.txt /tmp".'
+    },
+
+    // --- SYS1-CH03: Getting Help ---
+    {
+        id: 'q-sys1-03-01',
+        chapterId: 'sys1-ch03',
+        type: 'syntax_drill',
+        question: 'Write the command to view the manual page for the "passwd" configuration file, which is located in section 5 of the manual.',
+        correctAnswer: 'man 5 passwd',
+        hint: 'Syntax: man [section] [topic]'
+    },
+    {
+        id: 'q-sys1-03-02',
+        chapterId: 'sys1-ch03',
+        type: 'syntax_drill',
+        question: 'Write the command to search all manual page summaries for the keyword "partition".',
+        correctAnswer: 'man -k partition',
+        hint: 'The -k flag stands for keyword (apropos).'
+    },
+
+    // --- SYS1-CH04: Text Files ---
+    {
+        id: 'q-sys1-04-01',
+        chapterId: 'sys1-ch04',
+        type: 'syntax_drill',
+        question: 'Write a command using a pipe to list all files in /etc and count how many lines are in the output.',
+        correctAnswer: 'ls /etc | wc -l',
+        hint: 'ls followed by wc with the lines flag.'
+    },
+    {
+        id: 'q-sys1-04-02',
+        chapterId: 'sys1-ch04',
+        type: 'mcq',
+        question: 'In the vim editor, which key is used to enter "Insert Mode"?',
+        options: ['Esc', 'i', ':q', 'Ctrl+C'],
+        correctAnswer: 'i',
+        hint: 'Think "Insert".'
+    },
+
+    // --- SYS1-CH05: Users & Groups ---
+    {
+        id: 'q-sys1-05-01',
+        chapterId: 'sys1-ch05',
+        type: 'syntax_drill',
+        question: 'Write the command to create a new user named "ashborn" with a primary group of "developers".',
+        correctAnswer: 'useradd -g developers ashborn',
+        hint: 'Use the -g flag for primary group.'
+    },
+    {
+        id: 'q-sys1-05-02',
+        chapterId: 'sys1-ch05',
+        type: 'mcq',
+        question: 'Which file contains the encrypted password hashes for users on a Linux system?',
+        options: ['/etc/passwd', '/etc/shadow', '/etc/group', '/etc/gshadow'],
+        correctAnswer: '/etc/shadow',
+        hint: 'It is hidden in the shadows.'
+    },
+
+    // --- SYS1-CH06: Permissions ---
+    {
+        id: 'q-sys1-06-01',
+        chapterId: 'sys1-ch06',
+        type: 'syntax_drill',
+        question: 'Write the command to set the permissions of "script.sh" so the owner has full access (rwx), the group has read/execute (r-x), and others have no access.',
+        correctAnswer: 'chmod 750 script.sh',
+        hint: 'rwx=7, r-x=5, ---=0.'
+    },
+    {
+        id: 'q-sys1-06-02',
+        chapterId: 'sys1-ch06',
+        type: 'syntax_drill',
+        question: 'Write the command to add the "Sticky Bit" to a directory named "/shared".',
+        correctAnswer: 'chmod +t /shared',
+        hint: 'The t bit is the sticky bit.'
+    },
+
+    // --- SYS1-CH07: Processes ---
+    {
+        id: 'q-sys1-07-01',
+        chapterId: 'sys1-ch07',
+        type: 'syntax_drill',
+        question: 'Write the command to send a "SIGKILL" signal to a process with PID 1234.',
+        correctAnswer: 'kill -9 1234',
+        hint: 'SIGKILL is signal number 9.'
+    },
+    {
+        id: 'q-sys1-07-02',
+        chapterId: 'sys1-ch07',
+        type: 'mcq',
+        question: 'Which command provides a dynamic, real-time view of running processes and system resource usage?',
+        options: ['ps', 'kill', 'top', 'uptime'],
+        correctAnswer: 'top',
+        hint: 'It sits at the top of the system.'
+    },
+
+    // --- SYS1-CH08: Services ---
+    {
+        id: 'q-sys1-08-01',
+        chapterId: 'sys1-ch08',
+        type: 'syntax_drill',
+        question: 'Write the command to check if the "httpd" service is currently running.',
+        correctAnswer: 'systemctl status httpd',
+        hint: 'Use the status subcommand.'
+    },
+    {
+        id: 'q-sys1-08-02',
+        chapterId: 'sys1-ch08',
+        type: 'syntax_drill',
+        question: 'Write the command to ensure the "sshd" service starts automatically every time the system boots.',
+        correctAnswer: 'systemctl enable sshd',
+        hint: 'Use the enable subcommand.'
+    },
+
+    // --- SYS1-CH09: SSH ---
+    {
+        id: 'q-sys1-09-01',
+        chapterId: 'sys1-ch09',
+        type: 'syntax_drill',
+        question: 'Write the command to generate a new RSA SSH key pair with a 4096-bit key length.',
+        correctAnswer: 'ssh-keygen -t rsa -b 4096',
+        hint: 'Use -t for type and -b for bits.'
+    },
+    {
+        id: 'q-sys1-09-02',
+        chapterId: 'sys1-ch09',
+        type: 'mcq',
+        question: 'In which file is the SSH daemon configuration stored?',
+        options: ['/etc/ssh/ssh_config', '/etc/ssh/sshd_config', '/etc/sshd.conf', '/etc/ssh/config'],
+        correctAnswer: '/etc/ssh/sshd_config',
+        hint: 'The daemon configuration ends with "d".'
+    },
+
+    // --- SYS1-CH10: Logs ---
+    {
+        id: 'q-sys1-10-01',
+        chapterId: 'sys1-ch10',
+        type: 'syntax_drill',
+        question: 'Write the command to view all journal logs for the "sshd" service since the last boot.',
+        correctAnswer: 'journalctl -u sshd -b',
+        hint: 'Use -u for unit and -b for boot.'
+    },
+    {
+        id: 'q-sys1-10-02',
+        chapterId: 'sys1-ch10',
+        type: 'mcq',
+        question: 'Which directory contains most of the system log files in a traditional Linux system?',
+        options: ['/var/log', '/etc/log', '/usr/log', '/tmp/log'],
+        correctAnswer: '/var/log',
+        hint: 'Variable data logs.'
+    },
+
+    // --- SYS1-CH11: Networking ---
+    {
+        id: 'q-sys1-11-01',
+        chapterId: 'sys1-ch11',
+        type: 'syntax_drill',
+        question: 'Write the command to show the IP address information for all network interfaces.',
+        correctAnswer: 'ip addr',
+        hint: 'Two short words.'
+    },
+    {
+        id: 'q-sys1-11-02',
+        chapterId: 'sys1-ch11',
+        type: 'syntax_drill',
+        question: 'Write the command to set the hostname of the system to "server.example.com".',
+        correctAnswer: 'hostnamectl set-hostname server.example.com',
+        hint: 'Use hostnamectl with the set-hostname subcommand.'
+    },
+
+    // --- SYS1-CH12: Archiving ---
+    {
+        id: 'q-sys1-12-01',
+        chapterId: 'sys1-ch12',
+        type: 'syntax_drill',
+        question: 'Write the command to create a compressed gzip tar archive named "backup.tar.gz" of the /etc directory.',
+        correctAnswer: 'tar -czf backup.tar.gz /etc',
+        hint: 'Flags: c=create, z=gzip, f=file.'
+    },
+    {
+        id: 'q-sys1-12-02',
+        chapterId: 'sys1-ch12',
+        type: 'syntax_drill',
+        question: 'Write the command to securely copy "file.txt" to the /tmp directory on a remote server at 192.168.1.10 using the username "admin".',
+        correctAnswer: 'scp file.txt admin@192.168.1.10:/tmp',
+        hint: 'Similar to cp, but with remote destination.'
+    },
+
+    // --- SYS1-CH13: Software ---
+    {
+        id: 'q-sys1-13-01',
+        chapterId: 'sys1-ch13',
+        type: 'syntax_drill',
+        question: 'Write the command to search for a package named "nginx" in the configured repositories.',
+        correctAnswer: 'dnf search nginx',
+        hint: 'Use the search subcommand.'
+    },
+    {
+        id: 'q-sys1-13-02',
+        chapterId: 'sys1-ch13',
+        type: 'syntax_drill',
+        question: 'Write the command to view detailed information about the installed "kernel" package.',
+        correctAnswer: 'dnf info kernel',
+        hint: 'Use the info subcommand.'
+    },
+
+    // --- SYS1-CH14: File Systems ---
+    {
+        id: 'q-sys1-14-01',
+        chapterId: 'sys1-ch14',
+        type: 'syntax_drill',
+        question: 'Write the command to mount the file system on /dev/sdb1 to the /mnt/data directory.',
+        correctAnswer: 'mount /dev/sdb1 /mnt/data',
+        hint: 'Syntax: mount [device] [mountpoint]'
+    },
+    {
+        id: 'q-sys1-14-02',
+        chapterId: 'sys1-ch14',
+        type: 'mcq',
+        question: 'Which file contains the persistent mount configuration for the system?',
+        options: ['/etc/mounts', '/etc/fstab', '/proc/mounts', '/etc/filesystems'],
+        correctAnswer: '/etc/fstab',
+        hint: 'File system table.'
+    },
+
+    // --- SYS1-CH15: System Analysis ---
+    {
+        id: 'q-sys1-15-01',
+        chapterId: 'sys1-ch15',
+        type: 'syntax_drill',
+        question: 'Write the command to display disk space usage in human-readable format.',
+        correctAnswer: 'df -h',
+        hint: 'Disk free with human-readable flag.'
+    },
+    {
+        id: 'q-sys1-15-02',
+        chapterId: 'sys1-ch15',
+        type: 'syntax_drill',
+        question: 'Write the command to display the system\'s current uptime and load averages.',
+        correctAnswer: 'uptime',
+        hint: 'Tells you how long the system has been up.'
+    },
 
     // --- SYS2-CH05: SELinux ---
     {

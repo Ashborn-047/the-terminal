@@ -1,9 +1,10 @@
 import { test, expect } from '@playwright/test';
+import { injectStandardFixtures } from './test-utils';
 
 test.describe('User Onboarding Flow', () => {
     test.beforeEach(async ({ page }) => {
-        await page.addInitScript(() => {
-            (window as any).PLAYWRIGHT_TESTING = true;
+        await injectStandardFixtures(page, {
+            ui: { onboardingComplete: false, onboardingStep: 0, username: '' }
         });
     });
 
@@ -23,7 +24,9 @@ test.describe('User Onboarding Flow', () => {
 
         // 4. Wait for verification delay §3.1 (WelcomeModal has 1.5s delay)
         // The modal should disappear and walkthrough should appear
-        await expect(page.getByRole('heading', { name: 'The Command Line' })).toBeVisible({ timeout: 10000 });
+        const walkthroughTitle = page.getByTestId('walkthrough-title');
+        await expect(walkthroughTitle).toBeVisible({ timeout: 15000 });
+        await expect(walkthroughTitle).toHaveText(/The Command Line/i);
 
         // 5. Walkthrough Step 1: pwd
         const step1Input = page.getByTestId('walkthrough-input');
@@ -31,23 +34,27 @@ test.describe('User Onboarding Flow', () => {
         await page.keyboard.press('Enter');
 
         // 6. Walkthrough Step 2: ls -la
-        await expect(page.getByRole('heading', { name: 'Your First Output' })).toBeVisible();
+        await expect(walkthroughTitle).toHaveText(/Your First Output/i);
         const step2Input = page.getByTestId('walkthrough-input');
         await step2Input.fill('ls -la');
         await page.keyboard.press('Enter');
 
         // 7. Walkthrough Step 3: Next
-        await expect(page.getByRole('heading', { name: 'Navigation Basics' })).toBeVisible();
+        await expect(walkthroughTitle).toHaveText(/Systematic Chapters/i);
         await page.getByRole('button', { name: 'Next Step →' }).click();
 
-        // 8. Walkthrough Step 4: Start Learning
-        await expect(page.getByRole('heading', { name: "You're Ready" })).toBeVisible();
+        // 8. Walkthrough Step 4: Next
+        await expect(walkthroughTitle).toHaveText(/The Challenge Arena/i);
+        await page.getByRole('button', { name: 'Next Step →' }).click();
+
+        // 9. Walkthrough Step 5: Start Learning
+        await expect(walkthroughTitle).toHaveText(/You're Ready/i);
         await page.getByRole('button', { name: 'Enter Terminal' }).click();
 
-        // 9. Verify redirect to first lab §3.3
+        // 10. Verify redirect to first lab §3.3
         await expect(page).toHaveURL(/\/lab\/lab-1-1/);
 
-        // 10. Verify first lab instructions are visible
+        // 11. Verify first lab instructions are visible
         await expect(page.getByText('Your First Command')).toBeVisible();
     });
 
