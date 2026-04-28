@@ -115,7 +115,6 @@ export const SkillTree: React.FC = () => {
                     const branchModules = branch.modules.map(id => moduleData[id]).filter(Boolean);
 
                     return (
-                    return (
                         <Card 
                             key={branch.id} 
                             variant="default" 
