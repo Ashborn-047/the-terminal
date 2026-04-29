@@ -38,100 +38,109 @@ export const sysadmin1Chapters: ChapterMetadata[] = [
     },
     {
         id: 'track1-ch04',
-        title: 'Managing Local Users and Groups',
+        title: 'Mastering Vim: The Text Editor That’s Everywhere',
         objectiveCode: 'T1-CH04',
-        description: 'Create and manage local users and groups. Understand /etc/passwd and configure password aging.',
+        description: 'Survival skills for the legendary modal editor. Open, edit, save, and navigate at the speed of thought.',
         requiredLevel: 4,
         xpReward: 250,
         track: 1
     },
     {
         id: 'track1-ch05',
-        title: 'Controlling Access to Files',
+        title: 'Managing Local Users and Groups',
         objectiveCode: 'T1-CH05',
-        description: 'Secure files using standard Linux permissions (UGO, rwx), special permissions (SUID/SGID), and umask.',
+        description: 'Create and manage local users and groups. Understand /etc/passwd and configure password aging.',
         requiredLevel: 5,
-        xpReward: 300,
+        xpReward: 250,
         track: 1
     },
     {
         id: 'track1-ch06',
-        title: 'Monitoring and Managing Linux Processes',
+        title: 'Controlling Access to Files',
         objectiveCode: 'T1-CH06',
-        description: 'Identify running processes (ps, top), control background jobs, and send signals (kill) to manage system load.',
+        description: 'Secure files using standard Linux permissions (UGO, rwx), special permissions (SUID/SGID), and umask.',
         requiredLevel: 6,
-        xpReward: 250,
+        xpReward: 300,
         track: 1
     },
     {
         id: 'track1-ch07',
-        title: 'Controlling Services and Daemons',
+        title: 'Monitoring and Managing Linux Processes',
         objectiveCode: 'T1-CH07',
-        description: 'Understand systemd architecture and use systemctl to start, stop, reload, and enable services at boot.',
+        description: 'Identify running processes (ps, top), control background jobs, and send signals (kill) to manage system load.',
         requiredLevel: 7,
-        xpReward: 300,
+        xpReward: 250,
         track: 1
     },
     {
         id: 'track1-ch08',
-        title: 'Configuring and Securing SSH',
+        title: 'Controlling Services and Daemons',
         objectiveCode: 'T1-CH08',
-        description: 'Configure secure remote access using OpenSSH. Generate keys and manage sshd_config parameters.',
+        description: 'Understand systemd architecture and use systemctl to start, stop, reload, and enable services at boot.',
         requiredLevel: 8,
-        xpReward: 250,
-        track: 1
-    },
-    {
-        id: 'track1-ch09',
-        title: 'Analyzing and Storing Logs',
-        objectiveCode: 'T1-CH09',
-        description: 'Locate and interpret system log files. Use journalctl to query systemd journal data.',
-        requiredLevel: 8,
-        xpReward: 200,
-        track: 1
-    },
-    {
-        id: 'track1-ch10',
-        title: 'Managing Enterprise Networking',
-        objectiveCode: 'T1-CH10',
-        description: 'Configure IPv4 network interfaces using nmcli. Validate connections with ping and ip routing commands.',
-        requiredLevel: 9,
-        xpReward: 350,
-        track: 1
-    },
-    {
-        id: 'track1-ch11',
-        title: 'Archiving and Transferring Files',
-        objectiveCode: 'T1-CH11',
-        description: 'Create compressed tar archives and securely transfer files across the network using scp and rsync.',
-        requiredLevel: 10,
-        xpReward: 250,
-        track: 1
-    },
-    {
-        id: 'track1-ch12',
-        title: 'Installing and Updating Software Packages',
-        objectiveCode: 'T1-CH12',
-        description: 'Manage RPM packages using dnf/yum. Configure software repositories and module streams.',
-        requiredLevel: 10,
         xpReward: 300,
         track: 1
     },
     {
-        id: 'track1-ch13',
-        title: 'Accessing Linux File Systems',
-        objectiveCode: 'T1-CH13',
-        description: 'Identify block devices, mount/unmount file systems, and locate specific files using find and locate.',
+        id: 'track1-ch09',
+        title: 'Configuring and Securing SSH',
+        objectiveCode: 'T1-CH09',
+        description: 'Configure secure remote access using OpenSSH. Generate keys and manage sshd_config parameters.',
+        requiredLevel: 9,
+        xpReward: 250,
+        track: 1
+    },
+    {
+        id: 'track1-ch10',
+        title: 'Analyzing and Storing Logs',
+        objectiveCode: 'T1-CH10',
+        description: 'Locate and interpret system log files. Use journalctl to query systemd journal data.',
+        requiredLevel: 10,
+        xpReward: 200,
+        track: 1
+    },
+    {
+        id: 'track1-ch11',
+        title: 'Managing Enterprise Networking',
+        objectiveCode: 'T1-CH11',
+        description: 'Configure IPv4 network interfaces using nmcli. Validate connections with ping and ip routing commands.',
         requiredLevel: 11,
+        xpReward: 350,
+        track: 1
+    },
+    {
+        id: 'track1-ch12',
+        title: 'Archiving and Transferring Files',
+        objectiveCode: 'T1-CH12',
+        description: 'Create compressed tar archives and securely transfer files across the network using scp and rsync.',
+        requiredLevel: 12,
+        xpReward: 250,
+        track: 1
+    },
+    {
+        id: 'track1-ch13',
+        title: 'Installing and Updating Software Packages',
+        objectiveCode: 'T1-CH13',
+        description: 'Manage RPM packages using dnf/yum. Configure software repositories and module streams.',
+        requiredLevel: 13,
         xpReward: 300,
         track: 1
     },
     {
         id: 'track1-ch14',
-        title: 'Analyzing Servers and Getting Support',
+        title: 'Accessing Linux File Systems',
         objectiveCode: 'T1-CH14',
+        description: 'Identify block devices, mount/unmount file systems, and locate specific files using find and locate.',
+        requiredLevel: 14,
+        xpReward: 300,
+        track: 1
+    },
+    {
+        id: 'track1-ch15',
+        title: 'Analyzing Servers and Getting Support',
+        objectiveCode: 'T1-CH15',
         description: 'Generate diagnostic sosreports to assist vendor support teams in resolving system issues.',
-        requiredLevel: 12,
+        requiredLevel: 15,
         xpReward: 150,
         track: 1
     }
