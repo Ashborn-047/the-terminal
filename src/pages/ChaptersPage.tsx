@@ -103,6 +103,261 @@ const TrackSection = ({ title, chapters, level, completedChapterIds, onStartChap
     </div>
 );
 
+const SectionRenderer = ({ section }: { section: any }) => {
+    const renderContent = (content?: string) => {
+        if (!content) return null;
+        return (
+            <div style={{ 
+                fontFamily: tokens.font.sans, 
+                fontSize: tokens.fontSize.md, 
+                color: tokens.color.text.primary, 
+                lineHeight: 1.6,
+                whiteSpace: 'pre-wrap',
+                marginBottom: tokens.space[6]
+            }}>
+                {content}
+            </div>
+        );
+    };
+
+    const renderList = (list?: string[]) => {
+        if (!list) return null;
+        return (
+            <ul style={{ 
+                paddingLeft: tokens.space[6], 
+                marginBottom: tokens.space[6],
+                color: tokens.color.text.primary,
+                fontFamily: tokens.font.sans,
+                fontSize: tokens.fontSize.md,
+                lineHeight: 1.6
+            }}>
+                {list.map((item, i) => (
+                    <li key={i} style={{ marginBottom: tokens.space[2] }} dangerouslySetInnerHTML={{ __html: item.replace(/`([^`]+)`/g, '<code>$1</code>') }} />
+                ))}
+            </ul>
+        );
+    };
+
+    const renderTerminalBlock = (blocks?: any[]) => {
+        if (!blocks) return null;
+        return blocks.map((block, i) => (
+            <div key={i} className="terminal-block" style={{
+                background: '#0A0A0C',
+                backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.015) 2px, rgba(255,255,255,0.015) 4px)',
+                border: `1px solid ${tokens.color.border.lime}`,
+                padding: tokens.space[4],
+                margin: `${tokens.space[4]} 0`,
+                fontFamily: tokens.font.mono,
+                fontSize: tokens.fontSize.sm,
+                color: tokens.color.text.primary,
+                overflowX: 'auto'
+            }}>
+                {block.showPrompt && <span style={{ color: tokens.color.lime.base }}>$ </span>}
+                {block.command}
+                {block.output && <div style={{ marginTop: 4, color: tokens.color.text.secondary }}>{block.output}</div>}
+            </div>
+        ));
+    };
+
+    const renderCallouts = (callouts?: any[]) => {
+        if (!callouts) return null;
+        return callouts.map((call, i) => {
+            const variantStyles: any = {
+                pro_tip: { border: `1px solid ${tokens.color.border.lime}`, icon: '🧠' },
+                caution: { border: `1px solid ${tokens.color.amber.base}`, icon: '⚠️' },
+                try_it: { border: `1px solid ${tokens.color.lime.base}`, icon: '🧪' },
+                info: { border: `1px solid ${tokens.color.border.strong}`, icon: 'ℹ️' }
+            };
+            const config = variantStyles[call.type] || variantStyles.info;
+
+            return (
+                <Card key={i} style={{ 
+                    padding: tokens.space[4], 
+                    margin: `${tokens.space[4]} 0`, 
+                    background: tokens.color.bg.surface,
+                    display: 'flex',
+                    gap: 12,
+                    alignItems: 'flex-start',
+                    border: config.border
+                }}>
+                    <span style={{ fontSize: '1.2rem' }}>{call.icon || config.icon}</span>
+                    <div style={{ fontSize: tokens.fontSize.sm, color: tokens.color.text.primary }}>
+                        {call.content || call.text}
+                    </div>
+                </Card>
+            );
+        });
+    };
+
+    const renderSubsections = (subsections?: any[]) => {
+        if (!subsections) return null;
+        return subsections.map((sub, i) => (
+            <div key={i} style={{ marginBottom: tokens.space[10] }}>
+                <Display size="xs" style={{ marginBottom: tokens.space[4], color: tokens.color.lime.base, textTransform: 'uppercase' }}>{sub.heading}</Display>
+                {renderContent(sub.content)}
+                {sub.diagram && (
+                    <Card style={{ 
+                        padding: tokens.space[6], 
+                        background: tokens.color.bg.overlay, 
+                        border: `1px solid ${tokens.color.border.default}`,
+                        marginBottom: tokens.space[6],
+                        fontFamily: tokens.font.mono
+                    }}>
+                        {sub.diagram.tree && (
+                            <pre style={{ margin: 0, color: tokens.color.lime.base, fontSize: tokens.fontSize.sm }}>
+                                {sub.diagram.tree.join('\n')}
+                            </pre>
+                        )}
+                        {sub.diagram.caption && (
+                            <div style={{ marginTop: tokens.space[4], fontSize: tokens.fontSize.xs, color: tokens.color.text.tertiary, textAlign: 'center' }}>
+                                {sub.diagram.caption}
+                            </div>
+                        )}
+                    </Card>
+                )}
+            </div>
+        ));
+    };
+
+    const renderExercises = (exercises?: any[]) => {
+        if (!exercises) return null;
+        return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.space[8] }}>
+                {exercises.map((ex, i) => (
+                    <Card key={i} style={{ padding: tokens.space[6], borderLeft: `4px solid ${tokens.color.lime.base}` }}>
+                        <Label size="sm" color={tokens.color.lime.base} style={{ marginBottom: tokens.space[2], display: 'block' }}>{ex.title}</Label>
+                        {ex.command && (
+                            <div className="terminal-block" style={{
+                                background: '#0A0A0C',
+                                border: `1px solid ${tokens.color.border.lime}`,
+                                padding: tokens.space[4],
+                                marginBottom: tokens.space[4],
+                                fontFamily: tokens.font.mono,
+                                fontSize: tokens.fontSize.sm,
+                                color: tokens.color.lime.base
+                            }}>
+                                <span style={{ color: tokens.color.lime.base }}>$ </span>{ex.command}
+                            </div>
+                        )}
+                        {ex.commands && ex.commands.map((cmd: string, idx: number) => (
+                            <div key={idx} className="terminal-block" style={{
+                                background: '#0A0A0C',
+                                border: `1px solid ${tokens.color.border.lime}`,
+                                padding: tokens.space[4],
+                                marginBottom: tokens.space[2],
+                                fontFamily: tokens.font.mono,
+                                fontSize: tokens.fontSize.sm,
+                                color: tokens.color.lime.base
+                            }}>
+                                <span style={{ color: tokens.color.lime.base }}>$ </span>{cmd}
+                            </div>
+                        ))}
+                        <div style={{ fontSize: tokens.fontSize.sm, color: tokens.color.text.secondary, marginBottom: tokens.space[4] }}>
+                            {ex.explanation}
+                        </div>
+                        <div style={{ 
+                            background: tokens.color.bg.overlay, 
+                            padding: tokens.space[4], 
+                            border: `1px dashed ${tokens.color.border.default}`,
+                            fontSize: tokens.fontSize.xs,
+                            color: tokens.color.text.primary
+                        }}>
+                            <span style={{ color: tokens.color.lime.base, fontWeight: 'bold' }}>TRY IT: </span>
+                            {ex.try_it_yourself}
+                        </div>
+                    </Card>
+                ))}
+            </div>
+        );
+    };
+
+    return (
+        <div>
+            <Display size="lg" style={{ 
+                marginBottom: 24, 
+                lineHeight: 1.2, 
+                textTransform: 'uppercase', 
+                color: tokens.color.lime.base,
+                borderBottom: `1px solid ${tokens.color.border.lime}`,
+                paddingBottom: 4
+            }}>
+                {section.heading || section.title}
+            </Display>
+
+            {renderContent(section.content || section.intro)}
+            
+            {section.terminal_blocks && renderTerminalBlock(section.terminal_blocks)}
+
+            {section.diagram_block && (
+                <div style={{
+                    background: tokens.color.bg.base,
+                    border: `1px solid ${tokens.color.border.strong}`,
+                    padding: tokens.space[4],
+                    margin: `${tokens.space[4]} 0`,
+                    fontFamily: tokens.font.mono,
+                    fontSize: '0.85rem',
+                    whiteSpace: 'pre',
+                    overflowX: 'auto',
+                    color: tokens.color.text.primary
+                }}>
+                    {section.diagram_block}
+                </div>
+            )}
+
+            {section.reveal && (
+                <details style={{ marginTop: 16, cursor: 'pointer' }}>
+                    <summary style={{ 
+                        fontFamily: tokens.font.mono, 
+                        color: tokens.color.text.secondary,
+                        fontSize: tokens.fontSize.xs,
+                        marginBottom: 8
+                    }}>
+                        {section.reveal.summary}
+                    </summary>
+                    <div className="terminal-block" style={{
+                         background: '#0A0A0C',
+                         border: `1px solid ${tokens.color.border.lime}`,
+                         padding: tokens.space[4],
+                         fontFamily: tokens.font.mono,
+                         fontSize: tokens.fontSize.sm
+                    }}>
+                        {section.reveal.content}
+                    </div>
+                </details>
+            )}
+
+            {section.terminal_blocks_after && renderTerminalBlock(section.terminal_blocks_after)}
+
+            {renderList(section.list)}
+            {renderSubsections(section.subsections)}
+            {renderExercises(section.exercises)}
+            
+            {section.bullets && (
+                <ul style={{ paddingLeft: tokens.space[6], color: tokens.color.text.primary, marginBottom: 16 }}>
+                    {section.bullets.map((bullet: string, i: number) => (
+                        <li key={i} style={{ marginBottom: tokens.space[2], fontSize: tokens.fontSize.sm }} dangerouslySetInnerHTML={{ __html: bullet.replace(/`([^`]+)`/g, '<code>$1</code>') }} />
+                    ))}
+                </ul>
+            )}
+
+            {section.terminal_blocks_extra && renderTerminalBlock(section.terminal_blocks_extra)}
+
+            {renderCallouts(section.callouts)}
+
+            {section.tips && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.space[4], marginTop: tokens.space[4] }}>
+                    {section.tips.map((tip: string, i: number) => (
+                        <Card key={i} style={{ padding: tokens.space[4], background: tokens.color.bg.overlay, display: 'flex', gap: 12 }}>
+                            <span style={{ color: tokens.color.lime.base }}>💡</span>
+                            <div style={{ fontSize: tokens.fontSize.sm }}>{tip}</div>
+                        </Card>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+};
+
 export const ChaptersPage: React.FC = () => {
     const { level, awardXP, completedChapterIds, markChapterCompleted } = useGamificationStore();
     const [selectedChapter, setSelectedChapter] = useState<ChapterMetadata | null>(null);
@@ -226,7 +481,7 @@ export const ChaptersPage: React.FC = () => {
                         <Display size="sm" color={tokens.color.lime.base} style={{ marginBottom: 4 }}>
                             {selectedChapter.title}
                         </Display>
-                        <Mono size="2xs" color={tokens.color.text.tertiary}>MODULE: {selectedChapter.objectiveCode} | READING PHASE</Mono>
+                        <Label size="2xs" color={tokens.color.text.tertiary}>MODULE: {selectedChapter.objectiveCode} | READING PHASE</Label>
                     </div>
                     <Button variant="ghost" size="sm" onClick={() => setViewMode('list')}>
                         Exit
@@ -253,23 +508,13 @@ export const ChaptersPage: React.FC = () => {
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.4 }}
                         >
-                            <Display size="lg" style={{ marginBottom: 24, lineHeight: 1.2 }}>{currentSection.title}</Display>
-                            
-                            <div style={{ 
-                                fontFamily: tokens.font.sans, 
-                                fontSize: tokens.fontSize.md, 
-                                color: tokens.color.text.primary, 
-                                lineHeight: 1.8,
-                                whiteSpace: 'pre-wrap'
-                            }}>
-                                {currentSection.content}
-                            </div>
+                            <SectionRenderer section={currentSection} />
                         </motion.div>
 
                         <div style={{ 
                             marginTop: 64, 
                             paddingTop: 32, 
-                            borderTop: `1px solid ${tokens.color.border.subtle}`,
+                            borderTop: `1px solid ${tokens.color.border.default}`,
                             display: 'flex',
                             justifyContent: 'space-between',
                             alignItems: 'center'
@@ -278,14 +523,20 @@ export const ChaptersPage: React.FC = () => {
                                 variant="ghost" 
                                 onClick={() => setReadingSectionIndex(prev => Math.max(0, prev - 1))}
                                 disabled={readingSectionIndex === 0}
+                                style={{ fontFamily: tokens.font.display, textTransform: 'uppercase' }}
                             >
                                 <ChevronLeft size={18} /> Previous
                             </Button>
+
+                            <Mono size="2xs" color={tokens.color.text.tertiary}>
+                                {readingSectionIndex + 1} / {sections.length}
+                            </Mono>
 
                             {readingSectionIndex < sections.length - 1 ? (
                                 <Button 
                                     variant="lime" 
                                     onClick={() => setReadingSectionIndex(prev => prev + 1)}
+                                    style={{ fontFamily: tokens.font.display, textTransform: 'uppercase' }}
                                 >
                                     Next Section <ChevronRight size={18} />
                                 </Button>
@@ -294,7 +545,7 @@ export const ChaptersPage: React.FC = () => {
                                     variant="lime" 
                                     size="lg"
                                     onClick={handleStartAssessment}
-                                    style={{ padding: '16px 32px' }}
+                                    style={{ padding: '16px 32px', fontFamily: tokens.font.display, textTransform: 'uppercase' }}
                                 >
                                     Start Assessment <ArrowRight size={18} />
                                 </Button>
