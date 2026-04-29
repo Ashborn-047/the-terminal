@@ -283,13 +283,13 @@ export const chapterContents: Record<string, ChapterContent> = {
         description: 'Master the built-in help systems: man, info, --help, and /usr/share/doc.',
         sections: [
             {
-                type: 'text',
+                type: 'interactive',
                 id: 'why_matters',
                 heading: '1. Why This Matters',
-                content: "You're sitting in front of your terminal. You've just learned to move around, but now you're staring at a mysterious command like `tar -czf` and wondering what all those letters do. You could search the web, but the real answer is closer — it's already on your machine. Linux has one of the most thorough built‑in documentation systems in the computing world. Learning to use it is like being given a personal instruction manual for every tool you'll ever encounter.\n\nIn this chapter, you'll discover that the terminal itself can teach you. You'll learn to ask the system for help, read manuals, and find quick examples without ever leaving your keyboard. This transforms the command line from a scary void into a library full of friendly guides."
+                content: "You're sitting in front of your terminal. You've just learned to move around, but now you're staring at a mysterious command like `tar -czf` and wondering what all those letters do. You could search the web, but the real answer is closer — it's already on your machine. Linux has one of the most thorough built‑in documentation systems in the computing world.\n\nIn this chapter, you'll discover that the terminal itself can teach you. You'll learn to ask the system for help, read manuals, and find quick examples without ever leaving your keyboard. This transforms the command line from a scary void into a library full of friendly guides."
             },
             {
-                type: 'text',
+                type: 'interactive',
                 id: 'what_learn',
                 heading: "2. What You'll Learn",
                 list: [
@@ -302,118 +302,160 @@ export const chapterContents: Record<string, ChapterContent> = {
                 ]
             },
             {
-                type: 'text',
-                id: 'core_concepts',
-                heading: '3. Core Concepts',
-                subsections: [
-                    {
-                        heading: "3.1 The man Command: Your Personal Manual",
-                        content: "`man` (short for “manual”) opens a formatted page about nearly every command, configuration file, and system function on your system. It's the first thing to try when you wonder what a command does or what options it accepts. \n\nSyntax: `man command_name` \n\nFor example: `man ls` opens the manual page inside a pager (usually `less`). You'll see a description, a list of options, and often examples. Press `q` to quit.",
-                        diagram: {
-                            type: 'ascii_table',
-                            caption: "Common Manual Sections",
-                            tree: [
-                                "+---------+----------------------------------+--------------------+",
-                                "| Section | Content                          | Example            |",
-                                "+---------+----------------------------------+--------------------+",
-                                "| 1       | User commands (executables)      | man 1 ls           |",
-                                "| 5       | File formats and config files    | man 5 crontab      |",
-                                "| 8       | System administration commands   | man 8 fdisk        |",
-                                "+---------+----------------------------------+--------------------+"
-                            ]
-                        },
-                        callouts: [
-                            {
-                                type: 'pro_tip',
-                                text: "You can search the brief descriptions of all manual pages using `man -k keyword` or the `apropos` command. This is lifesaving when you can't remember the exact command name."
-                            }
-                        ]
-                    },
-                    {
-                        heading: "3.2 Quick Answers with --help and help",
-                        content: "Many commands support a `--help` flag that shows a short usage summary. It's less detailed than the man page but perfect for a quick option refresh: \n\n```bash\nls --help\n```\n\nFor shell built‑ins (like `cd`, `echo`, `pwd`), the man page may not exist as a separate entry because those are part of the shell itself. For those, use `help`: \n\n```bash\nhelp cd\n```"
-                    },
-                    {
-                        heading: "3.3 The info System (and pinfo)",
-                        content: "The `info` system provides hyperlinked, node‑based documentation, mostly for GNU utilities. It resembles a mini‑website you browse inside the terminal. To read about `coreutils` (the collection that includes `ls`, `cp`, etc.): \n\n```bash\ninfo coreutils\n```\n\nNavigation uses arrow keys, `Tab`, and `Enter`. Press `q` to quit. Some people find `info` cumbersome; `pinfo` is a more user‑friendly alternative on many systems."
-                    },
-                    {
-                        heading: "3.4 Extra Documentation: /usr/share/doc",
-                        content: "The directory `/usr/share/doc` contains subdirectories for many installed packages. Inside you'll often find README files, sample configurations, and even tutorials. It's a great place to look when the manual page feels too concise. For example: \n\n```bash\nls /usr/share/doc\n```"
-                    }
+                type: 'interactive',
+                id: 'man_intro',
+                heading: '3. The man Command: Your Personal Manual',
+                content: "`man` (short for “manual”) opens a formatted page about nearly every command, configuration file, and system function on your system. It's the first thing to try when you wonder what a command does or what options it accepts.",
+                terminal_blocks: [
+                    { command: "man ls", showPrompt: true }
+                ],
+                callouts: [
+                    { type: 'pro_tip', icon: '🧠', content: "Use the up/down arrows to scroll, `/` to search for text inside the manual, and press `q` to quit and return to the terminal." }
                 ]
             },
             {
-                type: 'hands_on_examples',
-                id: 'hands_on',
-                heading: '4. Hands-On Examples',
-                intro: "Open your separate terminal window. All commands are safe and read‑only except where noted (creating a directory is harmless). Follow along.",
-                exercises: [
-                    {
-                        title: "4.1 Reading a Manual Page",
-                        command: "man man",
-                        explanation: "This is the manual for man itself. Use the up/down arrows to scroll, / to search, and q to quit.",
-                        try_it_yourself: "Open the man page for ls. Find the option that sorts files by modification time. What is it? (Answer: -t)"
-                    },
-                    {
-                        title: "4.2 Searching Without Knowing the Name",
-                        commands: ["man -k calendar", "apropos calendar"],
-                        explanation: "Find commands related to a keyword. Both commands are equivalent.",
-                        try_it_yourself: "Try finding a command that lists processes — hint: the keyword is “process”."
-                    },
-                    {
-                        title: "4.3 Navigating Different Sections",
-                        commands: ["man 1 crontab", "man 5 crontab"],
-                        explanation: "Notice the difference. Section 1 is the command, Section 5 is the file format.",
-                        try_it_yourself: "Look up man 5 passwd and compare it with man 1 passwd."
-                    },
-                    {
-                        title: "4.4 Using --help for a Quick Reference",
-                        command: "grep --help | less",
-                        explanation: "The output scrolls fast. Pipe it through less to read page by page.",
-                        try_it_yourself: "Try it with other commands like df or du."
-                    }
+                type: 'interactive',
+                id: 'man_navigation',
+                heading: '4. Navigating the Manual',
+                content: "Manual pages use a 'pager' (usually `less`) to display text. This means you can search and jump around effectively.",
+                list: [
+                    "**Space**: Next page",
+                    "**b**: Previous page",
+                    "**/term**: Search forward for 'term'",
+                    "**n**: Find next match",
+                    "**q**: Quit"
+                ],
+                terminal_blocks: [
+                    { command: "man man", showPrompt: true }
+                ],
+                callouts: [
+                    { type: 'try_it', icon: '🧪', content: "Open `man man`, type `/pager` and hit Enter. It will jump to the section explaining how it views text." }
+                ]
+            },
+            {
+                type: 'interactive',
+                id: 'man_sections',
+                heading: '5. Manual Sections: Knowing Where to Look',
+                content: "The manual is divided into numbered sections. Sometimes a name (like `passwd`) exists in multiple sections: one for the command and one for the configuration file.",
+                diagram_block: "ascii\n+---------+----------------------------------+--------------------+\n| Section | Content                          | Example            |\n+---------+----------------------------------+--------------------+\n| 1       | User commands (executables)      | man 1 ls           |\n| 5       | File formats and config files    | man 5 crontab      |\n| 8       | System administration commands   | man 8 fdisk        |\n+---------+----------------------------------+--------------------+\n",
+                callouts: [
+                    { type: 'info', icon: 'ℹ️', content: "By default, `man` shows the lowest-numbered section. To see the config file for passwords, you must specify section 5: `man 5 passwd`." }
+                ]
+            },
+            {
+                type: 'interactive',
+                id: 'apropos',
+                heading: '6. Searching by Keyword (apropos)',
+                content: "When you don't know the exact command name, use `apropos` (or `man -k`) to search the one-line descriptions of all manuals.",
+                terminal_blocks: [
+                    { command: "apropos \"list directory\"", showPrompt: true },
+                    { command: "man -k calendar", showPrompt: true }
+                ],
+                callouts: [
+                    { type: 'pro_tip', icon: '🧠', content: "This is the 'Google' of the terminal. If you know *what* you want to do but not *how*, start here." }
+                ]
+            },
+            {
+                type: 'interactive',
+                id: 'help_flags',
+                heading: '7. Quick Help with --help',
+                content: "If you just need a quick reminder of a command's options, almost all tools support the `--help` flag. It prints a short summary and exits.",
+                terminal_blocks: [
+                    { command: "ls --help", showPrompt: true },
+                    { command: "mkdir --help", showPrompt: true }
+                ],
+                callouts: [
+                    { type: 'info', icon: 'ℹ️', content: "Unlike `man`, which opens a new screen, `--help` dumps text directly into your terminal history." }
+                ]
+            },
+            {
+                type: 'interactive',
+                id: 'shell_help',
+                heading: '8. Shell Built-ins vs. Commands',
+                content: "Some commands (like `cd`, `history`, `pwd`) are part of the shell itself. They don't always have a `man` page. For these, use the `help` command.",
+                terminal_blocks: [
+                    { command: "help cd", showPrompt: true },
+                    { command: "help history", showPrompt: true }
+                ],
+                callouts: [
+                    { type: 'caution', icon: '⚠️', content: "If `man command` says \"No manual entry\", try `help command`." }
+                ]
+            },
+            {
+                type: 'interactive',
+                id: 'info_system',
+                heading: '9. The info System',
+                content: "GNU tools use a deeper system called `info`. It's like a hyperlinked website inside your terminal. It's more detailed than `man` but harder to navigate.",
+                terminal_blocks: [
+                    { command: "info coreutils", showPrompt: true }
+                ],
+                callouts: [
+                    { type: 'pro_tip', icon: '🧠', content: "Inside `info`, use `Tab` to jump between links and `Enter` to follow them. Press `q` to quit." }
+                ]
+            },
+            {
+                type: 'interactive',
+                id: 'usr_share_doc',
+                heading: '10. Documentation in /usr/share/doc',
+                content: "For complex software, there is often extra documentation (READMEs, examples, changelogs) in `/usr/share/doc/package_name`.",
+                terminal_blocks: [
+                    { command: "ls /usr/share/doc", showPrompt: true }
+                ],
+                callouts: [
+                    { type: 'info', icon: 'ℹ️', content: "When a manual page says 'See README for details', this is where you go looking." }
+                ]
+            },
+            {
+                type: 'interactive',
+                id: 'tldr_whatis',
+                heading: '11. Simplified Help: tldr & whatis',
+                content: "`whatis` gives you a one-line summary of a command. `tldr` is a popular community tool (often installed) that gives practical examples instead of technical jargon.",
+                terminal_blocks: [
+                    { command: "whatis grep", showPrompt: true }
+                ],
+                callouts: [
+                    { type: 'try_it', icon: '🧪', content: "Try `whatis ls` to see a single-line summary of the list command." }
                 ]
             },
             {
                 type: 'common_mistakes',
                 id: 'mistakes',
-                heading: '5. Common Mistakes (and How to Fix Them)',
-                items: [
-                    "**Typing `man cd` and getting “No manual entry for cd”**: `cd` is a shell built‑in, not an external command. Use `help cd` instead.",
-                    "**Not knowing which manual section you need**: If `man keyword` doesn't show what you expected, try `man -k keyword` or `man -a keyword` (which shows all sections).",
-                    "**Scrolling past important info in `man`**: Use `/searchterm` inside `man` to jump straight to what you need.",
-                    "**Confusing `info` with `pinfo`**: If `info` feels clunky, check if `pinfo` is installed. If not, just use `man` — it's perfectly fine."
+                heading: '12. Common Mistakes',
+                list: [
+                    "**Typing `man cd`**: This often fails. Remember: for built-ins, use `help`.",
+                    "**Getting lost in a manual**: If you're overwhelmed, just hit `q` and use `--help` for a summary.",
+                    "**Not checking sections**: If `man passwd` shows the command but you wanted the file format, use `man 5 passwd`.",
+                    "**Searching without quotes**: If your keyword has spaces in `apropos`, wrap it in quotes."
                 ]
             },
             {
                 type: 'pro_corner',
                 id: 'pro_corner',
-                heading: '6. Extra Info / Pro Corner',
-                tips: [
-                    "**What Is `tldr`?**: A community‑driven tool that gives simplified, example‑focused pages.",
-                    "**The `whatis` Command**: Prints the one‑line description from the manual. Quick and handy: `whatis ls`.",
-                    "**Manual Pages on the Web**: Sites like `man7.org` provide online access, but local `man` is always more accurate for your specific version."
+                heading: '13. Pro Corner',
+                list: [
+                    "**Offline Help**: Man pages are available even without an internet connection.",
+                    "**Search Forward/Backward**: In most pagers, `/` searches forward and `?` searches backward.",
+                    "**MANPATH**: Controls where the system looks for manual pages.",
+                    "**Whatis Database**: If `apropos` finds nothing, run `mandb` to rebuild the index."
                 ]
             },
             {
-                type: 'looking_ahead',
+                type: 'interactive',
                 id: 'look_ahead',
-                heading: '7. Looking Ahead',
-                content: "Now you know how to find answers inside the system. This changes everything. When we later introduce new commands, you'll have the reflex to `man` them, understand their options, and even read the related config file manual pages. The command line is no longer a mystery — it's a conversation you can look up at any time.\n\nNext, you'll put your new navigation and help skills to use as we dive into creating, viewing, and editing text files. You'll meet vim, pipes, and redirection, turning the terminal into your primary workspace."
+                heading: '14. Looking Ahead',
+                content: "Now you have the keys to the library. You don't need to memorize every flag — you just need to know how to find them. In the next chapter, we'll use these skills to master the 'Story of Data': viewing, redirecting, and manipulating text files like a pro."
             },
             {
                 type: 'summary',
                 id: 'summary',
-                heading: '8. Chapter Summary',
+                heading: '15. Chapter Summary',
                 bullets: [
-                    "`man command` opens the full manual; press `q` to exit.",
-                    "Use `man -k keyword` or `apropos` to search all manual pages.",
-                    "Manual sections (1, 5, 8, etc.) separate different types of documentation.",
-                    "`command --help` gives a short usage summary for most commands.",
-                    "For shell built‑ins, use `help command`.",
-                    "The `info` system provides node‑based hypertext docs.",
-                    "`/usr/share/doc` contains additional READMEs and examples for installed packages."
+                    "**man** — The gold standard for full documentation.",
+                    "**Sections** — 1 (Commands), 5 (Files), 8 (Admin).",
+                    "**apropos** — Search by keyword when names fail.",
+                    "**--help** — Quick option refresh.",
+                    "**help** — For shell built-in commands.",
+                    "**/usr/share/doc** — Deep dives and examples."
                 ]
             }
         ]
@@ -425,13 +467,13 @@ export const chapterContents: Record<string, ChapterContent> = {
         description: 'Learn to view files, redirect streams, and chain commands with pipes.',
         sections: [
             {
-                type: 'text',
+                type: 'interactive',
                 id: 'why_matters',
                 heading: '1. Why This Matters',
                 content: "You have a log file from a misbehaving application. You need to see the last 20 lines, filter out lines containing \"error\", sort them by timestamp, and save the result to a new file. All of that can be done in a single breath — no mouse, no spreadsheet, no heavy editor. This is the moment the terminal becomes your real workspace.\n\nIn this chapter, you'll learn to view files, pipe commands together like Lego bricks, and shape text output exactly how you need it. It's the foundation of everything from log analysis to automation."
             },
             {
-                type: 'text',
+                type: 'interactive',
                 id: 'what_learn',
                 heading: "2. What You'll Learn",
                 list: [
@@ -443,95 +485,150 @@ export const chapterContents: Record<string, ChapterContent> = {
                 ]
             },
             {
-                type: 'text',
-                id: 'core_concepts',
-                heading: '3. Core Concepts',
-                subsections: [
-                    {
-                        heading: "3.1 Standard Streams: STDOUT, STDIN, STDERR",
-                        content: "Every command deals with three invisible streams:\n- **Standard Input (STDIN)**: where the command reads from (default: your keyboard).\n- **Standard Output (STDOUT)**: where the command prints normal results (default: your screen).\n- **Standard Error (STDERR)**: where the command sends error messages (default: your screen, kept separate so errors don't contaminate data).\n\nRedirection and pipes let you control these streams, sending output to files, feeding output of one command into another, and silencing errors."
-                    },
-                    {
-                        heading: "3.2 Redirection Symbols",
-                        content: "- `>` — redirect STDOUT to a file, **overwriting** it if it exists.\n- `>>` — redirect STDOUT to a file, **appending** to the end.\n- `2>` — redirect STDERR to a file.\n- `&>` — redirect both STDOUT and STDERR to the same file.\n\nExample: `ls /nonexistent 2> errors.txt` captures the error while letting normal output through."
-                    },
-                    {
-                        heading: "3.3 Pipes: The Superpower",
-                        content: "The pipe `|` takes the STDOUT of the left command and feeds it as STDIN to the right command. You can chain multiple pipes:\n\n```bash\ncat /var/log/messages | grep error | sort | uniq -c\n```\n\nThis reads the log, filters lines containing \"error\", sorts them, counts unique occurrences, and prints to screen. Each command is small and focused; the pipe connects them into something far more powerful."
-                    }
+                type: 'interactive',
+                id: 'cat_viewing',
+                heading: '3. Viewing Files with cat',
+                content: "`cat` (short for concatenate) is the most basic way to see what's inside a file. It dumps the entire content onto your screen at once.",
+                terminal_blocks: [
+                    { command: "cat /etc/hostname", showPrompt: true },
+                    { command: "cat /etc/hosts", showPrompt: true }
+                ],
+                callouts: [
+                    { type: 'caution', icon: '⚠️', content: "If you `cat` a very large file, it will flood your terminal. For large files, use `less` instead." }
                 ]
             },
             {
-                type: 'hands_on_examples',
-                id: 'hands_on',
-                heading: '4. Hands-On Examples',
-                intro: "Open your separate terminal. Create a practice file using `cat` first: \n\n```bash\ncat > sample.txt <<EOF\napple\nbanana\napple\ncherry\nbanana\ndate\napple\nEOF\n```",
-                exercises: [
-                    {
-                        title: "4.1 cat — Concatenate and Display",
-                        command: "cat sample.txt",
-                        explanation: "`cat` dumps the entire file. It's short for \"concatenate\" — it can join multiple files too: `cat file1 file2 > combined`.",
-                        try_it_yourself: "Create two short files with touch and add some content using cat > file1 (Press Ctrl+D to end input). Then join them into a third file."
-                    },
-                    {
-                        title: "4.2 head and tail — Top and Bottom Views",
-                        commands: ["head -n 3 sample.txt", "tail -n 2 sample.txt"],
-                        explanation: "head shows the beginning, tail shows the end. `tail -f` follows a file as it grows — perfect for watching logs live.",
-                        try_it_yourself: "Try `tail -n +3 sample.txt`. What does it show? (Answer: everything starting from line 3.)"
-                    },
-                    {
-                        title: "4.3 sort and uniq",
-                        commands: ["sort sample.txt", "sort sample.txt | uniq -c"],
-                        explanation: "`sort` orders lines. `uniq` handles duplicates (but only adjacent ones, so always sort first!).",
-                        try_it_yourself: "What happens if you run uniq sample.txt without sorting first? Observe the output and understand why."
-                    },
-                    {
-                        title: "4.4 Pipes in Action",
-                        command: "cat sample.txt | sort | uniq -c | sort -rn",
-                        explanation: "This gives you a frequency list sorted from most to least common. It's the kind of one-liner sysadmins use daily.",
-                        try_it_yourself: "Try adding `head -3` to the end of the pipeline above. What's the result?"
-                    }
+                type: 'interactive',
+                id: 'less_paging',
+                heading: '4. Smarter Viewing with less',
+                content: "`less` is a 'pager'. It opens a file in a scrollable view without flooding your screen. It's lightning fast even for huge files.",
+                terminal_blocks: [
+                    { command: "less /var/log/syslog", showPrompt: true }
+                ],
+                callouts: [
+                    { type: 'pro_tip', icon: '🧠', content: "In `less`, use `Space` to scroll down, `/` to search, and `q` to quit." }
+                ]
+            },
+            {
+                type: 'interactive',
+                id: 'head_tail',
+                heading: '5. Peeking: head and tail',
+                content: "Sometimes you only care about the start or end of a file. `head` shows the top 10 lines, and `tail` shows the bottom 10 lines by default.",
+                terminal_blocks: [
+                    { command: "head -n 5 /etc/passwd", showPrompt: true },
+                    { command: "tail -n 3 /etc/group", showPrompt: true }
+                ],
+                callouts: [
+                    { type: 'info', icon: 'ℹ️', content: "The `-n` flag lets you specify exactly how many lines you want to see." }
+                ]
+            },
+            {
+                type: 'interactive',
+                id: 'tail_follow',
+                heading: '6. Live Monitoring: tail -f',
+                content: "The `-f` (follow) flag keeps `tail` open and displays new lines as they are written to the file in real-time.",
+                terminal_blocks: [
+                    { command: "tail -f /var/log/auth.log", showPrompt: true }
+                ],
+                callouts: [
+                    { type: 'try_it', icon: '🧪', content: "This is how you watch logs live. Press `Ctrl+C` to stop following." }
+                ]
+            },
+            {
+                type: 'interactive',
+                id: 'redirection_basic',
+                heading: '7. Redirection Superpowers (>)',
+                content: "By default, commands print to the screen (STDOUT). Redirection symbols let you send that output to a file instead.",
+                list: [
+                    "**`>`**: Redirects output to a file, **overwriting** it.",
+                    "**`>>`**: Redirects output to a file, **appending** to it."
+                ],
+                terminal_blocks: [
+                    { command: "echo \"Hello World\" > greeting.txt", showPrompt: true },
+                    { command: "date >> greeting.txt", showPrompt: true }
+                ]
+            },
+            {
+                type: 'interactive',
+                id: 'redirection_errors',
+                heading: '8. Handling Errors (2>)',
+                content: "Linux separates normal output (1) from error messages (2). You can redirect them independently.",
+                terminal_blocks: [
+                    { command: "ls /root 2> errors.log", showPrompt: true }
+                ],
+                callouts: [
+                    { type: 'pro_tip', icon: '🧠', content: "Want to hide all errors? Redirect them to the black hole: `command 2> /dev/null`." }
+                ]
+            },
+            {
+                type: 'interactive',
+                id: 'pipes',
+                heading: '9. The Pipe: Chaining Commands (|)',
+                content: "The pipe takes the output of one command and feeds it as the input to the next.",
+                terminal_blocks: [
+                    { command: "ls /etc | head -n 5", showPrompt: true }
+                ],
+                callouts: [
+                    { type: 'info', icon: 'ℹ️', content: "The vertical bar `|` represents the pipe. You can chain as many as you like!" }
+                ]
+            },
+            {
+                type: 'interactive',
+                id: 'sort_uniq',
+                heading: '10. Sorting and Deduplicating',
+                content: "`sort` reorders lines alphabetically. `uniq` removes duplicates—but only if they are adjacent.",
+                terminal_blocks: [
+                    { command: "sort /etc/passwd | head", showPrompt: true }
+                ],
+                callouts: [
+                    { type: 'caution', icon: '⚠️', content: "Always `sort` before piping into `uniq`. Otherwise, `uniq` will miss non-adjacent duplicates." }
+                ]
+            },
+            {
+                type: 'interactive',
+                id: 'complex_pipelines',
+                heading: '11. Building Power Pipelines',
+                content: "Combine small, simple tools to do complex things.",
+                terminal_blocks: [
+                    { command: "cut -d: -f1 /etc/passwd | sort | head -n 5", showPrompt: true }
                 ]
             },
             {
                 type: 'common_mistakes',
                 id: 'mistakes',
-                heading: '5. Common Mistakes (and How to Fix Them)',
-                items: [
-                    "**Using `>` when you meant `>>`**: You overwrite a file you meant to append to. Always double-check.",
-                    "**Forgetting `| sort` before `uniq`**: `uniq` only removes *adjacent* duplicates.",
-                    "**Redirection confusion**: `cat file > file` *truncates* the file before reading it, resulting in an empty file.",
-                    "**`tail -f` followed by frantic Ctrl+C**: `tail -f` runs indefinitely; kill it with `Ctrl+C`."
+                heading: '12. Common Mistakes',
+                list: [
+                    "**Overwriting with `>`**: Using `>` instead of `>>` can delete data.",
+                    "**Forgetting `sort` before `uniq`**: This is a very common error.",
+                    "**Pipeline order**: The order of commands in a pipeline matters!"
                 ]
             },
             {
                 type: 'pro_corner',
                 id: 'pro_corner',
-                heading: '6. Extra Info / Pro Corner',
-                tips: [
-                    "**`less` is more**: For large files, use `less` instead of `cat`. It opens a scrollable, searchable view.",
-                    "**`tee` — The Splitter**: Want to see output on screen *and* save it to a file simultaneously? `ls -l | tee listing.txt`.",
-                    "**`wc` — Word Count**: Quick stats: `wc -l file` counts lines, `-w` words, `-c` characters.",
-                    "**Avoiding useless `cat`**: `grep foo file` is often more efficient than `cat file | grep foo`."
+                heading: '13. Pro Corner',
+                list: [
+                    "**`tee` Command**: Save output to a file *and* see it on screen.",
+                    "**Standard Streams**: STDIN (0), STDOUT (1), and STDERR (2).",
+                    "**`wc` (Word Count)**: Count lines, words, and characters."
                 ]
             },
             {
-                type: 'looking_ahead',
+                type: 'interactive',
                 id: 'look_ahead',
-                heading: '7. Looking Ahead',
-                content: "You can now slice, dice, and pipe text. This is the skill that turns you from a casual terminal visitor into a power user. Next, you'll need to *edit* text — not just view it. You'll meet `vim`, the legendary text editor that's on every Linux system."
+                heading: '14. Looking Ahead',
+                content: "In the next chapter, we'll enter the world of Terminal Editing with the legendary `vim`."
             },
             {
                 type: 'summary',
                 id: 'summary',
-                heading: '8. Chapter Summary',
+                heading: '15. Chapter Summary',
                 bullets: [
-                    "`cat` displays and concatenates files.",
-                    "`head` / `tail` show the first/last lines; `tail -f` follows live.",
-                    "`sort` orders lines; `uniq` handles duplicates (sort first!).",
-                    "Redirection `>`, `>>`, `2>`, `&>` control where output goes.",
-                    "Pipes `|` chain commands, passing output to input.",
-                    "Always test pipelines step by step."
+                    "**cat/less** — For viewing files.",
+                    "**head/tail** — Peeking at data.",
+                    "**Redirection (>, >>)** — Sending output to files.",
+                    "**Pipes (|)** — Chaining tools.",
+                    "**sort/uniq** — Cleaning results."
                 ]
             }
         ]
