@@ -16,7 +16,7 @@ export interface ChapterAssessment {
 // We will use procedural generators for syntax drills to provide infinite replayability,
 // alongside a static bank for specific MCQ theory questions.
 
-import { staticQuestionBank } from '../../../data/chapters/assessment_bank';
+import { staticQuestionBank } from '../../../data/assessments/index';
 
 export class QuestionProvider {
     /**

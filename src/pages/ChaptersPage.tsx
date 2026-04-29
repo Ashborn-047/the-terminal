@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useGamificationStore } from '../stores/gamificationStore';
 import { ChapterMetadata, sysadmin1Chapters, sysadmin2Chapters } from '../data/chapters/curriculum_metadata';
-import { chapterContents, ChapterContent } from '../data/chapters/chapter_content_data';
+import { chapterContents, ChapterContent } from '../data/chapters/index';
 import { ChapterAssessment, QuestionProvider } from '../features/lab-engine/providers/QuestionProvider';
 import { TerminalComponent } from '../components/terminal/Terminal';
 import { useTerminal } from '../hooks/useTerminal';
