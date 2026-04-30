@@ -6,6 +6,8 @@ import { ch04Content } from './ch04/content';
 import { ch05Content } from './ch05/content';
 import { ch06Content } from './ch06/content';
 
+import { ch07Content } from './ch07/content';
+
 export const chapterContents: Record<string, ChapterContent> = {
     'track1-ch01': ch01Content,
     'track1-ch02': ch02Content,
@@ -13,4 +15,5 @@ export const chapterContents: Record<string, ChapterContent> = {
     'track1-ch04': ch04Content,
     'track1-ch05': ch05Content,
     'track1-ch06': ch06Content,
+    'track1-ch07': ch07Content,
 };

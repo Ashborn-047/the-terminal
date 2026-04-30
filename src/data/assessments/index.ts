@@ -6,6 +6,8 @@ import { ch04Assessment } from './ch04';
 import { ch05Assessment } from './ch05';
 import { ch06Assessment } from './ch06';
 
+import { ch07Assessment } from './ch07';
+
 export const staticQuestionBank: ChapterAssessment[] = [
     ...ch01Assessment,
     ...ch02Assessment,
@@ -13,4 +15,5 @@ export const staticQuestionBank: ChapterAssessment[] = [
     ...ch04Assessment,
     ...ch05Assessment,
     ...ch06Assessment,
+    ...ch07Assessment,
 ];
