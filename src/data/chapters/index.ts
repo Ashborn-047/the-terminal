@@ -1,3 +1,4 @@
+import { ChapterContent } from '../../types/chapters';
 export type { ChapterContent, ChapterSection, TerminalBlock, Callout } from '../../types/chapters';
 import { ch01Content } from './ch01/content';
 import { ch02Content } from './ch02/content';
