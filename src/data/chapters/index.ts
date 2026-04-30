@@ -10,6 +10,7 @@ import { ch06Content } from './ch06/content';
 import { ch07Content } from './ch07/content';
 import { ch08Content } from './ch08/content';
 import { ch09Content } from './ch09/content';
+import { ch10Content } from './ch10/content';
 
 export const chapterContents: Record<string, ChapterContent> = {
     'track1-ch01': ch01Content,
@@ -21,4 +22,5 @@ export const chapterContents: Record<string, ChapterContent> = {
     'track1-ch07': ch07Content,
     'track1-ch08': ch08Content,
     'track1-ch09': ch09Content,
+    'track1-ch10': ch10Content,
 };
