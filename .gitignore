@@ -10,12 +10,16 @@ Thumbs.db
 redesign_v2_preview.html
 redesign-v2-preview.html
 test/
+tests/
+test-results/
+
 # Claude Findings
 claudes_findings/
 claude_findings/
 claude*findings/
 
 # SpacetimeDB
+spacetimedb.secrets
 spacetimedb_secrets.md
 
 # Playwright
@@ -25,8 +29,12 @@ spacetimedb_secrets.md
 /playwright/.cache/
 /playwright/.auth/
 
-# Compliance Audit (Local Only)
-/docs/compliance_audit.md
+# Documentation and Requirements
+docs/
+redesign_v2.md
+redesign_v2_preview.html
+redesign-v2-preview.html
+requirements.md
 
 # Stitch AI UI Generation
 .stitch/
@@ -45,7 +53,5 @@ _agents/
 
 # Testing and Scripting (Local Only)
 scripts/
-tests/
-test-results/
 playwright-report/
 playwright/
