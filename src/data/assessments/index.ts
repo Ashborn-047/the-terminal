@@ -19,6 +19,7 @@ import { ch15Assessment } from './foundational/ch15/assessment';
 
 // Advanced Assessments
 import { t2ch01Assessment } from './advanced/ch01/assessment';
+import { t2ch02Assessment } from './advanced/ch02/assessment';
 
 export const staticQuestionBank: ChapterAssessment[] = [
     // Foundational
@@ -40,4 +41,5 @@ export const staticQuestionBank: ChapterAssessment[] = [
 
     // Advanced
     ...t2ch01Assessment,
+    ...t2ch02Assessment,
 ];

@@ -20,6 +20,7 @@ import { ch15Content } from './foundational/ch15/content';
 
 // Advanced Chapters
 import { t2ch01Content } from './advanced/ch01/content';
+import { t2ch02Content } from './advanced/ch02/content';
 
 export const chapterContents: Record<string, ChapterContent> = {
     // Foundational
@@ -41,4 +42,5 @@ export const chapterContents: Record<string, ChapterContent> = {
     
     // Advanced
     'track2-ch01': t2ch01Content,
+    'track2-ch02': t2ch02Content,
 };
