@@ -1,4 +1,4 @@
-import { ChapterContent } from '../../../types/chapters';
+import { ChapterContent } from '../../../../types/chapters';
 
 export const t2ch02Content: ChapterContent = {
     chapterId: 'track2-ch02',

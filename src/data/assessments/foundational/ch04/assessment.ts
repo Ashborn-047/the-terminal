@@ -1,4 +1,4 @@
-import { ChapterAssessment } from '../features/lab-engine/providers/QuestionProvider';
+import { ChapterAssessment } from '../../../../features/lab-engine/providers/QuestionProvider';
 
 export const ch04Assessment: ChapterAssessment[] = [
     // --- TRACK1-CH04: Mastering Vim ---

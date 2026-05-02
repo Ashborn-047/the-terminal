@@ -21,6 +21,16 @@ import { ch15Content } from './foundational/ch15/content';
 // Advanced Chapters
 import { t2ch01Content } from './advanced/ch01/content';
 import { t2ch02Content } from './advanced/ch02/content';
+import { t2ch03Content } from './advanced/ch03/content';
+import { t2ch04Content } from './advanced/ch04/content';
+import { t2ch05Content } from './advanced/ch05/content';
+import { t2ch06Content } from './advanced/ch06/content';
+import { t2ch07Content } from './advanced/ch07/content';
+import { t2ch08Content } from './advanced/ch08/content';
+import { t2ch09Content } from './advanced/ch09/content';
+import { t2ch10Content } from './advanced/ch10/content';
+import { t2ch11Content } from './advanced/ch11/content';
+import { t2ch12Content } from './advanced/ch12/content';
 
 export const chapterContents: Record<string, ChapterContent> = {
     // Foundational
@@ -43,4 +53,14 @@ export const chapterContents: Record<string, ChapterContent> = {
     // Advanced
     'track2-ch01': t2ch01Content,
     'track2-ch02': t2ch02Content,
+    'track2-ch03': t2ch03Content,
+    'track2-ch04': t2ch04Content,
+    'track2-ch05': t2ch05Content,
+    'track2-ch06': t2ch06Content,
+    'track2-ch07': t2ch07Content,
+    'track2-ch08': t2ch08Content,
+    'track2-ch09': t2ch09Content,
+    'track2-ch10': t2ch10Content,
+    'track2-ch11': t2ch11Content,
+    'track2-ch12': t2ch12Content,
 };

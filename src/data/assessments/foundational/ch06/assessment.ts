@@ -1,4 +1,4 @@
-import { ChapterAssessment } from '../features/lab-engine/providers/QuestionProvider';
+import { ChapterAssessment } from '../../../../features/lab-engine/providers/QuestionProvider';
 
 export const ch06Assessment: ChapterAssessment[] = [
     // --- Chapter 6: Controlling Access to Files ---

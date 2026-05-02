@@ -1,4 +1,4 @@
-import { ChapterAssessment } from '../features/lab-engine/providers/QuestionProvider';
+import { ChapterAssessment } from '../../../../features/lab-engine/providers/QuestionProvider';
 
 export const ch03Assessment: ChapterAssessment[] = [
     // --- TRACK1-CH03: Reading the Story ---

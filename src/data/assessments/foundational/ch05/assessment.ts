@@ -1,4 +1,4 @@
-import { ChapterAssessment } from '../features/lab-engine/providers/QuestionProvider';
+import { ChapterAssessment } from '../../../../features/lab-engine/providers/QuestionProvider';
 
 export const ch05Assessment: ChapterAssessment[] = [
     // --- Chapter 5: Managing Local Users and Groups ---

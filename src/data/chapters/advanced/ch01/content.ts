@@ -1,4 +1,4 @@
-import { ChapterContent } from '../../../types/chapters';
+import { ChapterContent } from '../../../../types/chapters';
 
 export const t2ch01Content: ChapterContent = {
     chapterId: 'track2-ch01',
@@ -9,7 +9,7 @@ export const t2ch01Content: ChapterContent = {
             type: 'text',
             id: 'why_matters',
             heading: 'Why This Matters',
-            content: "You've mastered the basic commands. Now it's time to think in Bash. Loops, conditionals, variables, and regular expressions aren't just for hardcore sysadmins — they're everyday tools that turn repetitive tasks into one‑liners. Once you learn them, you'll save hours every week."
+            content: "You've mastered the basic commands. Now it's time to think in Bash. Loops, conditionals, variables, and regular expressions aren't just for hardcore sysadmins — they're everyday tools that turn repetitive tasks into one-liners. Once you learn them, you'll save hours every week."
         },
         {
             type: 'text',
@@ -160,7 +160,7 @@ export const t2ch01Content: ChapterContent = {
             content: "You can now write loops and conditionals. Next we'll schedule these scripts to run automatically.",
             list: [
                 "`#!/bin/bash` and `chmod +x`.",
-                "Variables: `name=\"value\"`, command substitution: `$(cmd) Surrounding quotes preserve spaces.`",
+                "Variables: `name=\"value\"`, command substitution: `$(cmd)`. Surrounding quotes preserve spaces.",
                 "Loops: `for var in list; do ... done`, `while [ condition ]; do ... done`.",
                 "Conditionals: `if [ ... ]; then ... fi`, `case`.",
                 "Regex with `grep -E`."

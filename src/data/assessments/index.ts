@@ -20,6 +20,16 @@ import { ch15Assessment } from './foundational/ch15/assessment';
 // Advanced Assessments
 import { t2ch01Assessment } from './advanced/ch01/assessment';
 import { t2ch02Assessment } from './advanced/ch02/assessment';
+import { t2ch03Assessment } from './advanced/ch03/assessment';
+import { t2ch04Assessment } from './advanced/ch04/assessment';
+import { t2ch05Assessment } from './advanced/ch05/assessment';
+import { t2ch06Assessment } from './advanced/ch06/assessment';
+import { t2ch07Assessment } from './advanced/ch07/assessment';
+import { t2ch08Assessment } from './advanced/ch08/assessment';
+import { t2ch09Assessment } from './advanced/ch09/assessment';
+import { t2ch10Assessment } from './advanced/ch10/assessment';
+import { t2ch11Assessment } from './advanced/ch11/assessment';
+import { t2ch12Assessment } from './advanced/ch12/assessment';
 
 export const staticQuestionBank: ChapterAssessment[] = [
     // Foundational
@@ -42,4 +52,14 @@ export const staticQuestionBank: ChapterAssessment[] = [
     // Advanced
     ...t2ch01Assessment,
     ...t2ch02Assessment,
+    ...t2ch03Assessment,
+    ...t2ch04Assessment,
+    ...t2ch05Assessment,
+    ...t2ch06Assessment,
+    ...t2ch07Assessment,
+    ...t2ch08Assessment,
+    ...t2ch09Assessment,
+    ...t2ch10Assessment,
+    ...t2ch11Assessment,
+    ...t2ch12Assessment,
 ];
