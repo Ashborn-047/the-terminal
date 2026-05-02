@@ -10,6 +10,8 @@ export interface ChapterAssessment {
     regexMatch?: boolean; // If true, correctAnswer is treated as a regex (useful for terminal verification)
     hint?: string;
     practiceOnly?: boolean;
+    explanation?: string;
+    difficulty?: 'easy' | 'medium' | 'hard';
 }
 
 // Since there are 27 chapters with 15+ questions each, defining them all statically would create a massive file.
