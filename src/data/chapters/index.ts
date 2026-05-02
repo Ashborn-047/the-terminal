@@ -1,23 +1,28 @@
 import { ChapterContent } from '../../types/chapters';
 export type { ChapterContent, ChapterSection, TerminalBlock, Callout } from '../../types/chapters';
-import { ch01Content } from './ch01/content';
-import { ch02Content } from './ch02/content';
-import { ch03Content } from './ch03/content';
-import { ch04Content } from './ch04/content';
-import { ch05Content } from './ch05/content';
-import { ch06Content } from './ch06/content';
 
-import { ch07Content } from './ch07/content';
-import { ch08Content } from './ch08/content';
-import { ch09Content } from './ch09/content';
-import { ch10Content } from './ch10/content';
-import { ch11Content } from './ch11/content';
-import { ch12Content } from './ch12/content';
-import { ch13Content } from './ch13/content';
-import { ch14Content } from './ch14/content';
-import { ch15Content } from './ch15/content';
+// Foundational Chapters
+import { ch01Content } from './foundational/ch01/content';
+import { ch02Content } from './foundational/ch02/content';
+import { ch03Content } from './foundational/ch03/content';
+import { ch04Content } from './foundational/ch04/content';
+import { ch05Content } from './foundational/ch05/content';
+import { ch06Content } from './foundational/ch06/content';
+import { ch07Content } from './foundational/ch07/content';
+import { ch08Content } from './foundational/ch08/content';
+import { ch09Content } from './foundational/ch09/content';
+import { ch10Content } from './foundational/ch10/content';
+import { ch11Content } from './foundational/ch11/content';
+import { ch12Content } from './foundational/ch12/content';
+import { ch13Content } from './foundational/ch13/content';
+import { ch14Content } from './foundational/ch14/content';
+import { ch15Content } from './foundational/ch15/content';
+
+// Advanced Chapters
+import { t2ch01Content } from './advanced/ch01/content';
 
 export const chapterContents: Record<string, ChapterContent> = {
+    // Foundational
     'track1-ch01': ch01Content,
     'track1-ch02': ch02Content,
     'track1-ch03': ch03Content,
@@ -33,4 +38,7 @@ export const chapterContents: Record<string, ChapterContent> = {
     'track1-ch13': ch13Content,
     'track1-ch14': ch14Content,
     'track1-ch15': ch15Content,
+    
+    // Advanced
+    'track2-ch01': t2ch01Content,
 };
