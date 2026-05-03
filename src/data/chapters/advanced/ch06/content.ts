@@ -1,3 +1,4 @@
+
 import { ChapterContent } from '../../../../types/chapters';
 
 export const t2ch06Content: ChapterContent = {
