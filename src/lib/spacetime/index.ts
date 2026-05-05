@@ -11,9 +11,8 @@ class SpacetimeService {
     constructor() {
         // Default to mock mode if not explicitly disabled. Force mock in test environments.
         this.isMock = 
-            (import.meta as any).env.MODE === 'test' || 
-            process.env.NODE_ENV === 'test' || 
-            (import.meta as any).env.VITE_MOCK_SPACETIME !== 'false';
+            import.meta.env.MODE === 'test' || 
+            import.meta.env.VITE_MOCK_SPACETIME !== 'false';
         
         if (!this.isMock) {
             try {
@@ -28,8 +27,8 @@ class SpacetimeService {
     }
 
     public connect() {
-        const uri = (import.meta as any).env.VITE_SPACETIME_URI || "https://maincloud.spacetimedb.com";
-        const databaseName = (import.meta as any).env.VITE_SPACETIME_DB_NAME || "terminal-backend";
+        const uri = import.meta.env.VITE_SPACETIME_URI || "https://maincloud.spacetimedb.com";
+        const databaseName = import.meta.env.VITE_SPACETIME_DB_NAME || "terminal-backend";
 
         try {
             console.log(`[SpacetimeDB] Attempting connection to ${databaseName}...`);
@@ -39,7 +38,9 @@ class SpacetimeService {
                 .onConnect(() => {
                     console.log("Connected to SpacetimeDB");
                     this.isConnected = true;
-                    this.onConnectCallbacks.forEach(cb => cb());
+                    this.onConnectCallbacks.forEach(cb => {
+                        try { cb(); } catch (e) { console.error("Error in onConnect callback:", e); }
+                    });
                     this.notifyObservers();
                 })
                 .onDisconnect(() => {
@@ -60,10 +61,12 @@ class SpacetimeService {
     }
 
     private handleInitializationFailure(err: Error) {
-        console.warn("[SpacetimeDB] Falling back to LOCAL MOCK MODE due to connection/schema fault.");
+        console.warn("[SpacetimeDB] Falling back to LOCAL MOCK MODE due to connection/schema fault.", err);
         this.isMock = true;
-        this.isConnected = true; // Mark as "connected" so initialization listeners proceed
-        this.onConnectCallbacks.forEach(cb => cb());
+        this.isConnected = true; 
+        this.onConnectCallbacks.forEach(cb => {
+            try { cb(); } catch (e) { console.error("Error in mock onConnect callback:", e); }
+        });
         this.notifyObservers();
     }
 

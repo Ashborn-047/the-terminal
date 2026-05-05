@@ -16,13 +16,15 @@ import {
     AchievementGrid,
     Display,
     Label,
-    Mono
+    Mono,
+    useResponsive
 } from '../components/ui/AshbornDesignSystem';
 
 /**
  * HomePage — Dashboard: stats overview, recent activity, quick actions.
  */
 const HomePage: React.FC = () => {
+    const { isMobile, isTablet } = useResponsive();
     const navigate = useNavigate();
     const { username } = useUIStore();
     const { level, totalXpEarned, streak, unlockedAchievements, activityHistory, getXPProgress } = useGamificationStore();
@@ -80,9 +82,20 @@ const HomePage: React.FC = () => {
                     display: 'flex',
                     alignItems: 'center',
                     gap: 24,
-                    flexWrap: 'wrap'
+                    flexWrap: 'wrap',
+                    justifyContent: 'center',
+                    textAlign: 'center'
                 }}
+                className="hero-banner"
             >
+                <style>{`
+                    @media (min-width: 640px) {
+                        .hero-banner {
+                            text-align: left !important;
+                            justify-content: flex-start !important;
+                        }
+                    }
+                `}</style>
                 <XPRing level={level} xpCurrent={current} xpNext={needed} size={100} accent="lime" />
                 
                 <div style={{ flex: 1, minWidth: 280 }}>
@@ -155,8 +168,8 @@ const HomePage: React.FC = () => {
                 id="dashboard-stats-grid"
                 style={{ 
                     display: 'grid', 
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
-                    gap: tokens.space[4], 
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', 
+                    gap: tokens.space[isMobile ? 2 : 4], 
                     marginBottom: tokens.space[8] 
                 }}
             >

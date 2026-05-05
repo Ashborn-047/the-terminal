@@ -13,15 +13,41 @@ export const ModuleNavBar: React.FC<ModuleNavBarProps> = () => {
     const currentModuleId = moduleId ? parseInt(moduleId) : 1;
 
     return (
-        <div style={{ 
-            display: 'flex', 
-            flexDirection: 'column', 
-            height: '100%',
-            backgroundColor: tokens.color.bg.surface,
-            borderRight: `1px solid ${tokens.color.border.default}`,
-            padding: tokens.space[4],
-            overflowY: 'auto'
-        }}>
+        <div 
+            className="module-navbar"
+            style={{ 
+                display: 'flex', 
+                flexDirection: 'var(--module-nav-dir, column)', 
+                height: '100%',
+                backgroundColor: tokens.color.bg.surface,
+                borderRight: `var(--module-nav-border-r, 1px solid ${tokens.color.border.default})`,
+                borderBottom: `var(--module-nav-border-b, none)`,
+                padding: tokens.space[4],
+                overflowY: 'auto',
+                overflowX: 'var(--module-nav-overflow-x, hidden)'
+            }}
+        >
+            <style>{`
+                @media (max-width: ${tokens.breakpoint.lg}) {
+                    .module-navbar {
+                        --module-nav-dir: row;
+                        --module-nav-border-r: none;
+                        --module-nav-border-b: 1px solid ${tokens.color.border.default};
+                        --module-nav-overflow-x: auto;
+                    }
+                    .module-navbar h2 { display: none; }
+                    .module-navbar .module-list { 
+                        flex-direction: row !important; 
+                        width: auto !important;
+                    }
+                    .module-navbar .module-item {
+                        width: auto !important;
+                        min-width: 140px;
+                        border-left: none !important;
+                        border-bottom: 2px solid var(--border-color, transparent);
+                    }
+                }
+            `}</style>
             <h2 style={{ 
                 fontFamily: tokens.font.sans,
                 fontSize: tokens.fontSize.xs,
@@ -35,12 +61,13 @@ export const ModuleNavBar: React.FC<ModuleNavBarProps> = () => {
                 Modules
             </h2>
             
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <div className="module-list" style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                 {MODULES.map((module) => {
                     const isActive = currentModuleId === module.id;
                     return (
                         <button
                             key={module.id}
+                            className="module-item"
                             onClick={() => navigate(`/labs/${module.id}`)}
                             style={{
                                 display: 'flex',
@@ -53,13 +80,8 @@ export const ModuleNavBar: React.FC<ModuleNavBarProps> = () => {
                                 borderLeft: `2px solid ${isActive ? tokens.color.lime.base : 'transparent'}`,
                                 cursor: 'pointer',
                                 transition: 'all 0.15s',
-                                width: '100%'
-                            }}
-                            onMouseOver={(e) => {
-                                if (!isActive) e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.03)';
-                            }}
-                            onMouseOut={(e) => {
-                                if (!isActive) e.currentTarget.style.backgroundColor = 'transparent';
+                                width: '100%',
+                                ['--border-color' as any]: isActive ? tokens.color.lime.base : 'transparent'
                             }}
                         >
                             <span style={{ fontSize: 20 }}>{module.icon}</span>
@@ -82,7 +104,7 @@ export const ModuleNavBar: React.FC<ModuleNavBarProps> = () => {
                                     color: tokens.color.text.tertiary,
                                     marginTop: 2
                                 }}>
-                                    MODULE {module.id.toString().padStart(2, '0')}
+                                    MOD {module.id}
                                 </span>
                             </div>
                         </button>

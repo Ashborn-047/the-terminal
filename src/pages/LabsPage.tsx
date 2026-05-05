@@ -56,18 +56,29 @@ const LabsPage: React.FC = () => {
     return (
         <div style={{ 
             display: 'flex', 
-            height: '100%', 
+            height: (window as any).innerWidth < 1025 ? 'auto' : '100%', 
             width: '100%', 
-            overflow: 'hidden', 
-            backgroundColor: tokens.color.bg.base 
+            overflow: (window as any).innerWidth < 1025 ? 'visible' : 'hidden', 
+            backgroundColor: tokens.color.bg.base,
+            flexDirection: 'var(--labs-layout-direction, row)'
         }}>
+            <style>{`
+                @media (max-width: ${tokens.breakpoint.lg}) {
+                    :root {
+                        --labs-layout-direction: column;
+                        --module-nav-width: 100%;
+                        --module-nav-height: auto;
+                    }
+                }
+            `}</style>
             {/* Context Panel (Secondary Sidebar) */}
             <div 
                 style={{ 
-                    width: 250, 
+                    width: 'var(--module-nav-width, 250px)', 
+                    height: 'var(--module-nav-height, 100%)',
                     flexShrink: 0,
                     borderRight: `1px solid ${tokens.color.border.default}`,
-                    display: 'var(--module-nav-display, block)'
+                    display: 'block'
                 }}
                 className="module-nav-container"
             >
@@ -125,10 +136,7 @@ const LabsPage: React.FC = () => {
                         </p>
                     </Card>
                 ) : (
-                    <div style={{ 
-                        display: 'grid', 
-                        gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))', 
-                        gap: tokens.space[6], 
+                    <div className="al-grid-responsive" style={{ 
                         maxWidth: 1024, 
                         marginLeft: 'auto', 
                         marginRight: 'auto', 

@@ -225,9 +225,16 @@ export const tokens = {
         lg: "0 12px 32px rgba(0,0,0,0.25)",
         glow: "0 0 20px rgba(200,241,53,0.15)",
     },
+    // ── BREAKPOINTS ──────────────────────────────────────────────────
+    breakpoint: {
+        sm: "640px",
+        md: "768px",
+        lg: "1024px",
+        xl: "1280px",
+    },
     z: {
-        base: 0, raised: 10, dropdown: 50,
-        tooltip: 100, modal: 200, toast: 300, critical: 400,
+        base: 0, raised: 10, dropdown: 50, header: 100,
+        tooltip: 120, modal: 200, toast: 300, critical: 400,
     },
 };
 
@@ -295,7 +302,26 @@ export const globalStyles = `
     40%{clip-path:inset(0 0 0 0)}
   }
 
+  html, body, #root {
+    min-height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Desktop-specific height constraint for the app shell */
+  @media (min-width: 1025px) {
+    html, body, #root {
+      height: 100%;
+      overflow: hidden;
+    }
+  }
+
   body {
+    overflow-x: hidden;
+    overflow-y: auto;
     background-color: var(--al-bg-base);
     background-image: 
       linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
@@ -309,7 +335,59 @@ export const globalStyles = `
   ::-webkit-scrollbar-thumb:hover { background:rgba(255,255,255,0.18); }
 
   ::selection { background:rgba(200,241,53,0.22); color:#E8E6E0; }
+
+  /* Responsive Utilities */
+  .hide-on-mobile {
+    @media (max-width: 640px) { display: none !important; }
+  }
+  .hide-on-tablet {
+    @media (max-width: 1024px) { display: none !important; }
+  }
+  .show-only-mobile {
+    @media (min-width: 641px) { display: none !important; }
+  }
+  
+  .al-grid-responsive {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  @media (min-width: 768px) {
+    .al-grid-responsive { grid-template-columns: repeat(2, 1fr); }
+  }
+  
+  @media (min-width: 1280px) {
+    .al-grid-responsive { grid-template-columns: repeat(3, 1fr); }
+  }
 `;
+
+// ════════════════════════════════════════════════════════════════════════
+// SECTION 2.5 — RESPONSIVE HOOKS
+// ════════════════════════════════════════════════════════════════════════
+export const useMediaQuery = (query: string) => {
+    const [matches, setMatches] = useState(false);
+
+    useEffect(() => {
+        const media = window.matchMedia(query);
+        if (media.matches !== matches) {
+            setMatches(media.matches);
+        }
+        const listener = () => setMatches(media.matches);
+        media.addEventListener("change", listener);
+        return () => media.removeEventListener("change", listener);
+    }, [matches, query]);
+
+    return matches;
+};
+
+export const useResponsive = () => {
+    const isMobile = useMediaQuery(`(max-width: ${tokens.breakpoint.sm})`);
+    const isTablet = useMediaQuery(`(max-width: ${tokens.breakpoint.lg})`);
+    const isDesktop = !isTablet;
+    
+    return { isMobile, isTablet, isDesktop };
+};
 
 // ════════════════════════════════════════════════════════════════════════
 // SECTION 3 — TYPOGRAPHY COMPONENTS
@@ -761,10 +839,10 @@ export const OnboardingModal = ({ onSubmit }) => {
         }}>
             {/* MODAL CARD */}
             <div style={{
-                width: "100%", maxWidth: 460,
+                width: "90%", maxWidth: 460,
                 background: tokens.color.bg.surface,
                 border: `1px solid ${tokens.color.border.strong}`,
-                padding: "40px 36px",
+                padding: "clamp(24px, 6vw, 40px) clamp(20px, 5vw, 36px)",
                 animation: `al-scaleIn ${tokens.motion.duration.normal} ${tokens.motion.easing.spring}`,
             }}>
                 {/* LOGO WORDMARK */}

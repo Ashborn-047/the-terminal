@@ -11,16 +11,18 @@ import { Parser } from '../../features/command-engine/shell/parser';
 import { ShellExecutor } from '../../features/command-engine/shell/executor';
 import { ShellEnvironment } from '../../features/command-engine/shell/environment';
 import { TabCompleter } from '../../features/command-engine/shell/completion';
+import { Signal } from '../../features/command-engine/types';
 import { useTerminalStore } from '../../stores/terminalStore';
 import { useGamificationStore } from '../../stores/gamificationStore';
 import { useHardcoreStore } from '../../stores/hardcoreStore';
-import { tokens, Button, Display, Mono } from '../ui/AshbornDesignSystem';
+import { tokens, Button, Display, Mono, useResponsive } from '../ui/AshbornDesignSystem';
 
 export const TerminalComponent: React.FC = () => {
     const terminalRef = useRef<HTMLDivElement>(null);
     const xtermRef = useRef<Terminal | null>(null);
     const fitAddonRef = useRef<FitAddon | null>(null);
     const shellEnvRef = useRef<ShellEnvironment | null>(null);
+    const { isMobile } = useResponsive();
     
     const { vfs, userId, cwd, executeCommand, jobManager } = useTerminal();
     const handleExecuteRef = useRef<any>(null);
@@ -55,11 +57,12 @@ export const TerminalComponent: React.FC = () => {
     useEffect(() => {
         if (!terminalRef.current) return;
 
+        const isMobile = window.innerWidth < 640;
         // Initialize XTerm
         const term = new Terminal({
             cursorBlink: true,
             fontFamily: tokens.font.mono,
-            fontSize: parseInt(tokens.fontSize.base),
+            fontSize: isMobile ? 11 : parseInt(tokens.fontSize.base),
             theme: {
                 background: tokens.color.bg.base,
                 foreground: tokens.color.terminal.output,
@@ -141,23 +144,23 @@ export const TerminalComponent: React.FC = () => {
         const bootStart = Date.now();
         const checkVisualReadiness = () => {
             const text = terminalRef.current?.innerText || '';
-            const promptExists = text.includes('linux-lab');
+            const promptExists = text.includes('linux-lab') || text.includes('guest') || text.includes('~') || text.includes('$');
 
             // Log polling status for CI diagnostics
-            if (Date.now() % 500 === 0) { // Log every ~500ms
+            if (Date.now() % 1000 < 100) { // Log every ~1000ms
                 console.debug(`[Terminal] Polling Readiness... TextLen: ${text.length}, Prompt: ${promptExists}`);
             }
 
-            if (promptExists) {
+            if (promptExists && text.length > 10) {
                 useTerminalStore.getState().setEngineStatus('ready');
                 console.info('[Terminal] Visual readiness confirmed. Engine is READY.');
             } else {
-                // Poll every 50ms until visible
-                const timeout = isTesting ? 1000 : 10000; // Faster fallback for CI
+                // Poll every 100ms until visible
+                const timeout = isMobile ? 15000 : 10000; // Give mobile more time if needed
                 if (Date.now() - bootStart < timeout) {
-                    setTimeout(checkVisualReadiness, 50);
+                    setTimeout(checkVisualReadiness, 100);
                 } else {
-                    console.warn(`[Terminal] Visual readiness timeout after ${timeout}ms. Forcing READY signal.`, {
+                    console.warn(`[Terminal] Visual readiness timeout. Forcing READY signal.`, {
                         prompt: promptExists,
                         text: text.substring(0, 100)
                     });
@@ -292,9 +295,9 @@ export const TerminalComponent: React.FC = () => {
             width: '100%',
             height: '100%',
             backgroundColor: tokens.color.bg.base,
-            padding: tokens.space[4],
-            border: `1px solid ${tokens.color.border.default}`,
-            boxShadow: tokens.shadow.md
+            padding: tokens.space[isMobile ? 2 : 4],
+            border: isMobile ? 'none' : `1px solid ${tokens.color.border.default}`,
+            boxShadow: isMobile ? 'none' : tokens.shadow.md
           }}
         >
             <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}>

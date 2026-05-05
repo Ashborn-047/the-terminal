@@ -15,7 +15,7 @@ import { ProtectedRoute } from './components/layout/ProtectedRoute';
 import { ConnectionBanner } from './components/ui/ConnectionBanner';
 import { spacetime } from './lib/spacetime';
 import { initSpacetimeSync } from './lib/spacetime/sync';
-import { globalStyles, tokens } from './components/ui/AshbornDesignSystem';
+import { globalStyles, tokens, useResponsive } from './components/ui/AshbornDesignSystem';
 import { useBootSequence, ColdBootScreen, WarmBootScreen } from './components/layout/BootSequence';
 // Lazy-loaded pages for code splitting
 const HomePage = React.lazy(() => import('./pages/HomePage'));
@@ -24,11 +24,11 @@ const ProfilePage = React.lazy(() => import('./pages/ProfilePage'));
 const LabView = React.lazy(() => import('./pages/LabView'));
 const TerminalPage = React.lazy(() => import('./pages/TerminalPage'));
 const CommandReferencePage = React.lazy(() => import('./pages/CommandReferencePage'));
-const ChatPage = React.lazy(() => import('./pages/ChatPage.tsx'));
-const SettingsPage = React.lazy(() => import('./pages/SettingsPage.tsx'));
-const ChallengeArenaPage = React.lazy(() => import('./pages/ChallengeArenaPage.tsx'));
-const AboutLinuxPage = React.lazy(() => import('./pages/AboutLinuxPage.tsx'));
-const ChaptersPage = React.lazy(() => import('./pages/ChaptersPage.tsx'));
+const ChatPage = React.lazy(() => import('./pages/ChatPage'));
+const SettingsPage = React.lazy(() => import('./pages/SettingsPage'));
+const ChallengeArenaPage = React.lazy(() => import('./pages/ChallengeArenaPage'));
+const AboutLinuxPage = React.lazy(() => import('./pages/AboutLinuxPage'));
+const ChaptersPage = React.lazy(() => import('./pages/ChaptersPage'));
 
 const PageLoader = () => (
   <div style={{
@@ -41,7 +41,7 @@ const PageLoader = () => (
     letterSpacing: tokens.letterSpacing.widest,
     textTransform: 'uppercase'
   }}>
-    <div style={{ display: 'flex', flexDir: 'column', alignItems: 'center', gap: 16 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
        <div className="animate-pulse">Initializing System...</div>
        <div style={{ width: 200, height: 2, background: 'rgba(0, 255, 157, 0.1)' }}>
           <div className="animate-shimmer" style={{ height: '100%', background: tokens.color.lime.base }} />
@@ -51,6 +51,9 @@ const PageLoader = () => (
 );
 
 function AppContent() {
+  const { isMobile, isTablet } = useResponsive();
+  const isResponsiveMode = isMobile || isTablet;
+  
   const { setOnboardingStep, setUsername, username, highContrast, themePreset } = useUIStore();
   const { setLabs, labs } = useLabStore();
   const [isAppReady, setIsAppReady] = React.useState(false);
@@ -167,9 +170,17 @@ function AppContent() {
   }
 
   return (
-    <div style={{ height: '100dvh', width: '100%', backgroundColor: tokens.color.bg.base, overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+    <div style={{ 
+      height: isResponsiveMode ? 'auto' : '100dvh', 
+      width: '100%', 
+      backgroundColor: tokens.color.bg.base, 
+      overflow: isResponsiveMode ? 'visible' : 'hidden', 
+      display: 'flex', 
+      flexDirection: 'column', 
+      minHeight: isResponsiveMode ? '100vh' : 0 
+    }}>
       <ConnectionBanner />
-      <div style={{ flex: 1, minHeight: 0, display: 'flex' }}>
+      <div style={{ flex: 1, minHeight: 0, display: 'flex', height: isResponsiveMode ? 'auto' : '100%' }}>
       <MainLayout>
         <ErrorBoundary section="Main Content">
           <Suspense fallback={<PageLoader />}>
