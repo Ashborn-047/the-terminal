@@ -7,7 +7,8 @@ import { TerminalComponent } from '../components/terminal/Terminal';
 import { useTerminal } from '../hooks/useTerminal';
 import { toastEmitter } from '../components/ToastNotification';
 import { motion, AnimatePresence } from 'motion/react';
-import { BookOpen, CheckCircle, Lock, ChevronRight, ChevronLeft, ArrowRight } from 'lucide-react';
+import { BookOpen, CheckCircle, Lock, ChevronRight, ChevronLeft, ArrowRight, Play } from 'lucide-react';
+import { PreAssessmentModal, ChapterReentryModal } from '../components/chapters/ChapterModals';
 import { 
     tokens, 
     Card, 
@@ -367,24 +368,57 @@ export const ChaptersPage: React.FC = () => {
     const [currentStepIndex, setCurrentStepIndex] = useState(0);
     const [inputValue, setInputValue] = useState('');
     const [isCompleted, setIsCompleted] = useState(false);
+    const [activeModal, setActiveModal] = useState<'pre_assessment' | 'reentry' | null>(null);
+    const [tempChapter, setTempChapter] = useState<ChapterMetadata | null>(null);
 
     const terminalState = useTerminal();
 
     const handleStartChapter = (chapter: ChapterMetadata) => {
-        setSelectedChapter(chapter);
+        if (completedChapterIds.includes(chapter.id)) {
+            setTempChapter(chapter);
+            setActiveModal('reentry');
+        } else {
+            setSelectedChapter(chapter);
+            setReadingSectionIndex(0);
+            setViewMode('reading');
+            setIsCompleted(false);
+        }
+    };
+
+    const confirmReentryRead = () => {
+        if (!tempChapter) return;
+        setSelectedChapter(tempChapter);
         setReadingSectionIndex(0);
         setViewMode('reading');
         setIsCompleted(false);
+        setActiveModal(null);
+        setTempChapter(null);
     };
 
-    const handleStartAssessment = async () => {
-        if (!selectedChapter) return;
+    const confirmReentryMCQ = () => {
+        if (!tempChapter) return;
+        setSelectedChapter(tempChapter);
+        setActiveModal(null);
+        handleStartAssessment(true); // true means use more questions for replay
+        setTempChapter(null);
+    };
+
+    const handleStartAssessment = async (isReplay = false) => {
+        const chapterToUse = selectedChapter || tempChapter;
+        if (!chapterToUse) return;
+        
+        // Use 10 questions for first time (as per user request 5-10), 
+        // maybe more or same for replay.
+        const questionCount = isReplay ? 15 : 10; 
+        
         try {
-            const questions = await QuestionProvider.fetchSessionQuestions(selectedChapter.id, 5);
+            const questions = await QuestionProvider.fetchSessionQuestions(chapterToUse.id, questionCount);
             setSessionQuestions(questions);
             setCurrentStepIndex(0);
             setInputValue('');
             setViewMode('assessment');
+            setActiveModal(null);
+            if (!selectedChapter) setSelectedChapter(chapterToUse);
         } catch (error) {
             console.error('Failed to start assessment:', error);
             toastEmitter.emit({ type: 'error', title: 'Error', message: 'Failed to load chapter content.', duration: 3000 });
@@ -544,10 +578,10 @@ export const ChaptersPage: React.FC = () => {
                                 <Button 
                                     variant="lime" 
                                     size="lg"
-                                    onClick={handleStartAssessment}
+                                    onClick={() => setActiveModal('pre_assessment')}
                                     style={{ padding: '16px 32px', fontFamily: tokens.font.display, textTransform: 'uppercase' }}
                                 >
-                                    Start Assessment <ArrowRight size={18} />
+                                    Finish Reading <ArrowRight size={18} />
                                 </Button>
                             )}
                         </div>
@@ -733,6 +767,21 @@ export const ChaptersPage: React.FC = () => {
                     onStartChapter={handleStartChapter}
                 />
             </div>
+
+            <PreAssessmentModal 
+                isOpen={activeModal === 'pre_assessment'}
+                chapterTitle={selectedChapter?.title || ''}
+                onConfirm={() => handleStartAssessment(false)}
+                onCancel={() => setViewMode('list')}
+            />
+
+            <ChapterReentryModal 
+                isOpen={activeModal === 'reentry'}
+                chapterTitle={tempChapter?.title || ''}
+                onRead={confirmReentryRead}
+                onJumpToMCQ={confirmReentryMCQ}
+                onCancel={() => setActiveModal(null)}
+            />
         </div>
     );
 };
