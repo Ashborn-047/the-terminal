@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { tokens } from './ui/AshbornDesignSystem';
 
 /**
  * Toast Notification System — per development_plan.md §6.2.4
- * Shows achievement unlocks, XP gains, level-ups, and general notifications.
+ * Shows achievement unlocks, streak updates, and general notifications.
+ * XP gains and level-ups are now integrated into centralized UI (SuccessAnimation).
  */
 export interface Toast {
     id: string;
-    type: 'achievement' | 'xp' | 'level-up' | 'streak' | 'info' | 'error';
+    type: 'achievement' | 'streak' | 'info' | 'error';
     title: string;
     message?: string;
     icon?: string;
@@ -39,7 +41,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     const addToast = useCallback((toast: Omit<Toast, 'id'>) => {
         const id = Date.now().toString(36) + Math.random().toString(36).slice(2);
-        const newToast: Toast = { ...toast, id };
+        const newToast: Toast = { ...toast, id } as Toast;
         setToasts(prev => [...prev, newToast]);
 
         setTimeout(() => {
@@ -86,10 +88,6 @@ function getToastStyle(type: Toast['type']): string {
     switch (type) {
         case 'achievement':
             return 'bg-brutal-dark border-brutal-yellow text-brutal-yellow achievement-glitch';
-        case 'xp':
-            return 'bg-brutal-dark border-brutal-green text-brutal-green';
-        case 'level-up':
-            return 'bg-brutal-yellow border-brutal-black text-brutal-black';
         case 'streak':
             return 'bg-brutal-dark border-brutal-yellow text-brutal-yellow';
         case 'error':

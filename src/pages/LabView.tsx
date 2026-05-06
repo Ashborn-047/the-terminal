@@ -90,19 +90,25 @@ const LabView: React.FC = () => {
         );
     }
 
-    const handleComplete = () => {
+    const [completionXpData, setCompletionXpData] = React.useState<{oldXp: number, newXp: number, gain: number} | undefined>(undefined);
+
+    const handleComplete = async () => {
         if (labProgress?.status === 'completed') return;
         const currentLevel = useGamificationStore.getState().level;
         const prevLabsCompleted = useGamificationStore.getState().labsCompleted;
         completeLab(lab.id);
-        const finalProgress = useLabStore.getState().progress[lab.id];
+        
+        let xpResult;
         if (vfsForVerification) {
-            processLabCompletion(lab.id, lab, vfsForVerification);
+            xpResult = await processLabCompletion(lab.id, lab, vfsForVerification);
+            setCompletionXpData(xpResult);
         }
+
         const returnPath = (lab.id.startsWith('arena-') || lab.id.startsWith('bs-')) ? '/challenge-arena' : '/chapters';
         const newLabsCompleted = prevLabsCompleted + 1;
+        
         if (newLabsCompleted === 1) {
-            setXpAwarded(lab.xpReward);
+            setXpAwarded(xpResult?.gain || lab.xpReward);
             const finalLevel = useGamificationStore.getState().level;
             if (finalLevel > currentLevel) {
                 setLeveledUp(finalLevel);
@@ -112,7 +118,7 @@ const LabView: React.FC = () => {
             setIsSuccessActive(true);
             setTimeout(() => {
                 navigate(returnPath);
-            }, 3000);
+            }, 6000); // Longer duration to see the animation
         }
     };
 
@@ -282,7 +288,7 @@ const LabView: React.FC = () => {
                     onDashboard={() => navigate('/')}
                 />
             )}
-            <SuccessAnimation active={isSuccessActive} />
+            <SuccessAnimation active={isSuccessActive} xpData={completionXpData} />
         </div>
     );
 };

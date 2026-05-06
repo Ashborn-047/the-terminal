@@ -18,6 +18,7 @@ import {
     Mono, 
     Badge 
 } from '../components/ui/AshbornDesignSystem';
+import { SuccessAnimation } from '../components/ui/SuccessAnimation';
 
 type ViewMode = 'list' | 'reading' | 'assessment';
 
@@ -370,7 +371,8 @@ export const ChaptersPage: React.FC = () => {
     const [isCompleted, setIsCompleted] = useState(false);
     const [activeModal, setActiveModal] = useState<'pre_assessment' | 'reentry' | null>(null);
     const [tempChapter, setTempChapter] = useState<ChapterMetadata | null>(null);
-
+    const [isSuccessActive, setIsSuccessActive] = useState(false);
+    const [completionXpData, setCompletionXpData] = useState<{oldXp: number, newXp: number, gain: number} | undefined>(undefined);
     const terminalState = useTerminal();
 
     const handleStartChapter = (chapter: ChapterMetadata) => {
@@ -382,6 +384,7 @@ export const ChaptersPage: React.FC = () => {
             setReadingSectionIndex(0);
             setViewMode('reading');
             setIsCompleted(false);
+            setActiveModal(null);
         }
     };
 
@@ -399,7 +402,7 @@ export const ChaptersPage: React.FC = () => {
         if (!tempChapter) return;
         setSelectedChapter(tempChapter);
         setActiveModal(null);
-        handleStartAssessment(true); // true means use more questions for replay
+        handleStartAssessment(true);
         setTempChapter(null);
     };
 
@@ -407,8 +410,6 @@ export const ChaptersPage: React.FC = () => {
         const chapterToUse = selectedChapter || tempChapter;
         if (!chapterToUse) return;
         
-        // Use 10 questions for first time (as per user request 5-10), 
-        // maybe more or same for replay.
         const questionCount = isReplay ? 15 : 10; 
         
         try {
@@ -451,27 +452,33 @@ export const ChaptersPage: React.FC = () => {
         }
     }, [selectedChapter, sessionQuestions, currentStepIndex]);
 
-    const handleChapterComplete = (chapter: ChapterMetadata) => {
-        setIsCompleted(true);
+    const handleChapterComplete = async (chapter: ChapterMetadata) => {
         const hasPracticeOnly = sessionQuestions.some(q => q.practiceOnly);
         if (!completedChapterIds.includes(chapter.id)) {
             if (!hasPracticeOnly) {
-                awardXP(chapter.xpReward);
+                const xpResult = await awardXP(chapter.xpReward, true);
+                setCompletionXpData(xpResult);
                 markChapterCompleted(chapter.id);
                 import('../lib/spacetime/index').then(({ spacetime }) => {
                     (spacetime as any).completeChapter?.(chapter.id);
                 }).catch(e => console.error(e));
-                toastEmitter.emit({
-                    type: 'achievement',
-                    title: 'Chapter Completed!',
-                    message: `Earned ${chapter.xpReward} XP`,
-                    icon: '📚'
-                });
+                
+                setIsCompleted(true);
+                setIsSuccessActive(true);
+                setTimeout(() => {
+                    setViewMode('list');
+                    setIsSuccessActive(false);
+                    setSelectedChapter(null);
+                }, 6000);
             } else {
                 toastEmitter.emit({ type: 'info', title: 'Practice Completed', message: 'Authoring in progress. No XP awarded.', icon: '🛠️' });
+                setIsCompleted(true);
+                setTimeout(() => setViewMode('list'), 2000);
             }
         } else {
             toastEmitter.emit({ type: 'info', title: 'Chapter Replayed', message: 'Practice makes perfect.', icon: '🔄' });
+            setIsCompleted(true);
+            setTimeout(() => setViewMode('list'), 2000);
         }
     };
 
@@ -493,7 +500,6 @@ export const ChaptersPage: React.FC = () => {
         }
     }, [terminalState.history, sessionQuestions, currentStepIndex, isCompleted, handleStepAdvance, selectedChapter, viewMode]);
 
-    // Render logic for Reading Mode
     if (selectedChapter && viewMode === 'reading') {
         const content = chapterContents[selectedChapter.id];
         const sections = content?.sections || [
@@ -591,11 +597,10 @@ export const ChaptersPage: React.FC = () => {
         );
     }
 
-    // Render logic for Assessment Mode
     if (selectedChapter && viewMode === 'assessment') {
         const assessment = sessionQuestions[currentStepIndex];
         
-        if (isCompleted) {
+        if (isCompleted && !isSuccessActive) {
              return (
                  <div style={{ 
                      height: '100%', 
@@ -782,6 +787,7 @@ export const ChaptersPage: React.FC = () => {
                 onJumpToMCQ={confirmReentryMCQ}
                 onCancel={() => setActiveModal(null)}
             />
+            <SuccessAnimation active={isSuccessActive} xpData={completionXpData} />
         </div>
     );
 };

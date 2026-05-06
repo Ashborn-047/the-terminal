@@ -302,6 +302,15 @@ export const globalStyles = `
     40%{clip-path:inset(0 0 0 0)}
   }
 
+  @keyframes shimmer {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(100%); }
+  }
+
+  .animate-shimmer {
+    animation: shimmer 2s infinite;
+  }
+
   html, body, #root {
     min-height: 100%;
     width: 100%;

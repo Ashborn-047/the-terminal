@@ -269,15 +269,18 @@ export const useGamificationStore = create<GamificationState>()(
             setMigrationNotice: (val) => set({ needsMigrationNotice: val }),
 
             awardXP: async (amount, silent) => {
+                const oldTotalXp = get().totalXpEarned;
                 const oldLevel = get().level;
                 const multiplier = get().getStreakMultiplier();
                 const boostedAmount = Math.round(amount * multiplier);
 
-                if (boostedAmount === 0) return;
+                if (boostedAmount === 0) return { oldXp: oldTotalXp, newXp: oldTotalXp, gain: 0 };
 
                 if (boostedAmount > 0) {
                     get().updateQuestProgress('earn_xp', boostedAmount);
                 }
+
+                const progressBefore = get().getXPProgress();
 
                 set((state) => {
                     const nextXp = state.totalXpEarned + boostedAmount;
@@ -294,28 +297,29 @@ export const useGamificationStore = create<GamificationState>()(
                     };
                 });
 
-                if (!silent) {
-                    const bonusText = multiplier > 1 ? ` (${multiplier}x streak bonus!)` : '';
+                const progressAfter = get().getXPProgress();
+                const newLevel = get().level;
+                const newTotalXp = get().totalXpEarned;
+
+                if (!silent && multiplier > 1) {
                     toastEmitter.emit({
-                        type: 'xp',
-                        title: `${boostedAmount > 0 ? '+' : ''}${boostedAmount} XP${bonusText}`,
-                        icon: boostedAmount > 0 ? '⚡' : '💡'
+                        type: 'streak',
+                        title: 'Streak Multiplier!',
+                        message: `${multiplier}x streak bonus applied!`,
+                        icon: '🔥',
                     });
                 }
 
-                const newLevel = get().level;
-                if (newLevel > oldLevel) {
-                    if (!silent) {
-                        useUIStore.getState().showLevelUp(newLevel);
-                    }
-                    toastEmitter.emit({
-                        type: 'level-up',
-                        title: `Level ${newLevel}!`,
-                        message: getLevelTitle(newLevel),
-                        icon: '🎖️',
-                        duration: 5000,
-                    });
+                if (newLevel > oldLevel && !silent) {
+                    useUIStore.getState().showLevelUp(newLevel);
+                    // Level-up toast removed as requested. SuccessAnimation or LevelUp modal should handle visuals.
                 }
+
+                return {
+                    oldXp: oldTotalXp,
+                    newXp: newTotalXp,
+                    gain: boostedAmount
+                };
             },
 
             hintPenalty: () => {
@@ -323,7 +327,7 @@ export const useGamificationStore = create<GamificationState>()(
                 set((state) => ({ hintsUsed: state.hintsUsed + 1 }));
             },
 
-            processLabCompletion: (labId: string, lab: Lab, vfs: VFS) => {
+            processLabCompletion: async (labId: string, lab: Lab, vfs: VFS) => {
                 const { labCompletionHistory } = get();
                 const historyRecord = labCompletionHistory[labId];
 
@@ -351,12 +355,13 @@ export const useGamificationStore = create<GamificationState>()(
 
                 // 4. Apply Multipliers (Hardcore + Streak + Daily Quest)
                 const questMultiplier = useQuestStore.getState().getQuestMultiplier(labId);
-                const finalXpGain = Math.floor(get().calculateTotalXpGain(totalBase) * questMultiplier);
+                const totalBaseWithQuest = totalBase * questMultiplier;
 
-                // 5. Update State
+                // 5. Award XP and capture data (SILENTLY to avoid toast duplication)
+                const xpResult = await get().awardXP(totalBaseWithQuest, true);
+
+                // 6. Update Lab History (awardXP only handles XP/Level)
                 set((state) => ({
-                    xp: state.xp + finalXpGain,
-                    totalXpEarned: state.totalXpEarned + finalXpGain,
                     labsCompleted: state.labsCompleted + 1,
                     labCompletionHistory: {
                         ...state.labCompletionHistory,
@@ -366,13 +371,10 @@ export const useGamificationStore = create<GamificationState>()(
                         }
                     }
                 }));
-
-                // Sync level and titles
-                get().addXp(0); 
                 
                 // SpacetimeDB Sync
                 import('../lib/spacetime/index').then(({ spacetime }) => {
-                    spacetime.completeLab(labId, BigInt(finalXpGain));
+                    spacetime.completeLab(labId, BigInt(xpResult.gain));
                 }).catch(err => console.error('[SPACETIME] Sync failed:', err));
 
                 // Achievement & Quests
@@ -383,6 +385,8 @@ export const useGamificationStore = create<GamificationState>()(
                 if (objectivesCompleted.length > 0) {
                     console.log(`[XP] Bonus Objectives Completed: ${objectivesCompleted.join(', ')}`);
                 }
+
+                return xpResult;
             },
 
             getStreakMultiplier: () => {
