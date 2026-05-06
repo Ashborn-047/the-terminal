@@ -6,7 +6,7 @@ import { ChapterAssessment, QuestionProvider } from '../features/lab-engine/prov
 import { TerminalComponent } from '../components/terminal/Terminal';
 import { useTerminal } from '../hooks/useTerminal';
 import { toastEmitter } from '../components/ToastNotification';
-import { motion, AnimatePresence } from 'motion';
+import { motion } from 'motion/react';
 import { BookOpen, CheckCircle, Lock, ChevronRight, ChevronLeft, ArrowRight, Play } from 'lucide-react';
 import { PreAssessmentModal, ChapterReentryModal } from '../components/chapters/ChapterModals';
 import { 

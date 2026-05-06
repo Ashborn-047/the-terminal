@@ -137,7 +137,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
                 <div style={{ width: '100%', marginTop: '12px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '8px' }}>
                         <Mono size="xs" color={tokens.color.text.secondary}>LEVEL {progress.level}</Mono>
-                        <Mono size="sm" color={tokens.color.text.primary} weight={900}>
+                        <Mono size="sm" color={tokens.color.text.primary} weight="black">
                             {Math.floor(progress.current)} <span style={{ opacity: 0.3 }}>/</span> {progress.needed} XP
                         </Mono>
                     </div>
