@@ -6,7 +6,7 @@ import { ChapterAssessment, QuestionProvider } from '../features/lab-engine/prov
 import { TerminalComponent } from '../components/terminal/Terminal';
 import { useTerminal } from '../hooks/useTerminal';
 import { toastEmitter } from '../components/ToastNotification';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { BookOpen, CheckCircle, Lock, ChevronRight, ChevronLeft, ArrowRight, Play } from 'lucide-react';
 import { PreAssessmentModal, ChapterReentryModal } from '../components/chapters/ChapterModals';
 import { 
@@ -666,7 +666,7 @@ export const ChaptersPage: React.FC = () => {
                                             padding: tokens.space[4],
                                             textAlign: 'left',
                                             border: `1px solid ${inputValue === opt ? tokens.color.lime.base : tokens.color.border.default}`,
-                                            background: inputValue === opt ? tokens.color.lime.alpha[8] : tokens.color.bg.overlay,
+                                            background: inputValue === opt ? tokens.color.lime.alpha[10] : tokens.color.bg.overlay,
                                             color: inputValue === opt ? tokens.color.lime.base : tokens.color.text.primary,
                                             fontFamily: tokens.font.sans,
                                             fontSize: tokens.fontSize.sm,
@@ -722,7 +722,7 @@ export const ChaptersPage: React.FC = () => {
 
                         {assessment.hint && (
                             <div style={{ marginTop: 24 }}>
-                                <Label size="2xs" color={tokens.color.text.tertiary} italic>
+                                <Label size="2xs" color={tokens.color.text.tertiary} style={{ fontStyle: 'italic' }}>
                                     Hint: {assessment.hint}
                                 </Label>
                             </div>
@@ -745,7 +745,7 @@ export const ChaptersPage: React.FC = () => {
                     gap: 8
                 }}>
                     <Display size="2xl" color={tokens.color.lime.base}>Linux Mastery Track</Display>
-                    <Label size="sm" color={tokens.color.text.secondary} uppercase letterSpacing={tokens.letterSpacing.widest} weight="bold">
+                    <Label size="sm" color={tokens.color.text.secondary} uppercase weight="bold" style={{ letterSpacing: tokens.letterSpacing.widest }}>
                         The definitive path from foundation to professional system administration.
                     </Label>
                     <div style={{ 
