@@ -157,9 +157,9 @@ interface GamificationState {
     triggerDeath: (reason: string) => void;
     resetXpOnDeath: () => void;
     setMigrationNotice: (val: boolean) => void;
-    awardXP: (amount: number, silent?: boolean) => void;
+    awardXP: (amount: number, silent?: boolean) => Promise<{ oldXp: number, newXp: number, gain: number }>;
     hintPenalty: () => void;
-    processLabCompletion: (labId: string, lab: Lab, vfs: VFS) => void;
+    processLabCompletion: (labId: string, lab: Lab, vfs: VFS) => Promise<{ oldXp: number, newXp: number, gain: number }>;
     getStreakMultiplier: () => number;
     updateStreak: () => void;
     purchaseStreakFreeze: () => boolean;
