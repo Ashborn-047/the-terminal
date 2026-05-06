@@ -1,12 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Sparkles, Zap } from 'lucide-react';
-import { tokens, ProgressBar, Label, Mono } from './AshbornDesignSystem';
-import { getXPProgress } from '../../stores/gamificationStore';
+import { Zap, CheckCircle, TrendingUp } from 'lucide-react';
+import { tokens, Label, Mono } from './AshbornDesignSystem';
+import { calculateXPProgress } from '../../stores/gamificationStore';
 
 interface SuccessAnimationProps {
     active: boolean;
-    duration?: number;
-    onComplete?: () => void;
     xpData?: {
         oldXp: number;
         newXp: number;
@@ -16,121 +14,178 @@ interface SuccessAnimationProps {
 
 export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({ 
     active, 
-    duration = 5000, 
-    onComplete,
     xpData 
 }) => {
-    const [visible, setVisible] = useState(active);
-    const [displayXp, setDisplayXp] = useState(xpData?.oldXp || 0);
-    const [isAnimating, setIsAnimating] = useState(false);
+    const [isVisible, setIsVisible] = useState(false);
+    const [displayXp, setDisplayXp] = useState(0);
+    const [hasAnimated, setHasAnimated] = useState(false);
 
     useEffect(() => {
         if (active) {
-            setVisible(true);
+            setIsVisible(true);
+            setHasAnimated(false);
             setDisplayXp(xpData?.oldXp || 0);
             
-            // Animation sequence
             const timer = setTimeout(() => {
-                setIsAnimating(true);
                 if (xpData) {
                     setDisplayXp(xpData.newXp);
+                    setHasAnimated(true);
                 }
             }, 800);
-
-            const hideTimer = setTimeout(() => {
-                setVisible(false);
-                if (onComplete) onComplete();
-            }, duration);
             
-            return () => {
-                clearTimeout(timer);
-                clearTimeout(hideTimer);
-            };
+            return () => clearTimeout(timer);
         } else {
-            setVisible(false);
-            setIsAnimating(false);
+            setIsVisible(false);
         }
-    }, [active, duration, onComplete, xpData]);
+    }, [active, xpData]);
 
-    if (!visible) return null;
+    if (!active && !isVisible) return null;
 
-    const progress = getXPProgress(displayXp);
+    const progress = calculateXPProgress(displayXp);
 
     return (
-        <div className="fixed inset-0 z-[100] pointer-events-none overflow-hidden flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-500">
-            {/* Confetti Particles */}
-            {[...Array(40)].map((_, i) => (
-                <div
-                    key={i}
-                    className="absolute animate-bounce"
-                    style={{
-                        top: '-20px',
-                        left: `${Math.random() * 100}%`,
-                        width: `${Math.random() * 12 + 6}px`,
-                        height: `${Math.random() * 12 + 6}px`,
-                        backgroundColor: [tokens.color.lime.base, '#FF0055', '#FFEE00', '#009DFF', '#FFFFFF'][Math.floor(Math.random() * 5)],
-                        transform: `rotate(${Math.random() * 360}deg)`,
-                        animation: `confetti-fall ${Math.random() * 2 + 2}s linear forwards`,
-                        animationDelay: `${Math.random() * 1}s`,
-                    }}
-                />
-            ))}
+        <div style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 1000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            backdropFilter: 'blur(8px)',
+            transition: 'opacity 0.5s ease-out',
+            opacity: isVisible ? 1 : 0,
+            pointerEvents: active ? 'auto' : 'none'
+        }}>
+            {/* Confetti Effect */}
+            <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+                {active && [...Array(30)].map((_, i) => (
+                    <div
+                        key={i}
+                        style={{
+                            position: 'absolute',
+                            top: '-20px',
+                            left: `${Math.random() * 100}%`,
+                            width: '8px',
+                            height: '8px',
+                            backgroundColor: [tokens.color.lime.base, tokens.color.amber.base, '#009DFF', '#FFFFFF'][Math.floor(Math.random() * 4)],
+                            borderRadius: '50%',
+                            opacity: 0.6,
+                            animation: `confetti-fall ${Math.random() * 3 + 2}s linear forwards`,
+                            animationDelay: `${Math.random() * 2}s`
+                        }}
+                    />
+                ))}
+            </div>
 
-            {/* Success Shield / Logo in center */}
-            <div className="bg-brutal-dark border-4 border-brutal-black p-10 shadow-brutal-lg animate-in zoom-in slide-in-from-bottom-10 duration-700 flex flex-col items-center max-w-md w-full pointer-events-auto">
-                <div className="relative mb-6">
-                    <Sparkles size={80} className="text-brutal-green animate-pulse" />
-                    {xpData && (
-                        <div className="absolute -top-2 -right-6 bg-brutal-yellow text-brutal-black px-3 py-1 font-black italic text-xl shadow-brutal rotate-12 animate-bounce">
-                            +{xpData.gain} XP
-                        </div>
-                    )}
+            {/* Modal Card */}
+            <div style={{
+                background: tokens.color.bg.surface,
+                border: `4px solid ${tokens.color.border.strong}`,
+                padding: '40px',
+                boxShadow: tokens.shadow.glow,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                maxWidth: '450px',
+                width: '100%',
+                position: 'relative',
+                transform: isVisible ? 'scale(1) translateY(0)' : 'scale(0.9) translateY(20px)',
+                transition: 'transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+            }}>
+                <div style={{
+                    position: 'absolute',
+                    top: '-24px',
+                    right: '-24px',
+                    background: tokens.color.amber.base,
+                    color: tokens.color.bg.base,
+                    padding: '8px 16px',
+                    fontWeight: 900,
+                    fontSize: '24px',
+                    fontStyle: 'italic',
+                    border: `3px solid ${tokens.color.border.strong}`,
+                    boxShadow: tokens.shadow.md,
+                    transform: 'rotate(12deg)',
+                    animation: hasAnimated ? 'bounce 1s infinite' : 'none'
+                }}>
+                    +{xpData?.gain || 0} XP
                 </div>
 
-                <h1 className="font-heading text-5xl text-brutal-white uppercase italic tracking-tighter mb-8 text-center leading-none">
-                    EXCELLENT <br /> <span className="text-brutal-green">WORK</span>
+                <div style={{ marginBottom: '24px' }}>
+                    <Zap size={80} color={tokens.color.lime.base} style={{ filter: `drop-shadow(0 0 10px ${tokens.color.lime.base})` }} />
+                </div>
+
+                <h1 style={{
+                    fontFamily: tokens.font.display,
+                    fontSize: '48px',
+                    color: tokens.color.text.primary,
+                    textTransform: 'uppercase',
+                    fontStyle: 'italic',
+                    letterSpacing: '-2px',
+                    marginBottom: '8px',
+                    textAlign: 'center',
+                    lineHeight: 1
+                }}>
+                    Mission Success
                 </h1>
+                
+                <Mono size="sm" color={tokens.color.lime.base} style={{ marginBottom: '32px', fontWeight: 'bold' }}>
+                    LINUX_OBJECTIVE_SECURED.SYS
+                </Mono>
 
-                {xpData && (
-                    <div className="w-full space-y-3 border-t border-white/10 pt-8 mt-4">
-                        <div className="flex justify-between items-end mb-1">
-                            <div className="flex flex-col">
-                                <Label size="xs" color={tokens.color.text.tertiary} uppercase weight={800} style={{ fontSize: '10px', letterSpacing: '0.1em' }}>XP Elevation</Label>
-                                <Mono size="sm" weight={900} color={tokens.color.lime.base} style={{ fontSize: '18px', marginTop: '-2px' }}>LEVEL {progress.level}</Mono>
-                            </div>
-                            <div className="text-right">
-                                <Mono size="sm" weight={700} color={tokens.color.text.secondary} style={{ fontSize: '14px' }}>
-                                    {Math.floor(progress.progress)} <span className="opacity-30 mx-1">/</span> {progress.needed}
-                                </Mono>
-                            </div>
-                        </div>
+                <div style={{ width: '100%', marginTop: '12px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '8px' }}>
+                        <Mono size="xs" color={tokens.color.text.secondary}>LEVEL {progress.level}</Mono>
+                        <Mono size="sm" color={tokens.color.text.primary} weight={900}>
+                            {Math.floor(progress.current)} <span style={{ opacity: 0.3 }}>/</span> {progress.needed} XP
+                        </Mono>
+                    </div>
 
-                        <div className="relative h-3 bg-black/40 border border-white/10 overflow-hidden shadow-[inset_0_1px_3px_rgba(0,0,0,0.8)]">
-                            <div 
-                                className="h-full bg-brutal-green transition-all duration-[2000ms] ease-out relative shadow-[0_0_15px_rgba(74,222,128,0.5)]"
-                                style={{ width: `${progress.percent}%` }}
-                            >
-                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-shimmer" />
-                            </div>
-                        </div>
-
-                        <div className="flex justify-center pt-4">
-                             <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-white/30">
-                                <div className="h-[1px] w-8 bg-white/10" />
-                                <Zap size={10} className="text-brutal-yellow" />
-                                Terminal Mastery
-                                <Zap size={10} className="text-brutal-yellow" />
-                                <div className="h-[1px] w-8 bg-white/10" />
-                             </div>
+                    <div style={{ 
+                        height: '16px', 
+                        background: tokens.color.bg.base, 
+                        border: `2px solid ${tokens.color.border.default}`,
+                        padding: '2px',
+                        position: 'relative'
+                    }}>
+                        <div style={{ 
+                            height: '100%', 
+                            width: `${progress.percent}%`, 
+                            background: tokens.color.lime.base,
+                            transition: 'width 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                            position: 'relative',
+                            overflow: 'hidden'
+                        }}>
+                            <div style={{
+                                position: 'absolute',
+                                inset: 0,
+                                background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)',
+                                animation: 'shimmer 2s infinite',
+                                width: '200%'
+                            }} />
                         </div>
                     </div>
-                )}
+                </div>
+
+                <div style={{ marginTop: '40px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <TrendingUp size={20} color={tokens.color.text.tertiary} />
+                    <Label size="xs" color={tokens.color.text.secondary}>TOTAL XP: {displayXp}</Label>
+                </div>
             </div>
 
             <style>{`
                 @keyframes confetti-fall {
-                    0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+                    0% { transform: translateY(0) rotate(0deg); opacity: 1; }
                     100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+                }
+                @keyframes shimmer {
+                    0% { transform: translateX(-100%); }
+                    100% { transform: translateX(100%); }
+                }
+                @keyframes bounce {
+                    0%, 100% { transform: translateY(0) rotate(12deg); }
+                    50% { transform: translateY(-10px) rotate(12deg); }
                 }
             `}</style>
         </div>

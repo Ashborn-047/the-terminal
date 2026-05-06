@@ -56,6 +56,20 @@ export function levelFromXP(totalXp: number): number {
     return level;
 }
 
+export function calculateXPProgress(totalXp: number): { current: number; needed: number; percent: number; level: number } {
+    const level = levelFromXP(totalXp);
+    const currentLevelXP = xpForLevel(level);
+    const nextLevelXP = xpForLevel(level + 1);
+    const current = totalXp - currentLevelXP;
+    const needed = nextLevelXP - currentLevelXP;
+    return { 
+        current, 
+        needed, 
+        percent: Math.round((current / Math.max(1, needed)) * 100),
+        level
+    };
+}
+
 // ======================================================================
 //  Achievement Definitions — per gamification_framework.md §2.4
 // ======================================================================
@@ -500,14 +514,7 @@ export const useGamificationStore = create<GamificationState>()(
 
             getTitle: () => getLevelTitle(get().level),
 
-            getXPProgress: () => {
-                const state = get();
-                const currentLevelXP = xpForLevel(state.level);
-                const nextLevelXP = xpForLevel(state.level + 1);
-                const current = state.totalXpEarned - currentLevelXP;
-                const needed = nextLevelXP - currentLevelXP;
-                return { current, needed, percent: Math.round((current / needed) * 100) };
-            },
+            getXPProgress: () => calculateXPProgress(get().totalXpEarned),
 
             generateDailyQuests: () => {
                 const today = new Date().toISOString().split('T')[0];
