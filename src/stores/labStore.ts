@@ -124,18 +124,32 @@ export const useLabStore = create<LabState>()(
             },
 
             revealSolution: (labId) => {
-                const p = get().progress[labId];
-                if (!p) return;
+                import('./gamificationStore').then(({ useGamificationStore }) => {
+                    const current = get().progress[labId];
+                    if (!current || current.solutionRevealed) return;
 
-                set((state) => ({
-                    progress: {
-                        ...state.progress,
-                        [labId]: {
-                            ...p,
-                            solutionRevealed: true
-                        }
+                    const gamification = useGamificationStore.getState();
+                    if (gamification.difficultyMode === 'HARD' && !gamification.spendXp(200)) {
+                        return;
                     }
-                }));
+
+                    set((state) => {
+                        const latest = state.progress[labId];
+                        if (!latest || latest.solutionRevealed) {
+                            return state;
+                        }
+
+                        return {
+                            progress: {
+                                ...state.progress,
+                                [labId]: {
+                                    ...latest,
+                                    solutionRevealed: true
+                                }
+                            }
+                        };
+                    });
+                });
             },
 
             resetLab: (labId) => {
