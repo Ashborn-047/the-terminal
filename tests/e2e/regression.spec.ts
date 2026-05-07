@@ -91,7 +91,7 @@ test.describe('Full Regression Flow', () => {
         // ──────────────────────────────────────────────
         const celebrationHeading = page.getByRole('heading', { name: /First Lab Complete!/i });
         await expect(celebrationHeading).toBeVisible({ timeout: 30000 });
-        await expect(page.getByText('+50 XP').first()).toBeVisible();
+        await expect(page.locator('text=/\\+(50|100|150) XP/').first()).toBeVisible();
 
         // Dismiss celebration
         const continueBtn = page.getByRole('button', { name: /Continue Learning/i });

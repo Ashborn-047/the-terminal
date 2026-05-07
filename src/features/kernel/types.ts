@@ -23,6 +23,7 @@ export interface PCB {
     cwd: string;
     fds: Map<number, FileDescriptor>;
     status: 'running' | 'sleeping' | 'stopped' | 'zombie';
+    abortController?: AbortController;
 }
 
 /**
@@ -35,4 +36,6 @@ export interface SyscallInterface {
     sys_exit(code: number): Promise<void>;
     sys_getpid(): number;
     sys_mkdir(path: string): Promise<number>; // returns 0 on success, <0 on error
+    sys_signal(pid: number, signal: string): Promise<void>;
+    get_abort_signal(): AbortSignal | undefined;
 }
