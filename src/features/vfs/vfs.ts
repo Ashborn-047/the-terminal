@@ -60,7 +60,7 @@ export function octalToPermissions(mode: string): InodePermissions | null {
     };
 }
 
-const MAX_SYMLINK_DEPTH = 20;
+const MAX_SYMLINK_DEPTH = 40;
 
 const PROTECTED_PATHS = [
     '/bin',
@@ -573,7 +573,8 @@ export class VFS {
         userId: string = 'root',
         groups: string[] = []
     ): Dentry | string {
-        if (_depth > MAX_SYMLINK_DEPTH) return 'Too many levels of symbolic links';
+        // Enforce 40 depth limit to prevent circular link crashes
+        if (_depth > 40) return 'Too many levels of symbolic links';
         const normPath = path.replace(/\/+$/, '') || '/';
         if (normPath === '/' || normPath === '' || normPath === '.') return this.dentries[this.rootDentryId];
 
@@ -586,17 +587,15 @@ export class VFS {
 
         for (let i = 0; i < parts.length; i++) {
             const part = parts[i];
-            const currentInode = this.inodeTable.getInodeRef(currentDentry.inodeId);
-            if (!currentInode) return formatError('FILE_NOT_FOUND');
 
             if (part === '.') continue;
             if (part === '..') {
-                const parentId = currentDentry.parentId || this.rootDentryId;
-                currentDentry = this.dentries[parentId];
+                currentDentry = currentDentry.parentId ? this.dentries[currentDentry.parentId] : this.dentries[this.rootDentryId];
                 continue;
             }
 
-            if (currentInode.type !== 'directory') return formatError('NOT_A_DIRECTORY');
+            const currentInode = this.inodeTable.getInodeRef(currentDentry.inodeId);
+            if (!currentInode || currentInode.type !== 'directory') return formatError('NOT_A_DIRECTORY');
 
             if (!this.hasPermission(currentInode, userId, 'execute', groups)) {
                 return formatError('PERMISSION_DENIED');
@@ -617,7 +616,9 @@ export class VFS {
 
             if (childInode && childInode.type === 'symlink' && followSymlinks) {
                 const target = childInode.target || '';
-                const resolved = this.resolveDentry(target, this.rootDentryId, true, _depth + 1, userId, groups);
+                const isAbsolute = target.startsWith('/');
+                const startId = isAbsolute ? this.rootDentryId : currentDentry.parentId!;
+                const resolved = this.resolveDentry(target, startId, true, _depth + 1, userId, groups);
                 if (typeof resolved === 'string') return resolved;
                 
                 if (i < parts.length - 1) {
@@ -641,6 +642,38 @@ export class VFS {
         _depth: number = 0,
         groups: string[] = []
     ): (Inode & { name: string }) | string {
+        const normPath = path.replace(/\/+$/, '') || '/';
+        const procMatch = normPath.match(/^\/proc\/([0-9]+)\/status$/);
+        if (procMatch) {
+            const pidStr = procMatch[1];
+            const procs = this.processProvider();
+            const process = procs.find(p => p.pid.toString() === pidStr);
+            if (process) {
+                return {
+                    id: `proc-${pidStr}-status`,
+                    name: 'status',
+                    type: 'file',
+                    permissions: { owner: { read: true, write: false, execute: false }, group: { read: true, write: false, execute: false }, others: { read: true, write: false, execute: false } },
+                    ownerId: process.uid || 'root',
+                    groupId: process.uid || 'root',
+                    nlink: 1,
+                    size: 0,
+                    atime: Date.now(),
+                    mtime: Date.now(),
+                    ctime: Date.now(),
+                    content: `Name:	process_${pidStr}
+State:	${process.status || 'sleeping'}
+Pid:	${pidStr}
+PPid:	${process.ppid || 1}
+Uid:	${process.uid || 'root'}
+`,
+                    isVirtual: true
+                };
+            } else {
+                return formatError('FILE_NOT_FOUND');
+            }
+        }
+
         const result = this.resolveDentry(path, this.rootDentryId, followSymlinks, _depth, userId, groups);
         if (typeof result === 'string') return result;
         const inode = this.inodeTable.getInodeRef(result.inodeId);
@@ -903,13 +936,14 @@ export class VFS {
 
             if (!this.hasPermission(parentInode, userId, 'write', groups)) return 'Permission denied.';
 
-            if (inode.type === 'directory' && recursive && dentryResult.children) {
+            if (inode.type === 'directory' && dentryResult.children) {
                 const children = [...dentryResult.children];
                 for (const childId of children) {
                     const childDentry = this.dentries[childId];
                     if (childDentry) {
                         const childPath = `${path === '/' ? '' : path}/${childDentry.name}`;
-                        await this.rm(childPath, true, userId);
+                        const childRes = await this.rm(childPath, true, userId, groups, isBootstrap);
+                        if (typeof childRes === 'string') return childRes;
                     }
                 }
             }
@@ -1012,6 +1046,14 @@ export class VFS {
                 { name: 'stat', type: 'file' as FileType, inodeId: 'proc-stat' }
             ];
             return [...procEntries, ...staticEntries];
+        }
+
+        // Handle `/proc/[pid]` virtual directories inside VFS
+        const procMatch = path.match(/^\/proc\/([0-9]+)$/);
+        if (procMatch) {
+            return [
+                { name: 'status', type: 'file' as FileType, inodeId: `proc-${procMatch[1]}-status` }
+            ];
         }
 
         // Standard VFS children

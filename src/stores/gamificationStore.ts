@@ -35,7 +35,8 @@ const FIRST_LAB_BONUS = 500;
 /** Returns level title; levels 11-20 → Linux Associate, 21-30 → Linux Professional, 31+ → Terminal Master */
 export function getLevelTitle(level: number): string {
     if (LEVEL_TITLES[level]) return LEVEL_TITLES[level];
-    if (level <= 20) return 'Linux Associate';
+    if (level <= 10) return 'Storage Handler'; // fallback just in case
+    if (level <= 20) return 'RHCSA Candidate';
     if (level <= 30) return 'Linux Professional';
     return 'Terminal Master';
 }

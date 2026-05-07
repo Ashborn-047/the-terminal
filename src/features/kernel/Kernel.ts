@@ -28,15 +28,17 @@ export class Kernel {
      * Spawns a new process in the kernel.
      * In a full implementation, this would handle true fork semantics.
      */
-    public spawnProcess(uid: string, cwd: string, stdoutCallback: (data: string) => void): PCB {
+    public spawnProcess(uid: string, cwd: string, stdoutCallback: (data: string) => void, ppid: number = 1): PCB {
         const pid = this.nextPid++;
+        const abortController = new AbortController();
         const pcb: PCB = {
             pid,
-            ppid: 1, // Parent is init for now
+            ppid,
             uid,
             cwd,
             fds: new Map(),
-            status: 'running'
+            status: 'running',
+            abortController
         };
 
         // Setup standard FDs
@@ -57,7 +59,13 @@ export class Kernel {
      * Generates the Syscall interface for a specific process context.
      * Commands are injected with this object.
      */
-    public createSyscallInterface(pid: number): SyscallInterface {
+    public getProcess(pid: number): PCB | undefined {
+        return this.processTable.get(pid);
+    }
+
+    public getProcesses(): PCB[] {
+        return Array.from(this.processTable.values());
+    }\n\n    public createSyscallInterface(pid: number): SyscallInterface {
         const pcb = this.processTable.get(pid);
         if (!pcb) throw new Error(`Kernel Panic: Process ${pid} does not exist.`);
 
@@ -84,6 +92,24 @@ export class Kernel {
                 // Here the Kernel validates permissions via VFS
                 const result = await this.vfs.mkdir(path, pcb.uid, []);
                 return result ? -1 : 0; // Simulated basic return code (0 = success)
+            },
+            sys_signal: async (targetPid: number, signal: string): Promise<void> => {
+                const targetPcb = this.processTable.get(targetPid);
+                if (!targetPcb) return;
+
+                if (signal === 'SIGINT' || signal === 'SIGTERM' || signal === 'SIGKILL') {
+                    if (targetPcb.abortController) {
+                        targetPcb.abortController.abort(signal);
+                    }
+                    targetPcb.status = 'zombie';
+                } else if (signal === 'SIGSTOP') {
+                    targetPcb.status = 'stopped';
+                } else if (signal === 'SIGCONT') {
+                    targetPcb.status = 'running';
+                }
+            },
+            get_abort_signal: (): AbortSignal | undefined => {
+                return pcb.abortController?.signal;
             }
         };
     }

@@ -127,15 +127,26 @@ export const useLabStore = create<LabState>()(
                 const p = get().progress[labId];
                 if (!p) return;
 
-                set((state) => ({
-                    progress: {
-                        ...state.progress,
-                        [labId]: {
-                            ...p,
-                            solutionRevealed: true
+                // Added Gamification Economy Hook for HARD Mode Penalty
+                import('./gamificationStore').then(({ useGamificationStore }) => {
+                    const gamification = useGamificationStore.getState();
+                    if (gamification.difficultyMode === 'HARD') {
+                        // Attempt to deduct 200 XP
+                        const canAfford = gamification.spendXp(200);
+                        if (!canAfford) {
+                            return; // Cannot afford the solution in HARD mode
                         }
                     }
-                }));
+                    set((state) => ({
+                        progress: {
+                            ...state.progress,
+                            [labId]: {
+                                ...p,
+                                solutionRevealed: true
+                            }
+                        }
+                    }));
+                });
             },
 
             resetLab: (labId) => {
